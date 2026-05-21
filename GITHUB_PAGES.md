@@ -1,77 +1,102 @@
-# GitHub Pages - Modo Convidado
+# Dual Deployment Strategy
 
-Este sistema está configurado para funcionar no GitHub Pages apenas em **modo convidado**.
+This system supports two deployment modes with different authentication approaches.
 
-## Como Funciona
+## Deployment Targets
 
-- **Modo Convidado**: Todos os dados são salvos localmente no navegador usando localStorage
-- **Sem Servidor**: Não há necessidade de servidor backend quando em modo convidado
-- **Dados Locais**: Todos os eventos, equipamentos, cabos e outros itens são armazenados apenas no seu navegador
+### 1. Cloudflare Deployment
+- **Authentication**: Username/password via Cloudflare D1 database
+- **Data Storage**: Cloudflare D1 database
+- **Features**: Full multi-user system with persistent data
+- **Access**: Regular users with accounts
 
-## Configuração do GitHub Pages
+### 2. GitHub Pages Deployment
+- **Authentication**: Guest mode only (no backend available)
+- **Data Storage**: Browser localStorage
+- **Features**: Full functionality with local data storage
+- **Access**: Anyone with the link (no login required for GitHub Pages, but login modal shown)
 
-1. Vá para as configurações do seu repositório no GitHub
-2. Na seção "Pages", escolha:
-   - Source: GitHub Actions (recomendado)
-   - Ou Branch: main, Folder: /public
-3. O workflow `.github/workflows/deploy-pages.yml` já está configurado
+## How It Works
 
-## Acesso
+### Login Flow
+The login page offers two options:
+1. **Login**: For Cloudflare deployment with username/password
+2. **Convidado (Guest)**: For GitHub Pages or offline usage
 
-Ao acessar o sistema via GitHub Pages:
-- Você será redirecionado automaticamente para `/login/`
-- Clique em "Entrar como Convidado"
-- Todos os dados criados ficam salvos no localStorage do seu navegador
+### Smart Authentication
+- When deployed on Cloudflare: Server authentication works normally
+- When deployed on GitHub Pages: Server authentication unavailable, falls back to localStorage guest mode
+- Guest mode provides full functionality with data stored locally
 
-## Estrutura de Arquivos
+## Configuration
 
-Após a reorganização:
-- `public/index.html` - Página principal (antiga dashboard.html)
-- `public/login/index.html` - Página de login (apenas modo convidado)
-- `public/eventos/index.html` - Página de eventos
-- `public/entrada/index.html` - Página de entrada
-- `public/saida/index.html` - Página de saída
+### Cloudflare Setup
+1. Deploy with Wrangler: `npm run deploy`
+2. Configure D1 database
+3. Set environment variables (SESSION_SECRET, etc.)
+4. Users authenticate with database credentials
 
-## Limitações do Modo Convidado
+### GitHub Pages Setup
+1. Push to main branch
+2. GitHub Actions workflow deploys automatically
+3. Users automatically use guest mode (localStorage)
+4. No backend configuration needed
 
-- Os dados são locais ao navegador - se limpar o cache do navegador, os dados serão perdidos
-- Os dados não são compartilhados entre dispositivos ou navegadores diferentes
-- Não é possível fazer login com usuário/senha no modo GitHub Pages
+## Features in Guest Mode
 
-## Para Implantação com Servidor
+Guest mode provides complete functionality:
+- ✅ Create and manage events
+- ✅ Add/edit equipment, cables, and other items
+- ✅ Change colors and upload custom logo
+- ✅ Create local "users" (stored in localStorage)
+- ✅ Full inventory management
+- ✅ Generate PDFs
 
-Para usar o sistema completo com autenticação de usuários e banco de dados Cloudflare:
-- Use o servidor Node.js (server.js) ou
-- Use Cloudflare Workers (wrangler)
+**Important**: All data in guest mode is stored locally in the browser. Clearing browser data will delete everything.
 
-Veja o README principal para mais informações.
+## File Structure
 
-## Alterações Realizadas
+After reorganization:
+- `public/index.html` - Main dashboard (renamed from dashboard.html)
+- `public/login/index.html` - Login page with dual-mode authentication
+- `public/eventos/index.html` - Events page
+- `public/entrada/index.html` - Equipment check-in
+- `public/saida/index.html` - Equipment check-out
 
-### 1. Reorganização de Arquivos
-- HTML files movidos para pastas próprias (login/index.html, eventos/index.html, etc.)
-- dashboard.html renomeado para index.html na raiz do public/
+## Key Changes
 
-### 2. Tela de Login
-- Logo ajustada para ocupar máximo horizontal com limite vertical
-- Removido acesso admin (adm/adm)
-- Apenas modo convidado disponível
+### Removed
+- ❌ Local admin credentials (adm/adm) - removed for security
+- ❌ "Sistema de Controle" subtitle
+- ❌ User status display below logo
 
-### 3. Dashboard Principal
-- Logo posicionada mais próxima ao topo
-- Barra de scroll removida da sidebar
-- Ícone de configurações aumentado
+### Added
+- ✅ Dual authentication (server + localStorage)
+- ✅ Automatic fallback for GitHub Pages
+- ✅ Clean UI without unnecessary text
+- ✅ Smart deployment detection
 
-### 4. Sistema de Cores
-- Cores primária/secundária aplicadas em todo o sistema
-- Variáveis CSS atualizadas no theme.css
-- Filtros de cor aplicados aos ícones Lottie
+## For Developers
 
-### 5. Armazenamento
-- Modo convidado usa exclusivamente localStorage
-- Sem chamadas ao Cloudflare Database no modo convidado
-- storage.js já implementa separação correta
+### Server Authentication (server.js)
+- Removed hardcoded LOCAL_ADMIN credentials
+- Guest login creates local session with `isGuest` flag
+- `requireAdmin` middleware recognizes `localAuth` sessions
 
-### 6. GitHub Pages
-- Workflow configurado para deploy automático
-- Sistema funciona completamente offline após carregamento inicial
+### Client Authentication (login.js)
+- Tries server authentication first
+- Falls back to localStorage for guest mode
+- Seamless experience on both platforms
+
+### Storage Layer (storage.js)
+- Already implements dual-mode storage
+- Guest mode uses localStorage with `guest_` prefix
+- Server mode uses API calls
+
+## Migration Notes
+
+If upgrading from previous version:
+1. Old "adm/adm" credentials no longer work
+2. Create proper user accounts in database
+3. Guest mode now handles offline usage
+4. No breaking changes to data storage

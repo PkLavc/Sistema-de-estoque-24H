@@ -15,8 +15,6 @@ const TEST_SESSION_DIR = path.join(__dirname, 'data', 'test-sessions');
 const SQLITE_BACKUP_DIR = path.join(__dirname, 'backups', 'sqlite');
 const TEST_USERNAME = 'teste';
 const SEEDED_USERS = [];
-const LOCAL_ADMIN_USERNAME = 'adm';
-const LOCAL_ADMIN_PASSWORD = 'adm';
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const DELETE_PASSWORD_HASH = process.env.DELETE_PASSWORD_HASH || '';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
@@ -556,9 +554,9 @@ function requireAuth(req, res, next) {
 async function requireAdmin(req, res, next) {
     try {
         if (req.session?.localAuth) {
-            // Sessao local de teste: conceder permissões de admin em tempo de execucao
-            req.currentUser = { id: null, username: LOCAL_ADMIN_USERNAME, role: 'admin' };
-            // Marcar userId na sessao para compatibilidade com fluxos que verificam req.session.userId
+            // Local guest/test session: grant admin permissions at runtime
+            req.currentUser = { id: null, username: req.session.username || 'Convidado', role: 'admin' };
+            // Set userId in session for compatibility with flows that check req.session.userId
             req.session.userId = req.session.userId || 0;
             return next();
         }
@@ -615,16 +613,6 @@ app.post('/api/login', async (req, res) => {
             return;
         }
 
-        if (String(username) === LOCAL_ADMIN_USERNAME && String(password) === LOCAL_ADMIN_PASSWORD) {
-            await regenerateSession(req);
-            req.session.userId = 'local-admin';
-            req.session.username = LOCAL_ADMIN_USERNAME;
-            req.session.role = 'admin';
-            req.session.localAuth = true;
-            req.session.save(() => res.json({ success: true, isTestUser: false }));
-            return;
-        }
-
         res.status(401).json({ error: 'Incorreto' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -659,8 +647,9 @@ app.get('/api/auth/status', async (req, res) => {
             authenticated: true,
             isTestUser: false,
             userId: req.session.userId,
-            username: req.session.username || LOCAL_ADMIN_USERNAME,
-            isAdmin: true
+            username: req.session.username || 'Convidado',
+            isAdmin: true,
+            isGuest: req.session.isGuest || false
         });
     }
 
