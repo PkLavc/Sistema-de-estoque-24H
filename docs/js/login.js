@@ -59,6 +59,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const credentials = document.getElementById('credentials');
     const loginForm = document.getElementById('loginForm');
     const btnSubmit = document.getElementById('btn-submit');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+
+    function setCredentialsRequired(isRequired) {
+        if (usernameInput) usernameInput.required = isRequired;
+        if (passwordInput) passwordInput.required = isRequired;
+    }
 
     // Apply custom logo and favicon if set
     applyCustomLogoAndFavicon();
@@ -72,6 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btnGuestMode.classList.remove('active');
             credentials.style.display = '';
             btnSubmit.textContent = 'Entrar';
+            setCredentialsRequired(true);
         });
     }
 
@@ -81,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btnLoginMode.classList.remove('active');
             credentials.style.display = 'none';
             btnSubmit.textContent = 'Entrar como Convidado';
+            setCredentialsRequired(false);
         });
     }
 
