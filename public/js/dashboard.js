@@ -1910,13 +1910,6 @@ async function checkAuth() {
             role: 'guest'
         };
         
-        // Update user status display
-        const userStatusEl = document.getElementById('userStatus');
-        if (userStatusEl) {
-            userStatusEl.textContent = '👤 Modo Convidado (Dados Locais)';
-            userStatusEl.style.display = 'block';
-        }
-        
         applyLoginManagementVisibility();
         return;
     }
@@ -1945,18 +1938,6 @@ async function checkAuth() {
                 role: isGuest ? 'guest' : (data.isAdmin ? 'admin' : 'user')
             }
             : null;
-        
-        // Update user status display
-        const userStatusEl = document.getElementById('userStatus');
-        if (userStatusEl && currentUser) {
-            if (currentUser.isGuest) {
-                userStatusEl.textContent = '👤 Modo Convidado (Dados Locais)';
-                userStatusEl.style.display = 'block';
-            } else {
-                userStatusEl.textContent = `👤 ${currentUser.username} (${currentUser.role})`;
-                userStatusEl.style.display = 'block';
-            }
-        }
         
         applyLoginManagementVisibility();
     } catch (error) {

@@ -17,7 +17,21 @@
             </div>
             
             <form id="loginForm">
-                <button type="submit" id="btn-submit">Entrar como Convidado</button>
+                <div class="auth-mode">
+                    <button type="button" id="btn-login-mode" class="mode active">Login</button>
+                    <button type="button" id="btn-guest-mode" class="mode">Convidado</button>
+                </div>
+
+                <div id="credentials">
+                    <div class="form-group">
+                        <input type="text" id="username" name="username" placeholder="Usuario" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="password" name="password" placeholder="Senha" required>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit">Entrar</button>
                 <div id="errorMessage" class="error-message"></div>
             </form>
             <p class="login-footer">© <span id="current-year">2026</span> <a id="perico-link" href="https://github.com/arthurperico" target="_blank" rel="noopener">Arthur Perico</a></p>

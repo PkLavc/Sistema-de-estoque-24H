@@ -27,8 +27,7 @@
 .section-header h1,
 .modal-card h2,
 .settings-tab.active,
-th,
-.user-status{
+th{
     color: var(--primary) !important;
 }
 
@@ -53,8 +52,7 @@ textarea:focus,
     border-left-color: var(--primary) !important;
 }
 
-.rental-return-alert,
-.user-status{
+.rental-return-alert{
     background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
     border-color: color-mix(in srgb, var(--primary) 40%, transparent) !important;
 }
