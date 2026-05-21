@@ -45,7 +45,7 @@ input[type="password"]:focus,
 textarea:focus,
 .user-password-input:focus{
     border-color: var(--primary) !important;
-    box-shadow: 0 0 15px rgba(var(--primary), 0.3) !important;
+    box-shadow: 0 0 15px color-mix(in srgb, var(--primary) 30%, transparent) !important;
 }
 
 .preview-card,
@@ -55,14 +55,14 @@ textarea:focus,
 
 .rental-return-alert,
 .user-status{
-    background: rgba(var(--primary), 0.12) !important;
-    border-color: rgba(var(--primary), 0.4) !important;
+    background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+    border-color: color-mix(in srgb, var(--primary) 40%, transparent) !important;
 }
 
 .menu-item:hover,
 .menu-item.active,
 .settings-tab:hover{
-    background: rgba(var(--primary), 0.1) !important;
+    background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
 }
 
 .login-box::before{
