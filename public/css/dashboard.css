@@ -994,8 +994,8 @@ textarea {
 }
 
 .settings-tab.active {
-    color: #ff3333;
-    border-bottom-color: #ff3333;
+    color: var(--primary, #ff3333);
+    border-bottom-color: var(--primary, #ff3333);
 }
 
 .settings-tab-content {
@@ -1129,7 +1129,7 @@ textarea {
 }
 
 .logo-upload-form input[type="file"]:hover {
-    border-color: #ff3333;
+    border-color: var(--primary, #ff3333);
 }
 
 .form-help {
@@ -1141,7 +1141,7 @@ textarea {
 .form-message {
     margin-top: 10px;
     font-size: 0.9rem;
-    color: #ff3333;
+    color: var(--primary, #ff3333);
 }
 
 @media (max-width: 768px) {

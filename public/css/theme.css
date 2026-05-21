@@ -27,6 +27,8 @@
 .section-header h1,
 .modal-card h2,
 .settings-tab.active,
+.current-logo-preview h3,
+.preview-box h2,
 th{
     color: var(--primary) !important;
 }
