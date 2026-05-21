@@ -1959,6 +1959,9 @@ function updateLogoutButton() {
         const username = currentUser.username || 'Usuário';
         logoutText.textContent = `${username} - Sair`;
         
+        // Remove long-text class first, then add if needed
+        logoutText.classList.remove('long-text');
+        
         // Check if text is too long and add scrolling class
         if (logoutText.scrollWidth > logoutText.clientWidth) {
             logoutText.classList.add('long-text');
@@ -2153,6 +2156,7 @@ function saveCustomLogo() {
     }
     
     // Save to localStorage (works for both guest and admin)
+    // TODO: Add server-side persistence for admin users when backend support is added
     localStorage.setItem('custom-logo', pendingLogoData);
     
     // Apply to sidebar logo

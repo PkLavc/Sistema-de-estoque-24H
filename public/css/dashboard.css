@@ -144,13 +144,15 @@ body {
     80%, 100% { transform: translateX(calc(-100% + 220px)); }
 }
 
-.logout-button:hover #logout-user-text {
-    animation: scrollText 3s linear infinite;
-}
-
-.logout-button #logout-user-text.long-text {
+/* Automatic animation for long text, pauses on hover */
+#logout-user-text.long-text {
     display: inline-block;
     white-space: nowrap;
+    animation: scrollText 6s linear infinite;
+}
+
+#logout-user-text.long-text:hover {
+    animation-play-state: paused;
 }
 
 .bottom-actions {

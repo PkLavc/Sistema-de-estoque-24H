@@ -116,14 +116,21 @@ function applyCustomLogoAndFavicon() {
             logoImg.src = customLogo;
         }
         
-        // Update favicon
-        const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
-        existingFavicons.forEach(link => link.remove());
-        
-        const link = document.createElement('link');
-        link.rel = 'icon';
-        link.type = 'image/webp';
-        link.href = customLogo;
-        document.head.appendChild(link);
+        // Update favicon using shared utility
+        updateFaviconElement(customLogo);
     }
+}
+
+// Shared utility function for updating favicon
+function updateFaviconElement(logoData) {
+    // Remove existing favicon links
+    const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
+    existingFavicons.forEach(link => link.remove());
+    
+    // Create new favicon link
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/webp';
+    link.href = logoData;
+    document.head.appendChild(link);
 }
