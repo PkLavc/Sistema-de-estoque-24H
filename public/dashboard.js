@@ -1808,6 +1808,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupMaintenanceModal();
     document.getElementById('createUserForm')?.addEventListener('submit', createLoginUser);
     await checkAuth();
+    loadThemeSettings();
 
     const urlParams = new URLSearchParams(window.location.search);
     const requestedSection = urlParams.get('section') || window.location.hash.replace('#', '');
@@ -1815,4 +1816,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     const section = allowedSections.includes(requestedSection) ? requestedSection : 'home';
     showSection(section);
 });
+
+function applyTheme(theme) {
+    try {
+        if (!theme) return;
+        const root = document.documentElement;
+        Object.keys(theme).forEach((key) => {
+            if (!theme[key]) return;
+            root.style.setProperty(`--${key}`, theme[key]);
+        });
+    } catch (e) {
+        console.error('Erro aplicando tema', e);
+    }
+}
+
+function saveThemeSettings() {
+    const primary = document.getElementById('primaryColor')?.value || '#ff3333';
+    const primary2 = document.getElementById('primary2Color')?.value || '#cc0000';
+    const bgStart = document.getElementById('bgStart')?.value || '#1a1a1a';
+    const theme = {
+        'primary': primary,
+        'primary-2': primary2,
+        'bg-start': bgStart
+    };
+    localStorage.setItem('appTheme', JSON.stringify(theme));
+    applyTheme(theme);
+}
+
+function loadThemeSettings() {
+    try {
+        const stored = localStorage.getItem('appTheme');
+        if (!stored) return;
+        const theme = JSON.parse(stored);
+        if (!theme) return;
+        if (theme['primary'] && document.getElementById('primaryColor')) document.getElementById('primaryColor').value = theme['primary'];
+        if (theme['primary-2'] && document.getElementById('primary2Color')) document.getElementById('primary2Color').value = theme['primary-2'];
+        if (theme['bg-start'] && document.getElementById('bgStart')) document.getElementById('bgStart').value = theme['bg-start'];
+        applyTheme(theme);
+    } catch (e) { console.error(e); }
+}
 

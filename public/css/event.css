@@ -1,0 +1,158 @@
+/* moved from public/event.css */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #1a1a1a;
+    color: #ffffff;
+    min-height: 100vh;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.event-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px;
+    min-height: 100vh;
+    min-width: 1200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #333;
+}
+
+.event-info h1 {
+    color: #ff3333;
+    font-size: 2.5rem;
+    margin-bottom: 5px;
+}
+
+.event-info p {
+    color: #888;
+    font-size: 1.1rem;
+}
+
+.event-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.btn-primary {
+    padding: 12px 30px;
+    background: linear-gradient(45deg, #ff3333, #cc0000);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #cc0000, #990000);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
+}
+
+.btn-primary.active {
+    background: linear-gradient(45deg, #cc0000, #990000);
+    box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    padding: 12px 30px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 8px;
+    color: #ccc;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-secondary:hover {
+    background: #444;
+    color: #fff;
+    border-color: #666;
+}
+
+.btn-secondary.active {
+    background: linear-gradient(45deg, #ff3333, #cc0000);
+    color: white;
+    border: none;
+    box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-close {
+    padding: 12px 30px;
+    background: #666;
+    border: 1px solid #888;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-close:hover {
+    background: #777;
+    border-color: #999;
+}
+
+.section {
+    display: none;
+    animation: fadeIn 0.3s ease;
+    flex: 1;
+    flex-direction: column;
+}
+
+.section.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.section-title {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.section-title h2 {
+    color: #ff3333;
+    font-size: 2rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.section-title p {
+    color: #888;
+    font-size: 1rem;
+}
+
+/* ... rest unchanged ... */

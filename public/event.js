@@ -116,7 +116,7 @@ async function generateSaidaPdf() {
             unit: 'mm',
             format: 'a4'
         });
-        const logoDataUrl = await loadImageAsDataUrl('/logo.PNG');
+        const logoDataUrl = await loadImageAsDataUrl('/logo.webp');
         const equipments = saidaEquipments
             .filter((item) => !item.returned)
             .map((item) => String(item.equipment_name || item.name || '').trim())
@@ -146,7 +146,7 @@ async function generateSaidaPdf() {
             cursorY = 20;
         };
 
-        doc.addImage(logoDataUrl, 'PNG', (pageWidth - 76) / 2, cursorY, 76, 44);
+        doc.addImage(logoDataUrl, 'WEBP', (pageWidth - 76) / 2, cursorY, 76, 44);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(18);
         doc.text(eventType === 'rental' ? 'Romaneio de Locação' : 'Romaneio de Saida', pageWidth / 2, cursorY + 54, { align: 'center' });

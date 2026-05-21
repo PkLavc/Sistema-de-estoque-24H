@@ -1,0 +1,404 @@
+/* moved from public/dashboard.css */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #1a1a1a;
+    color: #ffffff;
+    min-height: 100vh;
+    overflow-x: auto;
+}
+
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    min-width: 1280px;
+}
+
+.sidebar {
+    width: 340px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+    border-right: 1px solid #333;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.logo-image {
+    width: 320px;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto 5px;
+}
+
+.logo p {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.menu ul {
+    list-style: none;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    color: #ccc;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+.menu-item:hover {
+    background: rgba(255, 51, 51, 0.1);
+    color: #fff;
+    border-left-color: #ff3333;
+}
+
+.menu-item.active {
+    background: rgba(255, 51, 51, 0.2);
+    color: #fff;
+    border-left-color: #ff3333;
+}
+
+.menu-item.rental-return-pulse {
+    animation: rentalReturnPulse 0.85s ease-in-out infinite;
+    color: #fff;
+    border-left-color: #ff3333;
+}
+
+@keyframes rentalReturnPulse {
+    0%, 100% {
+        background: rgba(255, 51, 51, 0.12);
+        box-shadow: none;
+    }
+    50% {
+        background: rgba(255, 51, 51, 0.42);
+        box-shadow: 0 0 18px rgba(255, 51, 51, 0.45);
+    }
+}
+
+.logout-button {
+    width: 100%;
+    margin-top: auto;
+    background: transparent;
+    border: none;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+}
+
+.icon {
+    margin-right: 10px;
+    font-size: 0.95rem;
+    min-width: 52px;
+}
+
+.main-content {
+    flex: 1;
+    padding: 30px;
+    overflow: visible;
+}
+
+.section {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.section.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #333;
+    gap: 20px;
+}
+
+.section-header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.section-header h1 {
+    color: #ff3333;
+    font-size: 2.2rem;
+    margin-bottom: 5px;
+}
+
+.database-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.search-container,
+.maintenance-search-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.search-container input,
+.form-group input,
+.form-group select,
+textarea {
+    width: 100%;
+    padding: 16px;
+    background: #2a2a2a;
+    border: 2px solid #444;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.search-container input {
+    width: 360px;
+}
+
+.search-container input:focus,
+.form-group input:focus,
+.form-group select:focus,
+textarea:focus {
+    border-color: #ff3333;
+    box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);
+    background: #333;
+}
+
+.btn-primary {
+    padding: 12px 30px;
+    background: linear-gradient(45deg, #ff3333, #cc0000);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #cc0000, #990000);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.search-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-secondary,
+.btn-danger,
+.search-button {
+    padding: 12px 30px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 8px;
+    color: #ccc;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-secondary:hover,
+.btn-danger:hover,
+.search-button:hover {
+    background: #444;
+    color: #fff;
+    border-color: #666;
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+}
+
+.btn-delete-mini {
+    padding: 6px 10px;
+    font-size: 0.72rem;
+    line-height: 1;
+}
+
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.event-card,
+.form-grid,
+.table-container,
+.maintenance-form,
+.maintenance-list-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #333;
+    border-radius: 15px;
+}
+
+.event-card {
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.event-card:hover {
+    background: #222;
+    border-color: #555;
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.event-card h3 {
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+.event-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.event-created-by {
+    font-size: 0.78rem;
+    color: #bcbcbc;
+}
+
+.card-date,
+.event-card p,
+.empty-state,
+.empty-row {
+    color: #888;
+}
+
+.event-card p {
+    margin-bottom: 20px;
+}
+
+.rental-return-alert {
+    margin-bottom: 22px;
+    padding: 18px;
+    background: rgba(255, 51, 51, 0.12);
+    border: 1px solid rgba(255, 51, 51, 0.55);
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.rental-return-alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.rental-return-alert h2 {
+    color: #fff;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+}
+
+.rental-return-alert p {
+    color: #ddd;
+    line-height: 1.45;
+}
+
+.rental-alert-close {
+    flex: 0 0 auto;
+    padding: 9px 16px;
+}
+
+.rental-alert-list {
+    display: grid;
+    gap: 12px;
+}
+
+.rental-alert-event {
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+}
+
+.rental-alert-event-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    color: #fff;
+    font-weight: bold;
+}
+
+.rental-alert-items {
+    color: #cfcfcf;
+    margin: 0 0 12px 18px;
+    line-height: 1.45;
+}
+
+.history-block {
+    margin-bottom: 34px;
+}
+
+.history-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.history-title-row h2 {
+    color: #fff;
+    font-size: 1.25rem;
+}
+
+.history-count {
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+.users-panel {
+    display: grid;
+    gap: 14px;
+}
+
+/* end moved */

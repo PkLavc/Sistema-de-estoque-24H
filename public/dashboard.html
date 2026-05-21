@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>24h Locacoes - Dashboard</title>
-    <link rel="icon" type="image/png" href="/logo.PNG">
-    <link rel="stylesheet" href="dashboard.css?v=20260520-public-safe">
+    <link rel="icon" type="image/webp" href="/logo.webp">
+    <link rel="stylesheet" href="/css/dashboard.css?v=20260520-public-safe">
+    <link rel="stylesheet" href="/css/theme.css">
 </head>
 <body>
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="logo">
-                <img src="/logo.PNG" alt="24h Locacoes" class="logo-image">
+                <img src="/logo.webp" alt="24h Locacoes" class="logo-image">
                 <p>Sistema de Controle</p>
             </div>
 
@@ -26,6 +27,7 @@
                     <li id="usersMenuItem" style="display: none;"><a href="#" onclick="showSection('usuarios')" class="menu-item"><span class="icon">&#128274;</span> Logins</a></li>
                 </ul>
             </nav>
+            <button type="button" class="menu-item" onclick="showSection('config')"><span class="icon">⚙️</span> Configurações</button>
             <button type="button" class="menu-item logout-button" onclick="logout()"><span class="icon">🚶🚪</span> Sair</button>
         </aside>
 
@@ -336,6 +338,34 @@
                         </div>
                         <div id="maintenanceCableList" class="maintenance-list"></div>
                     </div>
+                </div>
+            </section>
+
+            <section id="config" class="section">
+                <div class="section-header">
+                    <h1>Configurações visuais</h1>
+                </div>
+                <div class="config-panel">
+                    <form id="themeForm" class="form-grid">
+                        <div class="form-group">
+                            <label for="primaryColor">Cor principal</label>
+                            <input type="color" id="primaryColor" name="primary" value="#ff3333">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="primary2Color">Cor secundária</label>
+                            <input type="color" id="primary2Color" name="primary2" value="#cc0000">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bgStart">Cor de fundo (início)</label>
+                            <input type="color" id="bgStart" name="bgStart" value="#1a1a1a">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-primary" onclick="saveThemeSettings()">Salvar cores</button>
+                        </div>
+                    </form>
                 </div>
             </section>
             <section id="locacao" class="section">

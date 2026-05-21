@@ -1,0 +1,26 @@
+/* Theme variables and overrides for dynamic color editing */
+:root{
+    --primary: #ff3333;
+    --primary-2: #cc0000;
+    --primary-3: #990000;
+    --panel-bg: #2a2a2a;
+    --bg-start: #1a1a1a;
+    --bg-end: #000000;
+    --text-muted: #aaa;
+}
+
+/* Button primary rules override existing styles where possible */
+.btn-primary{
+    background: linear-gradient(45deg, var(--primary), var(--primary-2)) !important;
+    border-color: var(--primary) !important;
+}
+.btn-primary:hover{ background: linear-gradient(45deg, var(--primary-2), var(--primary-3)) !important; }
+.btn-secondary{ border-color: var(--primary); color: var(--primary); }
+.user-role-badge.admin{ background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+
+/* Panels and inputs */
+.login-box, .dashboard-container, .database-view, .maintenance-list-card { background: var(--panel-bg) !important; }
+body{ background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%) !important; }
+
+/* Footer link appearance (looks like plain text) */
+.login-footer a, .footer-link { color: inherit; text-decoration: none; cursor: pointer; }

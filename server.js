@@ -556,6 +556,10 @@ function requireAuth(req, res, next) {
 async function requireAdmin(req, res, next) {
     try {
         if (req.session?.localAuth) {
+            // Sessao local de teste: conceder permissões de admin em tempo de execucao
+            req.currentUser = { id: null, username: LOCAL_ADMIN_USERNAME, role: 'admin' };
+            // Marcar userId na sessao para compatibilidade com fluxos que verificam req.session.userId
+            req.session.userId = req.session.userId || 0;
             return next();
         }
 
@@ -622,6 +626,24 @@ app.post('/api/login', async (req, res) => {
         }
 
         res.status(401).json({ error: 'Incorreto' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Login simplificado para "Convidado" — cria sessão local sem usar DB
+app.post('/api/login/guest', async (req, res) => {
+    try {
+        await cleanupTestSession(req);
+        await regenerateSession(req);
+        req.session.userId = 'local-guest';
+        req.session.username = 'Convidado';
+        // Por compatibilidade com requireAdmin anterior que aceitava localAuth,
+        // mantemos o mesmo sinalizador para conceder permissões temporarias.
+        req.session.role = 'admin';
+        req.session.localAuth = true;
+        req.session.isGuest = true;
+        req.session.save(() => res.json({ success: true }));
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

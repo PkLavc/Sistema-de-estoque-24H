@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>24h Locacoes - Login</title>
     <link rel="icon" type="image/webp" href="/logo.webp">
-    <link rel="stylesheet" href="/css/login.css">
-    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="css/theme.css">
 </head>
 <body>
     <div class="login-container">
@@ -18,28 +18,20 @@
             </div>
             
             <form id="loginForm">
-                <div class="auth-mode">
-                    <button type="button" id="btn-login-mode" class="mode active">Login</button>
-                    <button type="button" id="btn-guest-mode" class="mode">Convidado</button>
+                <div class="form-group">
+                    <input type="text" id="username" name="username" placeholder="Usuario" required>
                 </div>
-
-                <div id="credentials">
-                    <div class="form-group">
-                        <input type="text" id="username" name="username" placeholder="Usuario" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="password" id="password" name="password" placeholder="Senha" required>
-                    </div>
+                <div class="form-group">
+                    <input type="password" id="password" name="password" placeholder="Senha" required>
                 </div>
-
-                <button type="submit" id="btn-submit">Entrar</button>
+                <button type="submit">Entrar</button>
                 <div id="errorMessage" class="error-message"></div>
             </form>
             <p class="login-footer">© <span id="current-year">2026</span> <a id="perico-link" href="https://github.com/arthurperico" target="_blank" rel="noopener">Arthur Perico</a></p>
         </div>
     </div>
 
-    <script src="/login.js"></script>
+    <script src="login.js"></script>
     <script>
         document.getElementById('current-year').textContent = new Date().getFullYear();
         document.getElementById('perico-link').addEventListener('click', function(e){ /* keep style unchanged */ });
