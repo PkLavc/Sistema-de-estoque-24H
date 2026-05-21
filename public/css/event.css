@@ -66,12 +66,12 @@ body {
 .btn-primary:hover {
     background: linear-gradient(45deg, var(--primary-2), var(--primary-3));
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
+    box-shadow: 0 5px 15px color-mix(in srgb, var(--primary, #ff3333) 40%, transparent);
 }
 
 .btn-primary.active {
     background: linear-gradient(45deg, var(--primary-2), var(--primary-3));
-    box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
+    box-shadow: 0 5px 15px color-mix(in srgb, var(--primary, #ff3333) 40%, transparent);
     transform: translateY(-2px);
 }
 
@@ -98,7 +98,7 @@ body {
     background: linear-gradient(45deg, var(--primary), var(--primary-2));
     color: white;
     border: none;
-    box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
+    box-shadow: 0 5px 15px color-mix(in srgb, var(--primary, #ff3333) 40%, transparent);
     transform: translateY(-2px);
 }
 
@@ -233,7 +233,7 @@ body {
 #saidaCableName:focus,
 #saidaCableQuantity:focus {
     border-color: #ff3333;
-    box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--primary, #ff3333) 30%, transparent);
     background: #333;
 }
 
@@ -314,7 +314,7 @@ body {
 
 .conference-filter input:focus {
     border-color: #ff3333;
-    box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--primary, #ff3333) 30%, transparent);
     background: #333;
 }
 
@@ -366,7 +366,7 @@ body {
 
 .cable-entry-table input:focus {
     border-color: #ff3333;
-    box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--primary, #ff3333) 30%, transparent);
     background: #333;
 }
 
