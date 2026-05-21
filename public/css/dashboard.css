@@ -38,7 +38,7 @@ body {
 
 .logo-image {
     width: 100%;
-    max-height: 80px;
+    max-height: 120px;
     height: auto;
     display: block;
     margin: 0 auto 5px;
@@ -49,6 +49,24 @@ body {
     flex: 1;
     overflow-y: auto;
     margin-bottom: 10px;
+}
+
+/* Custom scrollbar styling for sidebar menu */
+.menu::-webkit-scrollbar {
+    width: 8px;
+}
+
+.menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.menu::-webkit-scrollbar-thumb {
+    background: var(--primary, #ff3333);
+    border-radius: 4px;
+}
+
+.menu::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary, #cc0000);
 }
 
 .menu ul {
@@ -111,6 +129,32 @@ body {
     cursor: pointer;
 }
 
+#logout-user-text {
+    display: inline-block;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* Animation for long usernames */
+@keyframes scrollText {
+    0%, 20% { transform: translateX(0); }
+    80%, 100% { transform: translateX(calc(-100% + 220px)); }
+}
+
+/* Automatic animation for long text, pauses on hover */
+#logout-user-text.long-text {
+    display: inline-block;
+    white-space: nowrap;
+    animation: scrollText 6s linear infinite;
+}
+
+#logout-user-text.long-text:hover {
+    animation-play-state: paused;
+}
+
 .bottom-actions {
     display: flex;
     gap: 8px;
@@ -136,11 +180,6 @@ body {
     height: 24px;
     margin-right: 10px;
     display: inline-block;
-}
-
-.btn-settings-icon .lottie-icon {
-    width: 32px;
-    height: 32px;
 }
 
 .main-content {
@@ -987,6 +1026,13 @@ textarea {
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
+}
+
+.preview-lottie-icon {
+    width: 48px;
+    height: 48px;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 .preview-button {

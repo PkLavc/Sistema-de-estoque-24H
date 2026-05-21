@@ -69,6 +69,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const btnSubmit = document.getElementById('btn-submit');
 
+    // Apply custom logo and favicon if set
+    applyCustomLogoAndFavicon();
+
     if (btnLoginMode) {
         btnLoginMode.addEventListener('click', function() {
             btnLoginMode.classList.add('active');
@@ -104,3 +107,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if already authenticated
     checkAuth();
 });
+
+function applyCustomLogoAndFavicon() {
+    const customLogo = localStorage.getItem('custom-logo');
+    if (customLogo) {
+        const logoImg = document.querySelector('.logo-image');
+        if (logoImg) {
+            logoImg.src = customLogo;
+        }
+        
+        // Update favicon using shared utility
+        updateFaviconElement(customLogo);
+    }
+}
+
+// Shared utility function for updating favicon
+function updateFaviconElement(logoData) {
+    // Remove existing favicon links
+    const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
+    existingFavicons.forEach(link => link.remove());
+    
+    // Create new favicon link
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/webp';
+    link.href = logoData;
+    document.head.appendChild(link);
+}

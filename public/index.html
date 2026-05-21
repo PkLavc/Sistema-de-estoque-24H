@@ -40,7 +40,8 @@
             
             <div class="bottom-actions">
                 <button type="button" class="menu-item logout-button btn-logout" onclick="logout()">
-                    <span class="lottie-icon" id="lottie-exit"></span> Sair
+                    <span class="lottie-icon" id="lottie-exit"></span> 
+                    <span id="logout-user-text">Sair</span>
                 </button>
                 <button type="button" class="menu-item btn-settings-icon" onclick="showSection('config')">
                     <span class="lottie-icon" id="lottie-settings"></span>
@@ -372,20 +373,6 @@
 
                 <!-- Theme Tab -->
                 <div id="settings-theme" class="settings-tab-content">
-                    <div class="section-header">
-                        <h2>Personalização do Tema</h2>
-                    </div>
-                    
-                    <div class="theme-preview">
-                        <div class="preview-box">
-                            <p>Prévia do tema</p>
-                            <div class="preview-elements">
-                                <div class="preview-button">Botão</div>
-                                <div class="preview-card">Card de exemplo</div>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <div class="config-panel">
                         <form id="themeForm" class="form-grid">
                             <div class="form-group">
@@ -426,14 +413,23 @@
                             </div>
                         </form>
                     </div>
+                    
+                    <div class="theme-preview">
+                        <div class="preview-box">
+                            <div class="preview-elements">
+                                <span class="lottie-icon preview-lottie-icon" id="lottie-home-preview"></span>
+                                <div>
+                                    <p>Prévia do tema</p>
+                                    <div class="preview-button">Botão</div>
+                                    <div class="preview-card">Card de exemplo</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Logo Tab -->
                 <div id="settings-logo" class="settings-tab-content">
-                    <div class="section-header">
-                        <h2>Personalização da Logo</h2>
-                    </div>
-                    
                     <div class="logo-upload-panel">
                         <div class="current-logo-preview">
                             <h3>Logo Atual</h3>
