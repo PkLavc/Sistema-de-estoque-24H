@@ -71,6 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Apply custom logo and favicon if set
     applyCustomLogoAndFavicon();
+    
+    // Apply theme colors from localStorage
+    applyThemeColorsOnLogin();
 
     if (btnLoginMode) {
         btnLoginMode.addEventListener('click', function() {
@@ -108,16 +111,34 @@ document.addEventListener('DOMContentLoaded', function() {
     checkAuth();
 });
 
+function applyThemeColorsOnLogin() {
+    const primaryColor = localStorage.getItem('theme-primary-color') || '#ff3333';
+    const secondaryColor = localStorage.getItem('theme-secondary-color') || '#cc0000';
+    const bgStart = localStorage.getItem('theme-bg-start') || '#1a1a1a';
+    const bgEnd = localStorage.getItem('theme-bg-end') || '#000000';
+    
+    // Apply colors to CSS variables
+    document.documentElement.style.setProperty('--primary', primaryColor);
+    document.documentElement.style.setProperty('--primary-2', secondaryColor);
+    document.documentElement.style.setProperty('--primary-3', secondaryColor);
+    document.documentElement.style.setProperty('--bg-start', bgStart);
+    document.documentElement.style.setProperty('--bg-end', bgEnd);
+}
+
 function applyCustomLogoAndFavicon() {
     const customLogo = localStorage.getItem('custom-logo');
+    const customFavicon = localStorage.getItem('custom-favicon');
+    
     if (customLogo) {
         const logoImg = document.querySelector('.logo-image');
         if (logoImg) {
             logoImg.src = customLogo;
         }
-        
-        // Update favicon using shared utility
-        updateFaviconElement(customLogo);
+    }
+    
+    // Update favicon - use custom if set, otherwise default favicon.webp
+    if (customFavicon) {
+        updateFaviconElement(customFavicon);
     }
 }
 

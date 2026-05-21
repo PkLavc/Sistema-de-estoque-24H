@@ -448,6 +448,28 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Favicon Upload Section -->
+                    <div class="logo-upload-panel" style="margin-top: 20px;">
+                        <div class="current-logo-preview">
+                            <h3>Favicon Atual</h3>
+                            <img id="faviconPreview" src="/assets/images/favicon.webp" alt="Favicon atual" class="logo-preview-image">
+                        </div>
+                        
+                        <div class="logo-upload-form">
+                            <div class="form-group">
+                                <label for="faviconUpload">Carregar Novo Favicon</label>
+                                <input type="file" id="faviconUpload" accept="image/*" onchange="handleFaviconUpload(event)">
+                                <p class="form-help">Formatos aceitos: JPG, PNG, WebP, SVG</p>
+                                <p id="faviconUploadMessage" class="form-message"></p>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn-primary" onclick="saveCustomFavicon()">Salvar Favicon</button>
+                                <button type="button" class="btn-secondary" onclick="resetFavicon()">Resetar Favicon Padrão</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
             <section id="locacao" class="section">

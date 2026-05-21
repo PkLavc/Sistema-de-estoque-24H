@@ -43,6 +43,7 @@ function applyCustomTheme() {
     const primaryColor = localStorage.getItem('theme-primary-color') || '#ff3333';
     const secondaryColor = localStorage.getItem('theme-secondary-color') || '#cc0000';
     const customLogo = localStorage.getItem('custom-logo');
+    const customFavicon = localStorage.getItem('custom-favicon');
     
     // Apply colors
     document.documentElement.style.setProperty('--primary', primaryColor);
@@ -55,8 +56,11 @@ function applyCustomTheme() {
         if (logoImg) {
             logoImg.src = customLogo;
         }
-        // Update favicon
-        updateFavicon(customLogo);
+    }
+    
+    // Apply custom favicon if exists
+    if (customFavicon) {
+        updateFavicon(customFavicon);
     }
     
     // Apply color filters to Lottie animations via CSS filter
@@ -2168,8 +2172,7 @@ function saveCustomLogo() {
         sidebarLogo.src = pendingLogoData;
     }
     
-    // Update favicon
-    updateFavicon(pendingLogoData);
+    // Note: Favicon is managed separately
     
     pendingLogoData = null;
     alert('Logo salva com sucesso!');
@@ -2191,7 +2194,6 @@ function updateFavicon(logoData) {
 function resetLogo() {
     localStorage.removeItem('custom-logo');
     const defaultLogoSrc = '/assets/images/logo.webp';
-    const defaultFaviconSrc = '/assets/images/favicon.webp';
     
     document.getElementById('logoPreview').src = defaultLogoSrc;
     const sidebarLogo = document.getElementById('customLogo');
@@ -2199,12 +2201,80 @@ function resetLogo() {
         sidebarLogo.src = defaultLogoSrc;
     }
     
-    // Reset favicon to default
-    updateFavicon(defaultFaviconSrc);
+    // Note: Favicon is managed separately
     
     pendingLogoData = null;
     alert('Logo resetada para o padrão!');
 }
+
+// Favicon upload handling
+let pendingFaviconData = null;
+
+function handleFaviconUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Check file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+        document.getElementById('faviconUploadMessage').textContent = 'Formato de arquivo invalido. Use JPG, PNG, WebP ou SVG.';
+        return;
+    }
+    
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        document.getElementById('faviconUploadMessage').textContent = 'Arquivo muito grande. Tamanho maximo: 2MB.';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        pendingFaviconData = e.target.result;
+        document.getElementById('faviconPreview').src = pendingFaviconData;
+        document.getElementById('faviconUploadMessage').textContent = 'Favicon carregado. Clique em "Salvar Favicon" para aplicar.';
+        document.getElementById('faviconUploadMessage').style.color = '#4CAF50';
+    };
+    reader.readAsDataURL(file);
+}
+
+function saveCustomFavicon() {
+    if (!pendingFaviconData) {
+        alert('Nenhum favicon foi carregado.');
+        return;
+    }
+    
+    // Check if user is guest or admin
+    const isGuest = currentUser?.role === 'guest';
+    const isAdmin = currentUser?.role === 'admin';
+    
+    if (!isGuest && !isAdmin) {
+        alert('Apenas administradores e convidados podem alterar o favicon.');
+        return;
+    }
+    
+    // Save to localStorage (works for both guest and admin)
+    localStorage.setItem('custom-favicon', pendingFaviconData);
+    
+    // Update favicon
+    updateFavicon(pendingFaviconData);
+    
+    pendingFaviconData = null;
+    alert('Favicon salvo com sucesso!');
+}
+
+function resetFavicon() {
+    localStorage.removeItem('custom-favicon');
+    const defaultFaviconSrc = '/assets/images/favicon.webp';
+    
+    document.getElementById('faviconPreview').src = defaultFaviconSrc;
+    
+    // Reset favicon to default
+    updateFavicon(defaultFaviconSrc);
+    
+    pendingFaviconData = null;
+    alert('Favicon resetado para o padrão!');
+}
+
 
 // Initialize color input sync
 document.addEventListener('DOMContentLoaded', () => {
