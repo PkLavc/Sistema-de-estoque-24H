@@ -403,7 +403,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="bgStart">Cor de Fundo (Início do Gradiente)</label>
+                                <label for="bgStart">Cor do Menu Lateral (Sidebar)</label>
                                 <div class="color-input-group">
                                     <input type="color" id="bgStart" name="bgStart" value="#1a1a1a">
                                     <input type="text" id="bgStartHex" value="#1a1a1a" placeholder="#1a1a1a">
@@ -411,7 +411,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="bgEnd">Cor de Fundo (Fim do Gradiente)</label>
+                                <label for="bgEnd">Cor de Fundo Geral (Background)</label>
                                 <div class="color-input-group">
                                     <input type="color" id="bgEnd" name="bgEnd" value="#000000">
                                     <input type="text" id="bgEndHex" value="#000000" placeholder="#000000">
@@ -445,6 +445,28 @@
                             <div class="form-actions">
                                 <button type="button" class="btn-primary" onclick="saveCustomLogo()">Salvar Logo</button>
                                 <button type="button" class="btn-secondary" onclick="resetLogo()">Resetar Logo Padrão</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Favicon Upload Section -->
+                    <div class="logo-upload-panel" style="margin-top: 20px;">
+                        <div class="current-logo-preview">
+                            <h3>Favicon Atual</h3>
+                            <img id="faviconPreview" src="/assets/images/favicon.webp" alt="Favicon atual" class="logo-preview-image">
+                        </div>
+                        
+                        <div class="logo-upload-form">
+                            <div class="form-group">
+                                <label for="faviconUpload">Carregar Novo Favicon</label>
+                                <input type="file" id="faviconUpload" accept="image/*" onchange="handleFaviconUpload(event)">
+                                <p class="form-help">Formatos aceitos: JPG, PNG, WebP, SVG</p>
+                                <p id="faviconUploadMessage" class="form-message"></p>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn-primary" onclick="saveCustomFavicon()">Salvar Favicon</button>
+                                <button type="button" class="btn-secondary" onclick="resetFavicon()">Resetar Favicon Padrão</button>
                             </div>
                         </div>
                     </div>

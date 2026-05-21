@@ -27,6 +27,8 @@
 .section-header h1,
 .modal-card h2,
 .settings-tab.active,
+.current-logo-preview h3,
+.preview-box h2,
 th{
     color: var(--primary) !important;
 }
@@ -69,7 +71,9 @@ textarea:focus,
 
 /* Panels and inputs */
 .login-box, .dashboard-container, .database-view, .maintenance-list-card { background: var(--panel-bg) !important; }
-body{ background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%) !important; }
+.sidebar { background: var(--bg-start) !important; }
+.main-content { background: var(--bg-end) !important; }
+body{ background: var(--bg-end) !important; }
 
 /* Footer link appearance (looks like plain text) */
 .login-footer a, .footer-link { color: inherit; text-decoration: none; cursor: pointer; }

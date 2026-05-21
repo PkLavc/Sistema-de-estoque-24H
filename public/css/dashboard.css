@@ -994,8 +994,8 @@ textarea {
 }
 
 .settings-tab.active {
-    color: #ff3333;
-    border-bottom-color: #ff3333;
+    color: var(--primary, #ff3333);
+    border-bottom-color: var(--primary, #ff3333);
 }
 
 .settings-tab-content {
@@ -1010,9 +1010,9 @@ textarea {
 /* Theme Settings */
 .theme-preview {
     background: #2a2a2a;
-    padding: 30px;
+    padding: 20px;
     border-radius: 8px;
-    margin-bottom: 30px;
+    margin-bottom: 15px;
 }
 
 .preview-box {
@@ -1020,8 +1020,8 @@ textarea {
 }
 
 .preview-box h2 {
-    color: #ff3333;
-    margin-bottom: 20px;
+    color: var(--primary, #ff3333);
+    margin-bottom: 15px;
     font-size: 1.25rem;
 }
 
@@ -1086,19 +1086,19 @@ textarea {
 .logo-upload-panel {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    gap: 15px;
 }
 
 .current-logo-preview {
     background: #2a2a2a;
-    padding: 30px;
+    padding: 20px;
     border-radius: 8px;
     text-align: center;
 }
 
 .current-logo-preview h3 {
-    color: #ff3333;
-    margin-bottom: 20px;
+    color: var(--primary, #ff3333);
+    margin-bottom: 15px;
 }
 
 .logo-preview-image {
@@ -1114,7 +1114,7 @@ textarea {
 
 .logo-upload-form {
     background: #2a2a2a;
-    padding: 30px;
+    padding: 20px;
     border-radius: 8px;
 }
 
@@ -1129,7 +1129,7 @@ textarea {
 }
 
 .logo-upload-form input[type="file"]:hover {
-    border-color: #ff3333;
+    border-color: var(--primary, #ff3333);
 }
 
 .form-help {
@@ -1141,7 +1141,7 @@ textarea {
 .form-message {
     margin-top: 10px;
     font-size: 0.9rem;
-    color: #ff3333;
+    color: var(--primary, #ff3333);
 }
 
 @media (max-width: 768px) {
