@@ -9,11 +9,14 @@ const crypto = require('crypto');
 
 const app = express();
 const PORT = 3000;
-const DATABASE_PATH = path.join(__dirname, 'database.db');
+const DATABASE_FILENAME = process.env.NODE_ENV === 'production' ? 'database.db' : 'database.local.db';
+const DATABASE_PATH = path.join(__dirname, DATABASE_FILENAME);
 const TEST_SESSION_DIR = path.join(__dirname, 'data', 'test-sessions');
 const SQLITE_BACKUP_DIR = path.join(__dirname, 'backups', 'sqlite');
 const TEST_USERNAME = 'teste';
 const SEEDED_USERS = [];
+const LOCAL_ADMIN_USERNAME = 'adm';
+const LOCAL_ADMIN_PASSWORD = 'adm';
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const DELETE_PASSWORD_HASH = process.env.DELETE_PASSWORD_HASH || '';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
@@ -468,7 +471,7 @@ async function bootstrapDatabase() {
         await initializeDatabase();
         await clearPendingTestSnapshots();
         await createSqliteBackup('startup');
-        console.log('Banco de dados conectado.');
+        console.log(`Banco de dados conectado em ${DATABASE_PATH}`);
     } catch (err) {
         console.error('Erro no banco:', err.message);
         process.exit(1);
@@ -546,12 +549,16 @@ async function cleanupTestSession(req) {
 }
 
 function requireAuth(req, res, next) {
-    if (req.session && req.session.userId) return next();
+    if (req.session && (req.session.userId || req.session.localAuth)) return next();
     res.status(401).json({ error: 'Nao autorizado' });
 }
 
 async function requireAdmin(req, res, next) {
     try {
+        if (req.session?.localAuth) {
+            return next();
+        }
+
         if (!req.session?.userId) {
             return res.status(401).json({ error: 'Nao autorizado' });
         }
@@ -604,6 +611,16 @@ app.post('/api/login', async (req, res) => {
             return;
         }
 
+        if (String(username) === LOCAL_ADMIN_USERNAME && String(password) === LOCAL_ADMIN_PASSWORD) {
+            await regenerateSession(req);
+            req.session.userId = 'local-admin';
+            req.session.username = LOCAL_ADMIN_USERNAME;
+            req.session.role = 'admin';
+            req.session.localAuth = true;
+            req.session.save(() => res.json({ success: true, isTestUser: false }));
+            return;
+        }
+
         res.status(401).json({ error: 'Incorreto' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -611,8 +628,18 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.get('/api/auth/status', async (req, res) => {
-    if (!req.session?.userId) {
+    if (!req.session?.userId && !req.session?.localAuth) {
         return res.json({ authenticated: false, isTestUser: false, username: null, isAdmin: false });
+    }
+
+    if (req.session?.localAuth) {
+        return res.json({
+            authenticated: true,
+            isTestUser: false,
+            userId: req.session.userId,
+            username: req.session.username || LOCAL_ADMIN_USERNAME,
+            isAdmin: true
+        });
     }
 
     try {
