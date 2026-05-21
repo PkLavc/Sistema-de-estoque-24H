@@ -247,7 +247,7 @@ function iniciarRelacao() {
 
     localStorage.setItem('relacao_event_id', eventId);
     localStorage.setItem('relacao_event_name', currentEvent ? currentEvent.name : 'Evento');
-    window.location.href = '/dashboard.html?section=banco';
+    window.location.href = '/?section=banco';
 }
 
 function showSection(sectionId) {
@@ -333,7 +333,7 @@ async function loadEvent() {
 
         if (backButton && eventType === 'rental') {
             backButton.onclick = () => {
-                window.location.href = '/dashboard.html?section=locacao';
+                window.location.href = '/?section=locacao';
             };
         }
 
@@ -1445,7 +1445,7 @@ async function logout() {
         clearPendingItems();
         localStorage.removeItem('relacao_event_id');
         localStorage.removeItem('relacao_event_name');
-        window.location.href = '/login.html';
+        window.location.href = '/login/';
     } catch (error) {
         console.error(error);
         showMsg(document.getElementById('conferenciaMessage'), 'Erro de conexao', 'error');
