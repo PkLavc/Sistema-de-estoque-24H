@@ -5,30 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>24h Locacoes - Dashboard</title>
     <link rel="icon" type="image/webp" href="/logo.webp">
-    <link rel="stylesheet" href="/css/dashboard.css?v=20260520-public-safe">
+    <link rel="stylesheet" href="/css/dashboard.css">
     <link rel="stylesheet" href="/css/theme.css">
 </head>
 <body>
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="logo">
-                <img src="/logo.webp" alt="24h Locacoes" class="logo-image">
+                <img id="customLogo" src="/logo.webp" alt="24h Locacoes" class="logo-image">
                 <p>Sistema de Controle</p>
+                <p id="userStatus" class="user-status"></p>
             </div>
 
             <nav class="menu">
                 <ul>
-                    <li><a href="#" onclick="showSection('home')" class="menu-item active"><span class="icon">🏠</span> Eventos</a></li>
-                    <li><a href="#" id="rentalMenuItem" onclick="showSection('locacao')" class="menu-item"><span class="icon">📋</span> Locação</a></li>
-                    <li><a href="#" onclick="showSection('manutencao')" class="menu-item"><span class="icon">🛠️</span> Manutencao</a></li>
-                    <li><a href="#" onclick="showSection('banco')" class="menu-item"><span class="icon">📊</span> Banco de Dados</a></li>
-                    <li><a href="#" onclick="showSection('cadastro')" class="menu-item"><span class="icon">➕</span> Cadastrar Equipamento</a></li>
-                    <li><a href="#" onclick="showSection('historico')" class="menu-item"><span class="icon">🗂️</span> Historico</a></li>
-                    <li id="usersMenuItem" style="display: none;"><a href="#" onclick="showSection('usuarios')" class="menu-item"><span class="icon">&#128274;</span> Logins</a></li>
+                    <li><a href="#" onclick="showSection('home')" class="menu-item active">
+                        <span class="lottie-icon" id="lottie-home"></span> Eventos
+                    </a></li>
+                    <li><a href="#" id="rentalMenuItem" onclick="showSection('locacao')" class="menu-item">
+                        <span class="lottie-icon" id="lottie-rental"></span> Locação
+                    </a></li>
+                    <li><a href="#" onclick="showSection('manutencao')" class="menu-item">
+                        <span class="lottie-icon" id="lottie-maintenance"></span> Manutencao
+                    </a></li>
+                    <li><a href="#" onclick="showSection('banco')" class="menu-item">
+                        <span class="lottie-icon" id="lottie-database"></span> Banco de Dados
+                    </a></li>
+                    <li><a href="#" onclick="showSection('cadastro')" class="menu-item">
+                        <span class="lottie-icon" id="lottie-plus"></span> Cadastrar Equipamento
+                    </a></li>
+                    <li><a href="#" onclick="showSection('historico')" class="menu-item">
+                        <span class="lottie-icon" id="lottie-historical"></span> Historico
+                    </a></li>
                 </ul>
             </nav>
-            <button type="button" class="menu-item" onclick="showSection('config')"><span class="icon">⚙️</span> Configurações</button>
-            <button type="button" class="menu-item logout-button" onclick="logout()"><span class="icon">🚶🚪</span> Sair</button>
+            
+            <div class="bottom-actions">
+                <button type="button" class="menu-item logout-button btn-logout" onclick="logout()">
+                    <span class="lottie-icon" id="lottie-exit"></span> Sair
+                </button>
+                <button type="button" class="menu-item btn-settings-icon" onclick="showSection('config')">
+                    <span class="lottie-icon" id="lottie-settings"></span>
+                </button>
+            </div>
         </aside>
 
         <main class="main-content">
@@ -240,55 +259,6 @@
                 </div>
             </section>
 
-            <section id="usuarios" class="section">
-                <div class="section-header">
-                    <h1>Gerenciamento de Logins</h1>
-                    <button type="button" id="openUserCreateButton" class="btn-primary" onclick="toggleCreateUserForm()">Cadastrar usuario</button>
-                </div>
-
-                <div class="users-panel">
-                    <form id="createUserForm" class="form-grid user-create-form" style="display: none;">
-                        <div class="form-group">
-                            <label for="newUsername">Usuario</label>
-                            <input type="text" id="newUsername" name="username" autocomplete="off" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="newUserPassword">Senha</label>
-                            <input type="password" id="newUserPassword" name="password" autocomplete="new-password" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="newUserRole">Classe</label>
-                            <select id="newUserRole" name="role">
-                                <option value="user">user</option>
-                                <option value="admin">admin</option>
-                            </select>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">Salvar usuario</button>
-                            <button type="button" class="btn-secondary" onclick="toggleCreateUserForm(false)">Cancelar</button>
-                        </div>
-                    </form>
-
-                    <div class="table-container">
-                        <table id="usersTable">
-                            <thead>
-                                <tr>
-                                    <th>Usuario</th>
-                                    <th>Classe</th>
-                                    <th>Nova senha</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <p id="usersMessage" class="users-message"></p>
-                </div>
-            </section>
-
             <section id="manutencao" class="section">
                 <div class="section-header">
                     <div class="section-header-content">
@@ -343,29 +313,149 @@
 
             <section id="config" class="section">
                 <div class="section-header">
-                    <h1>Configurações visuais</h1>
+                    <h1>Configurações</h1>
                 </div>
-                <div class="config-panel">
-                    <form id="themeForm" class="form-grid">
-                        <div class="form-group">
-                            <label for="primaryColor">Cor principal</label>
-                            <input type="color" id="primaryColor" name="primary" value="#ff3333">
-                        </div>
+                
+                <div class="settings-tabs">
+                    <button type="button" class="settings-tab active" onclick="showSettingsTab('users')">Usuários</button>
+                    <button type="button" class="settings-tab" onclick="showSettingsTab('theme')">Tema</button>
+                    <button type="button" class="settings-tab" onclick="showSettingsTab('logo')">Logo</button>
+                </div>
 
-                        <div class="form-group">
-                            <label for="primary2Color">Cor secundária</label>
-                            <input type="color" id="primary2Color" name="primary2" value="#cc0000">
-                        </div>
+                <!-- Users Tab -->
+                <div id="settings-users" class="settings-tab-content active">
+                    <div class="section-header">
+                        <h2>Gerenciamento de Usuários</h2>
+                        <button type="button" id="openUserCreateButton" class="btn-primary" onclick="toggleCreateUserForm()">Cadastrar usuário</button>
+                    </div>
 
-                        <div class="form-group">
-                            <label for="bgStart">Cor de fundo (início)</label>
-                            <input type="color" id="bgStart" name="bgStart" value="#1a1a1a">
-                        </div>
+                    <div class="users-panel">
+                        <form id="createUserForm" class="form-grid user-create-form" style="display: none;">
+                            <div class="form-group">
+                                <label for="newUsername">Usuário</label>
+                                <input type="text" id="newUsername" name="username" autocomplete="off" required>
+                            </div>
 
-                        <div class="form-actions">
-                            <button type="button" class="btn-primary" onclick="saveThemeSettings()">Salvar cores</button>
+                            <div class="form-group">
+                                <label for="newUserPassword">Senha</label>
+                                <input type="password" id="newUserPassword" name="password" autocomplete="new-password" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="newUserRole">Classe</label>
+                                <select id="newUserRole" name="role">
+                                    <option value="user">user</option>
+                                    <option value="admin">admin</option>
+                                </select>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">Salvar usuário</button>
+                                <button type="button" class="btn-secondary" onclick="toggleCreateUserForm(false)">Cancelar</button>
+                            </div>
+                        </form>
+
+                        <div class="table-container">
+                            <table id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Usuário</th>
+                                        <th>Classe</th>
+                                        <th>Nova senha</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
-                    </form>
+                        <p id="usersMessage" class="users-message"></p>
+                    </div>
+                </div>
+
+                <!-- Theme Tab -->
+                <div id="settings-theme" class="settings-tab-content">
+                    <div class="section-header">
+                        <h2>Personalização do Tema</h2>
+                    </div>
+                    
+                    <div class="theme-preview">
+                        <div class="preview-box">
+                            <p>Prévia do tema</p>
+                            <div class="preview-elements">
+                                <div class="preview-button">Botão</div>
+                                <div class="preview-card">Card de exemplo</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="config-panel">
+                        <form id="themeForm" class="form-grid">
+                            <div class="form-group">
+                                <label for="primaryColor">Cor Principal (Primária)</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="primaryColor" name="primary" value="#ff3333">
+                                    <input type="text" id="primaryColorHex" value="#ff3333" placeholder="#ff3333">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="primary2Color">Cor Secundária</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="primary2Color" name="primary2" value="#cc0000">
+                                    <input type="text" id="primary2ColorHex" value="#cc0000" placeholder="#cc0000">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bgStart">Cor de Fundo (Início do Gradiente)</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="bgStart" name="bgStart" value="#1a1a1a">
+                                    <input type="text" id="bgStartHex" value="#1a1a1a" placeholder="#1a1a1a">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bgEnd">Cor de Fundo (Fim do Gradiente)</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="bgEnd" name="bgEnd" value="#000000">
+                                    <input type="text" id="bgEndHex" value="#000000" placeholder="#000000">
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn-primary" onclick="saveThemeSettings()">Salvar Tema</button>
+                                <button type="button" class="btn-secondary" onclick="resetThemeSettings()">Resetar Padrão</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Logo Tab -->
+                <div id="settings-logo" class="settings-tab-content">
+                    <div class="section-header">
+                        <h2>Personalização da Logo</h2>
+                    </div>
+                    
+                    <div class="logo-upload-panel">
+                        <div class="current-logo-preview">
+                            <h3>Logo Atual</h3>
+                            <img id="logoPreview" src="/logo.webp" alt="Logo atual" class="logo-preview-image">
+                        </div>
+                        
+                        <div class="logo-upload-form">
+                            <div class="form-group">
+                                <label for="logoUpload">Carregar Nova Logo</label>
+                                <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(event)">
+                                <p class="form-help">Formatos aceitos: JPG, PNG, WebP, SVG</p>
+                                <p id="logoUploadMessage" class="form-message"></p>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn-primary" onclick="saveCustomLogo()">Salvar Logo</button>
+                                <button type="button" class="btn-secondary" onclick="resetLogo()">Resetar Logo Padrão</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
             <section id="locacao" class="section">
@@ -429,6 +519,8 @@
         </div>
     </div>
 
-    <script src="dashboard.js?v=20260520-public-safe"></script>
+    <script src="/js/storage.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js" integrity="sha512-jEnuDt6jfecCjthQAJ+ed0MTVA++5ZKmlUcmDGBv2vUI/REn6FuIdixLNnQT+vKusE2hhTk2is3cFvv5wA+Sgg==" crossorigin="anonymous"></script>
 </body>
 </html>
