@@ -258,55 +258,6 @@
                 </div>
             </section>
 
-            <section id="usuarios" class="section">
-                <div class="section-header">
-                    <h1>Gerenciamento de Logins</h1>
-                    <button type="button" id="openUserCreateButton" class="btn-primary" onclick="toggleCreateUserForm()">Cadastrar usuario</button>
-                </div>
-
-                <div class="users-panel">
-                    <form id="createUserForm" class="form-grid user-create-form" style="display: none;">
-                        <div class="form-group">
-                            <label for="newUsername">Usuario</label>
-                            <input type="text" id="newUsername" name="username" autocomplete="off" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="newUserPassword">Senha</label>
-                            <input type="password" id="newUserPassword" name="password" autocomplete="new-password" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="newUserRole">Classe</label>
-                            <select id="newUserRole" name="role">
-                                <option value="user">user</option>
-                                <option value="admin">admin</option>
-                            </select>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">Salvar usuario</button>
-                            <button type="button" class="btn-secondary" onclick="toggleCreateUserForm(false)">Cancelar</button>
-                        </div>
-                    </form>
-
-                    <div class="table-container">
-                        <table id="usersTable">
-                            <thead>
-                                <tr>
-                                    <th>Usuario</th>
-                                    <th>Classe</th>
-                                    <th>Nova senha</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <p id="usersMessage" class="users-message"></p>
-                </div>
-            </section>
-
             <section id="manutencao" class="section">
                 <div class="section-header">
                     <div class="section-header-content">
@@ -361,29 +312,149 @@
 
             <section id="config" class="section">
                 <div class="section-header">
-                    <h1>Configurações visuais</h1>
+                    <h1>Configurações</h1>
                 </div>
-                <div class="config-panel">
-                    <form id="themeForm" class="form-grid">
-                        <div class="form-group">
-                            <label for="primaryColor">Cor principal</label>
-                            <input type="color" id="primaryColor" name="primary" value="#ff3333">
-                        </div>
+                
+                <div class="settings-tabs">
+                    <button type="button" class="settings-tab active" onclick="showSettingsTab('users')">Usuários</button>
+                    <button type="button" class="settings-tab" onclick="showSettingsTab('theme')">Tema</button>
+                    <button type="button" class="settings-tab" onclick="showSettingsTab('logo')">Logo</button>
+                </div>
 
-                        <div class="form-group">
-                            <label for="primary2Color">Cor secundária</label>
-                            <input type="color" id="primary2Color" name="primary2" value="#cc0000">
-                        </div>
+                <!-- Users Tab -->
+                <div id="settings-users" class="settings-tab-content active">
+                    <div class="section-header">
+                        <h2>Gerenciamento de Usuários</h2>
+                        <button type="button" id="openUserCreateButton" class="btn-primary" onclick="toggleCreateUserForm()">Cadastrar usuário</button>
+                    </div>
 
-                        <div class="form-group">
-                            <label for="bgStart">Cor de fundo (início)</label>
-                            <input type="color" id="bgStart" name="bgStart" value="#1a1a1a">
-                        </div>
+                    <div class="users-panel">
+                        <form id="createUserForm" class="form-grid user-create-form" style="display: none;">
+                            <div class="form-group">
+                                <label for="newUsername">Usuário</label>
+                                <input type="text" id="newUsername" name="username" autocomplete="off" required>
+                            </div>
 
-                        <div class="form-actions">
-                            <button type="button" class="btn-primary" onclick="saveThemeSettings()">Salvar cores</button>
+                            <div class="form-group">
+                                <label for="newUserPassword">Senha</label>
+                                <input type="password" id="newUserPassword" name="password" autocomplete="new-password" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="newUserRole">Classe</label>
+                                <select id="newUserRole" name="role">
+                                    <option value="user">user</option>
+                                    <option value="admin">admin</option>
+                                </select>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">Salvar usuário</button>
+                                <button type="button" class="btn-secondary" onclick="toggleCreateUserForm(false)">Cancelar</button>
+                            </div>
+                        </form>
+
+                        <div class="table-container">
+                            <table id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Usuário</th>
+                                        <th>Classe</th>
+                                        <th>Nova senha</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
-                    </form>
+                        <p id="usersMessage" class="users-message"></p>
+                    </div>
+                </div>
+
+                <!-- Theme Tab -->
+                <div id="settings-theme" class="settings-tab-content">
+                    <div class="section-header">
+                        <h2>Personalização do Tema</h2>
+                    </div>
+                    
+                    <div class="theme-preview">
+                        <div class="preview-box">
+                            <p>Prévia do tema</p>
+                            <div class="preview-elements">
+                                <div class="preview-button">Botão</div>
+                                <div class="preview-card">Card de exemplo</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="config-panel">
+                        <form id="themeForm" class="form-grid">
+                            <div class="form-group">
+                                <label for="primaryColor">Cor Principal (Primária)</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="primaryColor" name="primary" value="#ff3333">
+                                    <input type="text" id="primaryColorHex" value="#ff3333" placeholder="#ff3333">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="primary2Color">Cor Secundária</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="primary2Color" name="primary2" value="#cc0000">
+                                    <input type="text" id="primary2ColorHex" value="#cc0000" placeholder="#cc0000">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bgStart">Cor de Fundo (Início do Gradiente)</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="bgStart" name="bgStart" value="#1a1a1a">
+                                    <input type="text" id="bgStartHex" value="#1a1a1a" placeholder="#1a1a1a">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bgEnd">Cor de Fundo (Fim do Gradiente)</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="bgEnd" name="bgEnd" value="#000000">
+                                    <input type="text" id="bgEndHex" value="#000000" placeholder="#000000">
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn-primary" onclick="saveThemeSettings()">Salvar Tema</button>
+                                <button type="button" class="btn-secondary" onclick="resetThemeSettings()">Resetar Padrão</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Logo Tab -->
+                <div id="settings-logo" class="settings-tab-content">
+                    <div class="section-header">
+                        <h2>Personalização da Logo</h2>
+                    </div>
+                    
+                    <div class="logo-upload-panel">
+                        <div class="current-logo-preview">
+                            <h3>Logo Atual</h3>
+                            <img id="logoPreview" src="/logo.webp" alt="Logo atual" class="logo-preview-image">
+                        </div>
+                        
+                        <div class="logo-upload-form">
+                            <div class="form-group">
+                                <label for="logoUpload">Carregar Nova Logo</label>
+                                <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(event)">
+                                <p class="form-help">Formatos aceitos: JPG, PNG, WebP, SVG</p>
+                                <p id="logoUploadMessage" class="form-message"></p>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn-primary" onclick="saveCustomLogo()">Salvar Logo</button>
+                                <button type="button" class="btn-secondary" onclick="resetLogo()">Resetar Logo Padrão</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
             <section id="locacao" class="section">

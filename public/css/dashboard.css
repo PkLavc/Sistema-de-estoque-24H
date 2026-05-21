@@ -920,3 +920,187 @@ textarea {
         padding: 20px;
     }
 }
+
+/* Settings Tabs */
+.settings-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 0;
+}
+
+.settings-tab {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #ccc;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.settings-tab:hover {
+    color: #fff;
+    background: rgba(255, 51, 51, 0.1);
+}
+
+.settings-tab.active {
+    color: #ff3333;
+    border-bottom-color: #ff3333;
+}
+
+.settings-tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.settings-tab-content.active {
+    display: block;
+}
+
+/* Theme Settings */
+.theme-preview {
+    background: #2a2a2a;
+    padding: 30px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.preview-box {
+    text-align: center;
+}
+
+.preview-box p {
+    color: #888;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.preview-elements {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.preview-button {
+    padding: 15px 30px;
+    background: linear-gradient(45deg, var(--primary, #ff3333), var(--primary-2, #cc0000));
+    color: white;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.preview-card {
+    padding: 20px 30px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #333;
+    border-left: 3px solid var(--primary, #ff3333);
+    border-radius: 8px;
+    color: #fff;
+}
+
+.color-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.color-input-group input[type="color"] {
+    width: 60px;
+    height: 40px;
+    border: 2px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+}
+
+.color-input-group input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #fff;
+    font-family: monospace;
+}
+
+/* Logo Upload */
+.logo-upload-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.current-logo-preview {
+    background: #2a2a2a;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.current-logo-preview h3 {
+    color: #ff3333;
+    margin-bottom: 20px;
+}
+
+.logo-preview-image {
+    max-width: 100%;
+    max-height: 200px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.logo-upload-form {
+    background: #2a2a2a;
+    padding: 30px;
+    border-radius: 8px;
+}
+
+.logo-upload-form input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    background: #1a1a1a;
+    border: 2px dashed #444;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+}
+
+.logo-upload-form input[type="file"]:hover {
+    border-color: #ff3333;
+}
+
+.form-help {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.form-message {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #ff3333;
+}
+
+@media (max-width: 768px) {
+    .logo-upload-panel {
+        grid-template-columns: 1fr;
+    }
+    
+    .settings-tabs {
+        overflow-x: auto;
+    }
+    
+    .settings-tab {
+        white-space: nowrap;
+    }
+}

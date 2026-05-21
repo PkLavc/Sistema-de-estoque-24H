@@ -1922,3 +1922,170 @@ function loadThemeSettings() {
     } catch (e) { console.error(e); }
 }
 
+// Settings tabs management
+function showSettingsTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.settings-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Remove active class from all tabs
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Show selected tab content
+    const content = document.getElementById(`settings-${tabName}`);
+    if (content) {
+        content.classList.add('active');
+    }
+    
+    // Mark selected tab as active
+    event.target.classList.add('active');
+}
+
+// Enhanced theme settings
+function saveThemeSettings() {
+    const primary = document.getElementById('primaryColor')?.value || '#ff3333';
+    const primary2 = document.getElementById('primary2Color')?.value || '#cc0000';
+    const bgStart = document.getElementById('bgStart')?.value || '#1a1a1a';
+    const bgEnd = document.getElementById('bgEnd')?.value || '#000000';
+    
+    const theme = {
+        'primary': primary,
+        'primary-2': primary2,
+        'bg-start': bgStart,
+        'bg-end': bgEnd
+    };
+    
+    localStorage.setItem('appTheme', JSON.stringify(theme));
+    applyTheme(theme);
+    updateColorInputs();
+    alert('Tema salvo com sucesso!');
+}
+
+function resetThemeSettings() {
+    localStorage.removeItem('appTheme');
+    const defaultTheme = {
+        'primary': '#ff3333',
+        'primary-2': '#cc0000',
+        'bg-start': '#1a1a1a',
+        'bg-end': '#000000'
+    };
+    
+    document.getElementById('primaryColor').value = defaultTheme['primary'];
+    document.getElementById('primary2Color').value = defaultTheme['primary-2'];
+    document.getElementById('bgStart').value = defaultTheme['bg-start'];
+    document.getElementById('bgEnd').value = defaultTheme['bg-end'];
+    
+    applyTheme(defaultTheme);
+    updateColorInputs();
+    alert('Tema resetado para o padrão!');
+}
+
+function updateColorInputs() {
+    // Sync color picker with text input
+    ['primary', 'primary2', 'bgStart', 'bgEnd'].forEach(name => {
+        const colorInput = document.getElementById(name + 'Color');
+        const hexInput = document.getElementById(name + 'ColorHex');
+        if (colorInput && hexInput) {
+            hexInput.value = colorInput.value;
+        }
+    });
+}
+
+// Logo upload handling
+let pendingLogoData = null;
+
+function handleLogoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Check file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+        document.getElementById('logoUploadMessage').textContent = 'Formato de arquivo inválido. Use JPG, PNG, WebP ou SVG.';
+        return;
+    }
+    
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        document.getElementById('logoUploadMessage').textContent = 'Arquivo muito grande. Tamanho máximo: 2MB.';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        pendingLogoData = e.target.result;
+        document.getElementById('logoPreview').src = pendingLogoData;
+        document.getElementById('logoUploadMessage').textContent = 'Logo carregada. Clique em "Salvar Logo" para aplicar.';
+        document.getElementById('logoUploadMessage').style.color = '#4CAF50';
+    };
+    reader.readAsDataURL(file);
+}
+
+function saveCustomLogo() {
+    if (!pendingLogoData) {
+        alert('Nenhuma logo foi carregada.');
+        return;
+    }
+    
+    // Check if user is guest or admin
+    const isGuest = currentUser?.role === 'guest';
+    const isAdmin = currentUser?.role === 'admin';
+    
+    if (!isGuest && !isAdmin) {
+        alert('Apenas administradores e convidados podem alterar a logo.');
+        return;
+    }
+    
+    if (isGuest) {
+        // Save to localStorage for guest
+        localStorage.setItem('custom-logo', pendingLogoData);
+    } else {
+        // For admin, save to localStorage (could be extended to save to server)
+        localStorage.setItem('custom-logo', pendingLogoData);
+    }
+    
+    // Apply to sidebar logo
+    const sidebarLogo = document.getElementById('customLogo');
+    if (sidebarLogo) {
+        sidebarLogo.src = pendingLogoData;
+    }
+    
+    pendingLogoData = null;
+    alert('Logo salva com sucesso!');
+}
+
+function resetLogo() {
+    localStorage.removeItem('custom-logo');
+    document.getElementById('logoPreview').src = '/logo.webp';
+    const sidebarLogo = document.getElementById('customLogo');
+    if (sidebarLogo) {
+        sidebarLogo.src = '/logo.webp';
+    }
+    pendingLogoData = null;
+    alert('Logo resetada para o padrão!');
+}
+
+// Initialize color input sync
+document.addEventListener('DOMContentLoaded', () => {
+    // Sync color pickers with text inputs
+    ['primary', 'primary2', 'bgStart', 'bgEnd'].forEach(name => {
+        const colorInput = document.getElementById(name + 'Color');
+        const hexInput = document.getElementById(name + 'ColorHex');
+        
+        if (colorInput && hexInput) {
+            colorInput.addEventListener('input', () => {
+                hexInput.value = colorInput.value;
+            });
+            
+            hexInput.addEventListener('input', () => {
+                if (/^#[0-9A-F]{6}$/i.test(hexInput.value)) {
+                    colorInput.value = hexInput.value;
+                }
+            });
+        }
+    });
+});
+
