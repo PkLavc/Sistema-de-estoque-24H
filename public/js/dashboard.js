@@ -1959,13 +1959,16 @@ function updateLogoutButton() {
         const username = currentUser.username || 'Usuário';
         logoutText.textContent = `${username} - Sair`;
         
-        // Remove long-text class first, then add if needed
+        // Remove long-text class first
         logoutText.classList.remove('long-text');
         
-        // Check if text is too long and add scrolling class
-        if (logoutText.scrollWidth > logoutText.clientWidth) {
-            logoutText.classList.add('long-text');
-        }
+        // Use requestAnimationFrame to ensure DOM layout is complete before checking dimensions
+        requestAnimationFrame(() => {
+            // Check if text is too long and add scrolling class
+            if (logoutText.scrollWidth > logoutText.clientWidth) {
+                logoutText.classList.add('long-text');
+            }
+        });
     }
 }
 
