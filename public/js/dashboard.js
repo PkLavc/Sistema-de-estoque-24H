@@ -1904,7 +1904,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const urlParams = new URLSearchParams(window.location.search);
     const requestedSection = urlParams.get('section') || window.location.hash.replace('#', '');
-    const allowedSections = ['home', 'cadastro', 'banco', 'eventos', 'historico', 'manutencao', 'locacao', 'usuarios', 'config'];
+    const allowedSections = ['home', 'cadastro', 'banco', 'eventos', 'historico', 'manutencao', 'locacao', 'config'];
     const section = allowedSections.includes(requestedSection) ? requestedSection : 'home';
     showSection(section);
 });
@@ -1967,8 +1967,12 @@ function showSettingsTab(tabName) {
         content.classList.add('active');
     }
     
-    // Mark selected tab as active
-    event.target.classList.add('active');
+    // Mark clicked tab as active - find it by the onclick attribute
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+        if (tab.getAttribute('onclick')?.includes(tabName)) {
+            tab.classList.add('active');
+        }
+    });
 }
 
 // Enhanced theme settings
@@ -2031,13 +2035,13 @@ function handleLogoUpload(event) {
     // Check file type
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
     if (!validTypes.includes(file.type)) {
-        document.getElementById('logoUploadMessage').textContent = 'Formato de arquivo inválido. Use JPG, PNG, WebP ou SVG.';
+        document.getElementById('logoUploadMessage').textContent = 'Formato de arquivo invalido. Use JPG, PNG, WebP ou SVG.';
         return;
     }
     
     // Check file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-        document.getElementById('logoUploadMessage').textContent = 'Arquivo muito grande. Tamanho máximo: 2MB.';
+        document.getElementById('logoUploadMessage').textContent = 'Arquivo muito grande. Tamanho maximo: 2MB.';
         return;
     }
     

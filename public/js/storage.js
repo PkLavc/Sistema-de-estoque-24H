@@ -302,6 +302,9 @@ class DataStorage {
             const users = this._loadFromLocalStorage('users') || [];
             const index = users.findIndex(u => u.id === userId);
             if (index !== -1) {
+                // Note: In guest mode, passwords are stored in localStorage for demo purposes only.
+                // This is intentional as guest data is temporary and local to the browser.
+                // In production mode (non-guest), passwords are handled securely by the server.
                 users[index].password = newPassword;
                 this._saveToLocalStorage('users', users);
                 return { success: true };

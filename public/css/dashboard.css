@@ -1117,3 +1117,14 @@ textarea {
         white-space: nowrap;
     }
 }
+
+/* Bottom action buttons */
+.bottom-actions .btn-logout {
+    flex: 1;
+}
+
+.bottom-actions .btn-settings-icon {
+    flex: 0 0 auto;
+    width: 50px;
+    justify-content: center;
+}
