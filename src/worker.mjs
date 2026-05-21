@@ -3,8 +3,6 @@ import bcrypt from 'bcryptjs';
 const SESSION_COOKIE_NAME = 'sessao24h';
 const SESSION_DURATION_SECONDS = 60 * 60 * 24;
 const TEST_USERNAME = 'teste';
-const RATE_LIMIT_MAX_ATTEMPTS = 5;
-const RATE_LIMIT_WINDOW_SECONDS = 300;
 const PROTECTED_PAGES = new Set([
     '/dashboard.html',
     '/event.html',
@@ -419,10 +417,6 @@ async function handleApiRequest(request, env) {
         const eventId = Number(eventMatch[1]);
         await deleteEventRecords(env, eventId);
         return json({ success: true });
-    }
-
-    if (pathname === '/api/admin/setup' && request.method === 'POST') {
-        return handleAdminSetup(request, env);
     }
 
     if (pathname === '/api/equipments' && request.method === 'GET') {
@@ -966,24 +960,10 @@ async function login(request, env) {
         return json({ error: 'Usuario e senha sao obrigatorios' }, 400);
     }
 
-    const ip = request.headers.get('CF-Connecting-IP')
-        || request.headers.get('X-Forwarded-For')
-        || 'unknown';
-
-    const rateCheck = await checkLoginRateLimit(env, ip);
-    if (rateCheck.blocked) {
-        return json({
-            error: `Muitas tentativas. Tente novamente em ${rateCheck.retryAfterSeconds}s`
-        }, 429);
-    }
-
     const user = await queryFirst(env, 'SELECT * FROM users WHERE username = ?', [username]);
     if (!user || !bcrypt.compareSync(password, user.password)) {
-        await recordLoginAttempt(env, ip, false);
         return json({ error: 'Incorreto' }, 401);
     }
-
-    await recordLoginAttempt(env, ip, true);
 
     await cleanupExpiredSessions(env);
     await cleanupCurrentSessionBeforeLogin(request, env);
@@ -1525,125 +1505,6 @@ async function ensureSaidaHiddenItemsTable(env) {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(event_id, item_type, item_id)
         )`
-    );
-}
-
-async function handleAdminSetup(request, env) {
-    const body = await readJson(request);
-    const setupCode = String(body.code || '').trim();
-    const username = String(body.username || '').trim();
-    const password = String(body.password || '');
-
-    const expectedCode = String(env.SETUP_ADMIN_CODE || '').trim();
-    if (!expectedCode) {
-        return json({ error: 'Setup code nao configurado no Worker (SETUP_ADMIN_CODE)' }, 500);
-    }
-
-    if (setupCode !== expectedCode) {
-        return json({ error: 'Codigo de setup invalido' }, 403);
-    }
-
-    if (!username) return json({ error: 'Usuario e obrigatorio' }, 400);
-    if (password.trim().length < 4) {
-        return json({ error: 'A senha deve ter pelo menos 4 caracteres' }, 400);
-    }
-
-    const existingUser = await queryFirst(env, 'SELECT id FROM users WHERE lower(username) = lower(?)', [username]);
-    if (existingUser) {
-        return json({ error: 'Ja existe um usuario com esse nome' }, 409);
-    }
-
-    const passwordHash = bcrypt.hashSync(password, 10);
-    const result = await execute(
-        env,
-        'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-        [username, passwordHash, 'admin']
-    );
-
-    return json({
-        id: result.meta.last_row_id,
-        username,
-        role: 'admin',
-        message: 'Administrador criado com sucesso!',
-        success: true
-    });
-}
-
-async function ensureRateLimitTable(env) {
-    await execute(
-        env,
-        `CREATE TABLE IF NOT EXISTS login_rate_limits (
-            ip_address TEXT NOT NULL,
-            attempt_time DATETIME NOT NULL,
-            success INTEGER NOT NULL DEFAULT 0
-        )`
-    );
-    await execute(
-        env,
-        `CREATE INDEX IF NOT EXISTS idx_login_rate_ip_time
-         ON login_rate_limits(ip_address, attempt_time)`
-    );
-}
-
-async function checkLoginRateLimit(env, ip) {
-    await ensureRateLimitTable(env);
-
-    const windowStart = toSqliteDate(new Date(Date.now() - RATE_LIMIT_WINDOW_SECONDS * 1000));
-
-    const recentAttempts = await queryFirst(
-        env,
-        `SELECT COUNT(*) AS total,
-                SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) AS successful
-         FROM login_rate_limits
-         WHERE ip_address = ?
-           AND attempt_time > ?`,
-        [ip, windowStart]
-    );
-
-    const total = Number(recentAttempts?.total || 0);
-    const maxAttempts = RATE_LIMIT_MAX_ATTEMPTS;
-
-    if (total >= maxAttempts) {
-        const oldestAttempt = await queryFirst(
-            env,
-            `SELECT attempt_time
-             FROM login_rate_limits
-             WHERE ip_address = ?
-               AND attempt_time > ?
-             ORDER BY attempt_time ASC
-             LIMIT 1`,
-            [ip, windowStart]
-        );
-
-        const oldestTime = oldestAttempt?.attempt_time
-            ? new Date(oldestAttempt.attempt_time + 'Z').getTime()
-            : Date.now();
-
-        const retryAfter = Math.ceil(
-            (oldestTime + RATE_LIMIT_WINDOW_SECONDS * 1000 - Date.now()) / 1000
-        );
-
-        return { blocked: true, retryAfterSeconds: Math.max(1, retryAfter) };
-    }
-
-    return { blocked: false, retryAfterSeconds: 0 };
-}
-
-async function recordLoginAttempt(env, ip, success) {
-    await ensureRateLimitTable(env);
-    const now = toSqliteDate(new Date());
-    await execute(
-        env,
-        'INSERT INTO login_rate_limits (ip_address, attempt_time, success) VALUES (?, ?, ?)',
-        [ip, now, success ? 1 : 0]
-    );
-
-    // Clean old records beyond window
-    const windowStart = toSqliteDate(new Date(Date.now() - RATE_LIMIT_WINDOW_SECONDS * 1000));
-    await execute(
-        env,
-        'DELETE FROM login_rate_limits WHERE ip_address = ? AND attempt_time < ?',
-        [ip, windowStart]
     );
 }
 
