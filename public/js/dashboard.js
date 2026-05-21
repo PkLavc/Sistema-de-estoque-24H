@@ -66,39 +66,53 @@ function applyCustomTheme() {
         updateFavicon('/assets/images/favicon.webp');
     }
     
-    // Apply color filters to Lottie animations via CSS filter
-    // Convert hex color to hue for CSS filter
-    const hexToHue = (hex) => {
-        // Remove # if present
+    // Update Lottie animation colors dynamically
+    updateLottieColors(primaryColor, secondaryColor);
+}
+
+// Function to update Lottie animation colors
+function updateLottieColors(primaryColor, secondaryColor) {
+    // Convert hex colors to RGB arrays for Lottie
+    const hexToRgbArray = (hex) => {
         hex = hex.replace('#', '');
-        // Convert to RGB
         const r = parseInt(hex.substr(0, 2), 16) / 255;
         const g = parseInt(hex.substr(2, 2), 16) / 255;
         const b = parseInt(hex.substr(4, 2), 16) / 255;
-        
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        let h = 0;
-        
-        if (max !== min) {
-            const d = max - min;
-            switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-                case g: h = ((b - r) / d + 2) / 6; break;
-                case b: h = ((r - g) / d + 4) / 6; break;
-            }
-        }
-        
-        return Math.round(h * 360);
+        return [r, g, b, 1];
     };
     
-    const primaryHue = hexToHue(primaryColor);
-    // Red is around 0deg, so calculate rotation needed
-    const hueRotation = primaryHue - 0; // 0 is red
+    const primaryRgb = hexToRgbArray(primaryColor);
+    const secondaryRgb = hexToRgbArray(secondaryColor);
     
-    // Apply hue rotation to all Lottie icons
-    document.querySelectorAll('.lottie-icon, .preview-lottie-icon').forEach(icon => {
-        icon.style.filter = `hue-rotate(${hueRotation}deg)`;
+    // Update all loaded Lottie animations
+    Object.keys(lottieAnimations).forEach(key => {
+        const animation = lottieAnimations[key];
+        if (animation && animation.renderer && animation.renderer.elements) {
+            try {
+                // Recursively update colors in the animation data
+                const updateColors = (element) => {
+                    if (element.shape && element.shape.c) {
+                        // Check if it's marked as primary or secondary
+                        const isPrimary = element.data?.cl === 'primary' || element.data?.nm === '.primary';
+                        const isSecondary = element.data?.cl === 'secondary' || element.data?.nm === '.secondary';
+                        
+                        if (isPrimary) {
+                            element.shape.c.k = secondaryRgb; // Using secondaryColor for primary class
+                        } else if (isSecondary) {
+                            element.shape.c.k = primaryRgb; // Using primaryColor for secondary class
+                        }
+                    }
+                    
+                    if (element.elements) {
+                        element.elements.forEach(updateColors);
+                    }
+                };
+                
+                animation.renderer.elements.forEach(updateColors);
+            } catch (e) {
+                console.log('Could not update Lottie colors for', key, e);
+            }
+        }
     });
 }
 
