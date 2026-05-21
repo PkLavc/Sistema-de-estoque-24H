@@ -1014,10 +1014,10 @@ textarea {
     text-align: center;
 }
 
-.preview-box p {
-    color: #888;
+.preview-box h2 {
+    color: #ff3333;
     margin-bottom: 20px;
-    font-size: 0.9rem;
+    font-size: 1.25rem;
 }
 
 .preview-elements {
