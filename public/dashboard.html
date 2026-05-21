@@ -5,30 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>24h Locacoes - Dashboard</title>
     <link rel="icon" type="image/webp" href="/logo.webp">
-    <link rel="stylesheet" href="/css/dashboard.css?v=20260520-public-safe">
+    <link rel="stylesheet" href="/css/dashboard.css">
     <link rel="stylesheet" href="/css/theme.css">
 </head>
 <body>
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="logo">
-                <img src="/logo.webp" alt="24h Locacoes" class="logo-image">
+                <img id="customLogo" src="/logo.webp" alt="24h Locacoes" class="logo-image">
                 <p>Sistema de Controle</p>
             </div>
 
             <nav class="menu">
                 <ul>
-                    <li><a href="#" onclick="showSection('home')" class="menu-item active"><span class="icon">🏠</span> Eventos</a></li>
-                    <li><a href="#" id="rentalMenuItem" onclick="showSection('locacao')" class="menu-item"><span class="icon">📋</span> Locação</a></li>
-                    <li><a href="#" onclick="showSection('manutencao')" class="menu-item"><span class="icon">🛠️</span> Manutencao</a></li>
-                    <li><a href="#" onclick="showSection('banco')" class="menu-item"><span class="icon">📊</span> Banco de Dados</a></li>
-                    <li><a href="#" onclick="showSection('cadastro')" class="menu-item"><span class="icon">➕</span> Cadastrar Equipamento</a></li>
-                    <li><a href="#" onclick="showSection('historico')" class="menu-item"><span class="icon">🗂️</span> Historico</a></li>
-                    <li id="usersMenuItem" style="display: none;"><a href="#" onclick="showSection('usuarios')" class="menu-item"><span class="icon">&#128274;</span> Logins</a></li>
+                    <li><a href="#" onclick="showSection('home')" class="menu-item active">
+                        <span class="lottie-icon" id="lottie-home"></span> Eventos
+                    </a></li>
+                    <li><a href="#" id="rentalMenuItem" onclick="showSection('locacao')" class="menu-item">
+                        <span class="lottie-icon" id="lottie-rental"></span> Locação
+                    </a></li>
+                    <li><a href="#" onclick="showSection('manutencao')" class="menu-item">
+                        <span class="lottie-icon" id="lottie-maintenance"></span> Manutencao
+                    </a></li>
+                    <li><a href="#" onclick="showSection('banco')" class="menu-item">
+                        <span class="lottie-icon" id="lottie-database"></span> Banco de Dados
+                    </a></li>
+                    <li><a href="#" onclick="showSection('cadastro')" class="menu-item">
+                        <span class="lottie-icon" id="lottie-plus"></span> Cadastrar Equipamento
+                    </a></li>
+                    <li><a href="#" onclick="showSection('historico')" class="menu-item">
+                        <span class="lottie-icon" id="lottie-historical"></span> Historico
+                    </a></li>
                 </ul>
             </nav>
-            <button type="button" class="menu-item" onclick="showSection('config')"><span class="icon">⚙️</span> Configurações</button>
-            <button type="button" class="menu-item logout-button" onclick="logout()"><span class="icon">🚶🚪</span> Sair</button>
+            
+            <div class="bottom-actions">
+                <button type="button" class="menu-item logout-button" onclick="logout()" style="flex: 1;">
+                    <span class="lottie-icon" id="lottie-exit"></span> Sair
+                </button>
+                <button type="button" class="menu-item" onclick="showSection('config')" style="flex: 0 0 auto; width: 50px; justify-content: center;">
+                    <span class="lottie-icon" id="lottie-settings"></span>
+                </button>
+            </div>
         </aside>
 
         <main class="main-content">
@@ -429,6 +447,7 @@
         </div>
     </div>
 
-    <script src="dashboard.js?v=20260520-public-safe"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 </body>
 </html>
