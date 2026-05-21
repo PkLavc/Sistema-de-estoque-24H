@@ -58,44 +58,61 @@ function applyCustomTheme() {
         }
     }
     
-    // Apply custom favicon if exists
+    // Apply custom favicon if exists, otherwise use default
     if (customFavicon) {
         updateFavicon(customFavicon);
+    } else {
+        // Ensure default favicon is loaded if no custom one exists
+        updateFavicon('/assets/images/favicon.webp');
     }
     
-    // Apply color filters to Lottie animations via CSS filter
-    // Convert hex color to hue for CSS filter
-    const hexToHue = (hex) => {
-        // Remove # if present
+    // Update Lottie animation colors dynamically
+    updateLottieColors(primaryColor, secondaryColor);
+}
+
+// Function to update Lottie animation colors
+function updateLottieColors(primaryColor, secondaryColor) {
+    // Convert hex colors to RGB arrays for Lottie
+    const hexToRgbArray = (hex) => {
         hex = hex.replace('#', '');
-        // Convert to RGB
         const r = parseInt(hex.substr(0, 2), 16) / 255;
         const g = parseInt(hex.substr(2, 2), 16) / 255;
         const b = parseInt(hex.substr(4, 2), 16) / 255;
-        
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        let h = 0;
-        
-        if (max !== min) {
-            const d = max - min;
-            switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-                case g: h = ((b - r) / d + 2) / 6; break;
-                case b: h = ((r - g) / d + 4) / 6; break;
-            }
-        }
-        
-        return Math.round(h * 360);
+        return [r, g, b, 1];
     };
     
-    const primaryHue = hexToHue(primaryColor);
-    // Red is around 0deg, so calculate rotation needed
-    const hueRotation = primaryHue - 0; // 0 is red
+    const primaryRgb = hexToRgbArray(primaryColor);
+    const secondaryRgb = hexToRgbArray(secondaryColor);
     
-    // Apply hue rotation to all Lottie icons
-    document.querySelectorAll('.lottie-icon, .preview-lottie-icon').forEach(icon => {
-        icon.style.filter = `hue-rotate(${hueRotation}deg)`;
+    // Update all loaded Lottie animations
+    Object.keys(lottieAnimations).forEach(key => {
+        const animation = lottieAnimations[key];
+        if (animation && animation.renderer && animation.renderer.elements) {
+            try {
+                // Recursively update colors in the animation data
+                const updateColors = (element) => {
+                    if (element.shape && element.shape.c) {
+                        // Check if it's marked as primary or secondary
+                        const isPrimary = element.data?.cl === 'primary' || element.data?.nm === '.primary';
+                        const isSecondary = element.data?.cl === 'secondary' || element.data?.nm === '.secondary';
+                        
+                        if (isPrimary) {
+                            element.shape.c.k = secondaryRgb; // Using secondaryColor for primary class
+                        } else if (isSecondary) {
+                            element.shape.c.k = primaryRgb; // Using primaryColor for secondary class
+                        }
+                    }
+                    
+                    if (element.elements) {
+                        element.elements.forEach(updateColors);
+                    }
+                };
+                
+                animation.renderer.elements.forEach(updateColors);
+            } catch (e) {
+                console.log('Could not update Lottie colors for', key, e);
+            }
+        }
     });
 }
 
@@ -2025,10 +2042,20 @@ function loadThemeSettings() {
         if (!stored) return;
         const theme = JSON.parse(stored);
         if (!theme) return;
+        
         if (theme['primary'] && document.getElementById('primaryColor')) document.getElementById('primaryColor').value = theme['primary'];
         if (theme['primary-2'] && document.getElementById('primary2Color')) document.getElementById('primary2Color').value = theme['primary-2'];
         if (theme['bg-start'] && document.getElementById('bgStart')) document.getElementById('bgStart').value = theme['bg-start'];
         if (theme['bg-end'] && document.getElementById('bgEnd')) document.getElementById('bgEnd').value = theme['bg-end'];
+        if (theme['text-color'] && document.getElementById('textColor')) document.getElementById('textColor').value = theme['text-color'];
+        if (theme['secondary-btn-bg'] && document.getElementById('secondaryBtnBg')) document.getElementById('secondaryBtnBg').value = theme['secondary-btn-bg'];
+        if (theme['secondary-btn-border'] && document.getElementById('secondaryBtnBorder')) document.getElementById('secondaryBtnBorder').value = theme['secondary-btn-border'];
+        if (theme['secondary-btn-text'] && document.getElementById('secondaryBtnText')) document.getElementById('secondaryBtnText').value = theme['secondary-btn-text'];
+        if (theme['component-bg'] && document.getElementById('componentBg')) document.getElementById('componentBg').value = theme['component-bg'];
+        if (theme['input-bg'] && document.getElementById('inputBg')) document.getElementById('inputBg').value = theme['input-bg'];
+        if (theme['input-border'] && document.getElementById('inputBorder')) document.getElementById('inputBorder').value = theme['input-border'];
+        if (theme['input-text'] && document.getElementById('inputText')) document.getElementById('inputText').value = theme['input-text'];
+        
         applyTheme(theme);
     } catch (e) { console.error(e); }
 }
@@ -2065,12 +2092,28 @@ function saveThemeSettings() {
     const primary2 = document.getElementById('primary2Color')?.value || '#cc0000';
     const bgStart = document.getElementById('bgStart')?.value || '#1a1a1a';
     const bgEnd = document.getElementById('bgEnd')?.value || '#000000';
+    const textColor = document.getElementById('textColor')?.value || '#cccccc';
+    const secondaryBtnBg = document.getElementById('secondaryBtnBg')?.value || '#444444';
+    const secondaryBtnBorder = document.getElementById('secondaryBtnBorder')?.value || '#555555';
+    const secondaryBtnText = document.getElementById('secondaryBtnText')?.value || '#cccccc';
+    const componentBg = document.getElementById('componentBg')?.value || '#2a2a2a';
+    const inputBg = document.getElementById('inputBg')?.value || '#333333';
+    const inputBorder = document.getElementById('inputBorder')?.value || '#555555';
+    const inputText = document.getElementById('inputText')?.value || '#ffffff';
     
     const theme = {
         'primary': primary,
         'primary-2': primary2,
         'bg-start': bgStart,
-        'bg-end': bgEnd
+        'bg-end': bgEnd,
+        'text-color': textColor,
+        'secondary-btn-bg': secondaryBtnBg,
+        'secondary-btn-border': secondaryBtnBorder,
+        'secondary-btn-text': secondaryBtnText,
+        'component-bg': componentBg,
+        'input-bg': inputBg,
+        'input-border': inputBorder,
+        'input-text': inputText
     };
     
     // Save to localStorage
@@ -2078,6 +2121,14 @@ function saveThemeSettings() {
     localStorage.setItem('theme-secondary-color', primary2);
     localStorage.setItem('theme-bg-start', bgStart);
     localStorage.setItem('theme-bg-end', bgEnd);
+    localStorage.setItem('theme-text-color', textColor);
+    localStorage.setItem('theme-secondary-btn-bg', secondaryBtnBg);
+    localStorage.setItem('theme-secondary-btn-border', secondaryBtnBorder);
+    localStorage.setItem('theme-secondary-btn-text', secondaryBtnText);
+    localStorage.setItem('theme-component-bg', componentBg);
+    localStorage.setItem('theme-input-bg', inputBg);
+    localStorage.setItem('theme-input-border', inputBorder);
+    localStorage.setItem('theme-input-text', inputText);
     localStorage.setItem('appTheme', JSON.stringify(theme));
     
     // Apply theme immediately
@@ -2089,17 +2140,46 @@ function saveThemeSettings() {
 
 function resetThemeSettings() {
     localStorage.removeItem('appTheme');
+    localStorage.removeItem('theme-primary-color');
+    localStorage.removeItem('theme-secondary-color');
+    localStorage.removeItem('theme-bg-start');
+    localStorage.removeItem('theme-bg-end');
+    localStorage.removeItem('theme-text-color');
+    localStorage.removeItem('theme-secondary-btn-bg');
+    localStorage.removeItem('theme-secondary-btn-border');
+    localStorage.removeItem('theme-secondary-btn-text');
+    localStorage.removeItem('theme-component-bg');
+    localStorage.removeItem('theme-input-bg');
+    localStorage.removeItem('theme-input-border');
+    localStorage.removeItem('theme-input-text');
+    
     const defaultTheme = {
         'primary': '#ff3333',
         'primary-2': '#cc0000',
         'bg-start': '#1a1a1a',
-        'bg-end': '#000000'
+        'bg-end': '#000000',
+        'text-color': '#cccccc',
+        'secondary-btn-bg': '#444444',
+        'secondary-btn-border': '#555555',
+        'secondary-btn-text': '#cccccc',
+        'component-bg': '#2a2a2a',
+        'input-bg': '#333333',
+        'input-border': '#555555',
+        'input-text': '#ffffff'
     };
     
     document.getElementById('primaryColor').value = defaultTheme['primary'];
     document.getElementById('primary2Color').value = defaultTheme['primary-2'];
     document.getElementById('bgStart').value = defaultTheme['bg-start'];
     document.getElementById('bgEnd').value = defaultTheme['bg-end'];
+    document.getElementById('textColor').value = defaultTheme['text-color'];
+    document.getElementById('secondaryBtnBg').value = defaultTheme['secondary-btn-bg'];
+    document.getElementById('secondaryBtnBorder').value = defaultTheme['secondary-btn-border'];
+    document.getElementById('secondaryBtnText').value = defaultTheme['secondary-btn-text'];
+    document.getElementById('componentBg').value = defaultTheme['component-bg'];
+    document.getElementById('inputBg').value = defaultTheme['input-bg'];
+    document.getElementById('inputBorder').value = defaultTheme['input-border'];
+    document.getElementById('inputText').value = defaultTheme['input-text'];
     
     applyTheme(defaultTheme);
     updateColorInputs();
@@ -2108,7 +2188,7 @@ function resetThemeSettings() {
 
 function updateColorInputs() {
     // Sync color picker with text input
-    ['primary', 'primary2', 'bgStart', 'bgEnd'].forEach(name => {
+    ['primary', 'primary2', 'bgStart', 'bgEnd', 'textColor', 'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText', 'componentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(name => {
         const colorInput = document.getElementById(name + 'Color');
         const hexInput = document.getElementById(name + 'ColorHex');
         if (colorInput && hexInput) {

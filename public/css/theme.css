@@ -7,6 +7,14 @@
     --bg-start: #1a1a1a;
     --bg-end: #000000;
     --text-muted: #aaa;
+    --text-color: #ccc;
+    --secondary-btn-bg: #444;
+    --secondary-btn-border: #555;
+    --secondary-btn-text: #ccc;
+    --component-bg: #2a2a2a;
+    --input-bg: #333;
+    --input-border: #555;
+    --input-text: #fff;
 }
 
 /* Apply primary color to all red elements */
@@ -77,3 +85,54 @@ body{ background: var(--bg-end) !important; }
 
 /* Footer link appearance (looks like plain text) */
 .login-footer a, .footer-link { color: inherit; text-decoration: none; cursor: pointer; }
+
+/* Text colors */
+.menu-item { color: var(--text-color) !important; }
+label, .form-help, .modal-subtitle, .form-message { color: var(--text-color) !important; }
+.section-header p, .database-tabs button, .category-tabs button { color: var(--text-color) !important; }
+
+/* Secondary buttons and gray/black elements */
+.btn-secondary,
+.database-tabs button:not(.active),
+.category-tabs button:not(.active),
+.maintenance-tabs button:not(.active) {
+    background: var(--secondary-btn-bg) !important;
+    border-color: var(--secondary-btn-border) !important;
+    color: var(--secondary-btn-text) !important;
+}
+
+.btn-secondary:hover,
+.database-tabs button:not(.active):hover,
+.category-tabs button:not(.active):hover,
+.maintenance-tabs button:not(.active):hover {
+    background: color-mix(in srgb, var(--secondary-btn-bg) 80%, white) !important;
+    border-color: color-mix(in srgb, var(--secondary-btn-border) 80%, white) !important;
+}
+
+/* Component backgrounds */
+.modal-card,
+.equipment-card,
+.maintenance-card,
+.database-view-card,
+.config-panel,
+.logo-upload-panel {
+    background: var(--component-bg) !important;
+}
+
+/* Input fields and search boxes */
+input[type="text"],
+input[type="password"],
+input[type="date"],
+input[type="number"],
+input[type="email"],
+textarea,
+select,
+.search-container input,
+.form-group input,
+.form-group select,
+.form-group textarea,
+.user-password-input {
+    background: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--input-text) !important;
+}
