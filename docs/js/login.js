@@ -1,18 +1,20 @@
 // Check authentication status
 async function checkAuth() {
+    // Guest mode always takes priority - no server check needed
+    if (localStorage.getItem('isGuestMode') === 'true') {
+        window.location.href = '../';
+        return;
+    }
+
     try {
         const response = await fetch('../api/auth/status');
         const data = await response.json();
         
         if (data.authenticated === true) {
-            window.location.href = '../app.html';
+            window.location.href = '../';
         }
     } catch (error) {
         // Server not available - could be GitHub Pages
-        // Check if already in guest mode
-        if (localStorage.getItem('isGuestMode') === 'true') {
-            window.location.href = '../app.html';
-        }
     }
 }
 
@@ -26,7 +28,7 @@ async function login(username, password) {
         });
 
         if (response.ok) {
-            window.location.href = '../app.html';
+            window.location.href = '../';
         } else {
             showError('Usuário ou senha incorretos');
         }
@@ -37,20 +39,9 @@ async function login(username, password) {
 
 // Guest login
 async function guestLogin() {
-    try {
-        // Try server-based guest login first (for Cloudflare)
-        const response = await fetch('../api/login/guest', { method: 'POST' });
-        if (response.ok) {
-            window.location.href = '../app.html';
-            return;
-        }
-    } catch (err) {
-        // Server not available - use localStorage guest mode (for GitHub Pages)
-    }
-    
-    // Fallback to localStorage guest mode
+    // Guest mode always uses localStorage (isolated from the real database)
     localStorage.setItem('isGuestMode', 'true');
-    window.location.href = '../app.html';
+    window.location.href = '../';
 }
 
 function showError(message) {

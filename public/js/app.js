@@ -1991,6 +1991,7 @@ async function checkAuth() {
         
         updateLogoutButton();
         applyLoginManagementVisibility();
+        document.body.style.visibility = 'visible';
         return;
     }
     
@@ -2021,6 +2022,7 @@ async function checkAuth() {
         
         updateLogoutButton();
         applyLoginManagementVisibility();
+        document.body.style.visibility = 'visible';
     } catch (error) {
         // Server not available - redirect to login
         window.location.href = 'login/';
