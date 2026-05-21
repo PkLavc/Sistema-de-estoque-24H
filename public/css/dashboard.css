@@ -27,20 +27,22 @@ body {
     flex-direction: column;
     position: fixed;
     height: 100vh;
-    overflow-y: auto;
+    overflow-y: hidden;
 }
 
 .logo {
     margin-bottom: 20px;
     text-align: center;
+    padding-top: 5px;
 }
 
 .logo-image {
-    width: 320px;
-    max-width: 100%;
+    width: 100%;
+    max-height: 80px;
     height: auto;
     display: block;
     margin: 0 auto 5px;
+    object-fit: contain;
 }
 
 .logo p {
@@ -152,6 +154,11 @@ body {
     height: 24px;
     margin-right: 10px;
     display: inline-block;
+}
+
+.btn-settings-icon .lottie-icon {
+    width: 32px;
+    height: 32px;
 }
 
 .main-content {

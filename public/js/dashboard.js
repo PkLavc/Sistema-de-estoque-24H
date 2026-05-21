@@ -391,7 +391,7 @@ async function loadRentalReturnAlerts() {
             credentials: 'include'
         });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
         if (!response.ok) return;
@@ -580,7 +580,7 @@ async function loadEvents() {
     try {
         const response = await fetch('/api/events', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -636,7 +636,7 @@ async function loadRentalEvents() {
     try {
         const response = await fetch('/api/rental-events', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -719,7 +719,7 @@ async function loadHistoryEvents() {
     try {
         const response = await fetch('/api/history-events', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
         if (!response.ok) return;
@@ -807,7 +807,7 @@ async function loadEquipments(search = '') {
     try {
         const response = await fetch(`/api/equipments?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -853,7 +853,7 @@ async function loadMaintenanceEquipments() {
     try {
         const response = await fetch('/api/equipments', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -1143,7 +1143,7 @@ async function loadCables(search = '') {
     try {
         const response = await fetch(`/api/cables?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -1232,7 +1232,7 @@ async function loadOtherItems(search = '') {
     try {
         const response = await fetch(`/api/other-items?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -1247,7 +1247,7 @@ async function loadMaintenanceCables() {
     try {
         const response = await fetch('/api/cables', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -1260,6 +1260,18 @@ async function loadMaintenanceCables() {
 }
 
 async function logout() {
+    const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
+    
+    if (isGuestMode) {
+        // Guest mode - just clear localStorage and redirect
+        if (confirm('Tem certeza que deseja sair? Todos os dados locais serão mantidos.')) {
+            localStorage.removeItem('isGuestMode');
+            window.location.href = '/login/';
+        }
+        return;
+    }
+    
+    // Server logout for authenticated users
     try {
         const response = await fetch('/api/logout', {
             method: 'POST',
@@ -1273,7 +1285,7 @@ async function logout() {
 
         clearPendingItems();
         clearRelacaoContext();
-        window.location.href = '/login.html';
+        window.location.href = '/login/';
     } catch (error) {
         console.error(error);
         alert('Erro de conexao.');
@@ -1853,10 +1865,42 @@ async function deleteLoginUser(userId) {
 }
 
 async function checkAuth() {
+    // Check if in guest mode from localStorage (for GitHub Pages)
+    const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
+    
+    if (isGuestMode) {
+        // Guest mode - no server authentication needed
+        if (typeof storage !== 'undefined') {
+            storage.setGuestMode(true);
+        }
+        
+        currentUser = { 
+            userId: null, 
+            username: 'Convidado', 
+            isAdmin: false,
+            isGuest: true,
+            role: 'guest'
+        };
+        
+        // Update user status display
+        const userStatusEl = document.getElementById('userStatus');
+        if (userStatusEl) {
+            userStatusEl.textContent = '👤 Modo Convidado (Dados Locais)';
+            userStatusEl.style.display = 'block';
+        }
+        
+        applyLoginManagementVisibility();
+        return;
+    }
+    
+    // Try server authentication (only for non-GitHub Pages deployments)
     try {
         const res = await fetch('/api/auth/status', { credentials: 'include' });
         const data = await res.json();
-        if (!data.authenticated) window.location.href = '/login.html';
+        if (!data.authenticated) {
+            window.location.href = '/login/';
+            return;
+        }
         
         // Set guest mode in storage
         const isGuest = data.isGuest || false;
@@ -1888,7 +1932,8 @@ async function checkAuth() {
         
         applyLoginManagementVisibility();
     } catch (error) {
-        window.location.href = '/login.html';
+        // Server not available - redirect to login
+        window.location.href = '/login/';
     }
 }
 
