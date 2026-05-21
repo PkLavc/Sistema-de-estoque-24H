@@ -9,14 +9,63 @@
     --text-muted: #aaa;
 }
 
-/* Button primary rules override existing styles where possible */
-.btn-primary{
+/* Apply primary color to all red elements */
+.btn-primary,
+.floating-create-button,
+.auth-mode .mode.active{
     background: linear-gradient(45deg, var(--primary), var(--primary-2)) !important;
     border-color: var(--primary) !important;
 }
-.btn-primary:hover{ background: linear-gradient(45deg, var(--primary-2), var(--primary-3)) !important; }
-.btn-secondary{ border-color: var(--primary); color: var(--primary); }
-.user-role-badge.admin{ background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+
+.btn-primary:hover,
+.floating-create-button:hover,
+.auth-mode .mode.active:hover{
+    background: linear-gradient(45deg, var(--primary-2), var(--primary-3)) !important;
+}
+
+/* Borders, text colors and highlights */
+.section-header h1,
+.modal-card h2,
+.settings-tab.active,
+th{
+    color: var(--primary) !important;
+}
+
+.settings-tab.active,
+.menu-item:hover,
+.menu-item.active{
+    border-color: var(--primary) !important;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+.form-group input:focus,
+.form-group select:focus,
+textarea:focus,
+.user-password-input:focus{
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 15px color-mix(in srgb, var(--primary) 30%, transparent) !important;
+}
+
+.preview-card,
+.category-row td{
+    border-left-color: var(--primary) !important;
+}
+
+.rental-return-alert{
+    background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+    border-color: color-mix(in srgb, var(--primary) 40%, transparent) !important;
+}
+
+.menu-item:hover,
+.menu-item.active,
+.settings-tab:hover{
+    background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+}
+
+.login-box::before{
+    background: linear-gradient(45deg, var(--primary), #000000) !important;
+}
 
 /* Panels and inputs */
 .login-box, .dashboard-container, .database-view, .maintenance-list-card { background: var(--panel-bg) !important; }

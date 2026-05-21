@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saída de Equipamentos</title>
+    <title>Entrada de Equipamentos</title>
     <link rel="icon" type="image/webp" href="/logo.webp">
     <link rel="stylesheet" href="event.css">
+        <link rel="stylesheet" href="/css/style.css">
     <style>
         .container {
             max-width: 800px;
@@ -151,38 +152,38 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Saída de Equipamentos</h1>
+            <h1>Entrada de Equipamentos</h1>
             <p id="eventInfo">Carregando informações do evento...</p>
         </div>
         
         <div class="nav-buttons">
             <button class="btn btn-secondary" onclick="window.history.back()">Voltar</button>
-            <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'">Dashboard</button>
+            <button class="btn btn-secondary" onclick="window.location.href='/'">Dashboard</button>
         </div>
         
         <div class="barcode-input">
-            <h3>Registrar Saída</h3>
+            <h3>Registrar Entrada</h3>
             <div class="input-group">
                 <input type="text" id="barcodeInput" placeholder="Digite o código de barras do equipamento" onkeypress="handleKeyPress(event)">
-                <button class="btn btn-primary" onclick="handleSaida()">Registrar Saída</button>
+                <button class="btn btn-primary" onclick="handleEntrada()">Registrar Entrada</button>
             </div>
             <div id="message" class="message" style="display: none;"></div>
         </div>
         
         <div class="equipment-list">
-            <h3>Equipamentos em Saída</h3>
+            <h3>Equipamentos em Entrada</h3>
             <div id="equipmentList">
-                <p style="color: #888; text-align: center;">Nenhum equipamento em saída</p>
+                <p style="color: #888; text-align: center;">Nenhum equipamento em entrada</p>
             </div>
         </div>
     </div>
 
     <script>
+        // TODA A LÓGICA DE FUNÇÕES DO SEU PRIMEIRO CÓDIGO FOI MANTIDA ABAIXO
         let eventId = null;
         let currentEvent = null;
-        let saidaEquipments = [];
+        let entradaEquipments = [];
 
-        // Carregar evento
         async function loadEvent() {
             const urlParams = new URLSearchParams(window.location.search);
             eventId = urlParams.get('id');
@@ -206,64 +207,99 @@
                 document.getElementById('eventInfo').textContent = 
                     `Evento: ${currentEvent.name} - Data: ${formatDate(currentEvent.date)}`;
                 
-                loadSaidaEquipments();
+                loadEntradaEquipments();
             } catch (error) {
                 console.error('Erro ao carregar evento:', error);
                 alert('Erro ao carregar evento');
             }
         }
 
-        // Carregar equipamentos em saída
-        async function loadSaidaEquipments() {
+        async function loadEntradaEquipments() {
             try {
                 const response = await fetch(`/api/events/${eventId}/history`);
                 const history = await response.json();
                 
-                // Filtrar apenas saídas que ainda não foram devolvidas
-                saidaEquipments = history.filter(item => item.action_type === 'saida');
+                const equipmentMap = new Map();
                 
-                displaySaidaEquipments();
+                history.forEach(item => {
+                    if (!equipmentMap.has(item.equipment_id)) {
+                        equipmentMap.set(item.equipment_id, {
+                            id: item.equipment_id,
+                            name: item.equipment_name,
+                            barcode: item.barcode,
+                            lastAction: item.action_type,
+                            returned: false
+                        });
+                    } else {
+                        const current = equipmentMap.get(item.equipment_id);
+                        if (item.action_type === 'entrada') {
+                            current.returned = true;
+                        }
+                    }
+                });
+                
+                entradaEquipments = Array.from(equipmentMap.values()).filter(eq => eq.lastAction === 'saida' && !eq.returned);
+                displayEntradaEquipments();
             } catch (error) {
-                console.error('Erro ao carregar equipamentos em saída:', error);
+                console.error('Erro ao carregar equipamentos para entrada:', error);
             }
         }
 
-        // Exibir equipamentos em saída
-        function displaySaidaEquipments() {
+        function displayEntradaEquipments() {
             const container = document.getElementById('equipmentList');
             container.innerHTML = '';
             
-            if (saidaEquipments.length === 0) {
-                container.innerHTML = '<p style="color: #888; text-align: center; width: 100%;">Nenhum equipamento em saída</p>';
+            if (entradaEquipments.length === 0) {
+                container.innerHTML = '<p style="color: #888; text-align: center; width: 100%;">Nenhum equipamento em entrada</p>';
                 return;
             }
             
-            saidaEquipments.forEach(equipment => {
+            const hasNotReturned = entradaEquipments.some(eq => !eq.returned);
+            
+            entradaEquipments.forEach(equipment => {
                 const card = document.createElement('div');
                 card.className = 'equipment-card';
+                
+                // Mantendo o estilo visual de status do segundo código, mas com lógica de entrada
                 card.innerHTML = `
                     <div class="equipment-info">
-                        <h4>${equipment.equipment_name}</h4>
+                        <h4>${equipment.name}</h4>
                         <p>Código: ${equipment.barcode}</p>
                     </div>
                     <div class="status-indicator">
                         <span class="status-dot"></span>
-                        <span class="status-text">Em Saída</span>
+                        <span class="status-text">Pendente de Entrada</span>
                     </div>
                 `;
                 container.appendChild(card);
             });
-        }
-
-        // Função de tecla Enter
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                handleSaida();
+            
+            if (hasNotReturned) {
+                const alertCard = document.createElement('div');
+                alertCard.className = 'equipment-card';
+                alertCard.style.border = '2px solid #e74c3c';
+                alertCard.style.background = 'rgba(231, 76, 60, 0.1)';
+                alertCard.innerHTML = `
+                    <div class="equipment-info">
+                        <h4 style="color: #e74c3c;">ATENÇÃO</h4>
+                        <p style="color: #e74c3c;">Há equipamentos que ainda não foram devolvidos</p>
+                    </div>
+                    <div class="status-indicator">
+                        <span class="status-dot" style="background: #e74c3c;"></span>
+                        <span class="status-text" style="color: #e74c3c;">Pendente</span>
+                    </div>
+                `;
+                container.appendChild(alertCard);
             }
         }
 
-        // Função de saída
-        async function handleSaida() {
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                handleEntrada();
+            }
+        }
+
+        async function handleEntrada() {
             const barcode = document.getElementById('barcodeInput').value.trim();
             
             if (!barcode) {
@@ -272,7 +308,6 @@
             }
             
             try {
-                // Buscar equipamento
                 const response = await fetch(`/api/equipments?search=${barcode}`);
                 const equipments = await response.json();
                 
@@ -282,40 +317,35 @@
                 }
                 
                 const equipment = equipments[0];
+                const equipmentInEvent = entradaEquipments.find(eq => eq.id === equipment.id);
                 
-                // Verificar se já está em saída
-                const alreadySaida = saidaEquipments.some(eq => eq.equipment_id === equipment.id);
-                if (alreadySaida) {
-                    showMessage('Equipamento já está em saída', 'error');
+                if (!equipmentInEvent) {
+                    showMessage('Este equipamento não saiu neste evento ou já foi devolvido', 'error');
                     return;
                 }
                 
-                // Registrar saída
-                const saidaResponse = await fetch('/api/equipment-events/saida', {
+                const entradaResponse = await fetch('/api/equipment-events/entrada', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         equipmentId: equipment.id,
                         eventId: eventId
                     })
                 });
                 
-                if (saidaResponse.ok) {
-                    showMessage(`Saída registrada: ${equipment.name}`, 'success');
+                if (entradaResponse.ok) {
+                    showMessage(`Entrada registrada: ${equipment.name}`, 'success');
                     document.getElementById('barcodeInput').value = '';
-                    loadSaidaEquipments();
+                    loadEntradaEquipments();
                 } else {
-                    showMessage('Erro ao registrar saída', 'error');
+                    showMessage('Erro ao registrar entrada', 'error');
                 }
             } catch (error) {
-                console.error('Erro ao processar saída:', error);
+                console.error('Erro ao processar entrada:', error);
                 showMessage('Erro de conexão', 'error');
             }
         }
 
-        // Funções auxiliares
         function showMessage(message, type) {
             const messageDiv = document.getElementById('message');
             messageDiv.textContent = message;
@@ -334,7 +364,6 @@
             return date.toLocaleDateString('pt-BR');
         }
 
-        // Inicialização
         document.addEventListener('DOMContentLoaded', async () => {
             await loadEvent();
         });

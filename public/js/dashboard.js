@@ -44,6 +44,7 @@ function applyCustomTheme() {
     // Apply colors
     document.documentElement.style.setProperty('--primary', primaryColor);
     document.documentElement.style.setProperty('--secondary', secondaryColor);
+    document.documentElement.style.setProperty('--primary-2', secondaryColor);
     
     // Apply custom logo if exists
     if (customLogo) {
@@ -53,12 +54,39 @@ function applyCustomTheme() {
         }
     }
     
-    // Apply color filters to Lottie animations
-    Object.values(lottieAnimations).forEach(anim => {
-        if (anim && anim.renderer && anim.renderer.elements) {
-            // This would require more complex color manipulation
-            // For now, we'll just note that Lottie color changes need specific implementation
+    // Apply color filters to Lottie animations via CSS filter
+    // Convert hex color to hue for CSS filter
+    const hexToHue = (hex) => {
+        // Remove # if present
+        hex = hex.replace('#', '');
+        // Convert to RGB
+        const r = parseInt(hex.substr(0, 2), 16) / 255;
+        const g = parseInt(hex.substr(2, 2), 16) / 255;
+        const b = parseInt(hex.substr(4, 2), 16) / 255;
+        
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h = 0;
+        
+        if (max !== min) {
+            const d = max - min;
+            switch (max) {
+                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                case g: h = ((b - r) / d + 2) / 6; break;
+                case b: h = ((r - g) / d + 4) / 6; break;
+            }
         }
+        
+        return Math.round(h * 360);
+    };
+    
+    const primaryHue = hexToHue(primaryColor);
+    // Red is around 0deg, so calculate rotation needed
+    const hueRotation = primaryHue - 0; // 0 is red
+    
+    // Apply hue rotation to all Lottie icons
+    document.querySelectorAll('.lottie-icon').forEach(icon => {
+        icon.style.filter = `hue-rotate(${hueRotation}deg)`;
     });
 }
 
@@ -391,7 +419,7 @@ async function loadRentalReturnAlerts() {
             credentials: 'include'
         });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
         if (!response.ok) return;
@@ -580,7 +608,7 @@ async function loadEvents() {
     try {
         const response = await fetch('/api/events', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -636,7 +664,7 @@ async function loadRentalEvents() {
     try {
         const response = await fetch('/api/rental-events', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -719,7 +747,7 @@ async function loadHistoryEvents() {
     try {
         const response = await fetch('/api/history-events', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
         if (!response.ok) return;
@@ -807,7 +835,7 @@ async function loadEquipments(search = '') {
     try {
         const response = await fetch(`/api/equipments?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -853,7 +881,7 @@ async function loadMaintenanceEquipments() {
     try {
         const response = await fetch('/api/equipments', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -1143,7 +1171,7 @@ async function loadCables(search = '') {
     try {
         const response = await fetch(`/api/cables?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -1232,7 +1260,7 @@ async function loadOtherItems(search = '') {
     try {
         const response = await fetch(`/api/other-items?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -1247,7 +1275,7 @@ async function loadMaintenanceCables() {
     try {
         const response = await fetch('/api/cables', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login.html';
+            window.location.href = '/login/';
             return;
         }
 
@@ -1260,6 +1288,18 @@ async function loadMaintenanceCables() {
 }
 
 async function logout() {
+    const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
+    
+    if (isGuestMode) {
+        // Guest mode - just clear localStorage and redirect
+        if (confirm('Tem certeza que deseja sair? Todos os dados locais serão mantidos.')) {
+            localStorage.removeItem('isGuestMode');
+            window.location.href = '/login/';
+        }
+        return;
+    }
+    
+    // Server logout for authenticated users
     try {
         const response = await fetch('/api/logout', {
             method: 'POST',
@@ -1273,7 +1313,7 @@ async function logout() {
 
         clearPendingItems();
         clearRelacaoContext();
-        window.location.href = '/login.html';
+        window.location.href = '/login/';
     } catch (error) {
         console.error(error);
         alert('Erro de conexao.');
@@ -1853,10 +1893,35 @@ async function deleteLoginUser(userId) {
 }
 
 async function checkAuth() {
+    // Check if in guest mode from localStorage (for GitHub Pages)
+    const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
+    
+    if (isGuestMode) {
+        // Guest mode - no server authentication needed
+        if (typeof storage !== 'undefined') {
+            storage.setGuestMode(true);
+        }
+        
+        currentUser = { 
+            userId: null, 
+            username: 'Convidado', 
+            isAdmin: false,
+            isGuest: true,
+            role: 'guest'
+        };
+        
+        applyLoginManagementVisibility();
+        return;
+    }
+    
+    // Try server authentication (only for non-GitHub Pages deployments)
     try {
         const res = await fetch('/api/auth/status', { credentials: 'include' });
         const data = await res.json();
-        if (!data.authenticated) window.location.href = '/login.html';
+        if (!data.authenticated) {
+            window.location.href = '/login/';
+            return;
+        }
         
         // Set guest mode in storage
         const isGuest = data.isGuest || false;
@@ -1874,21 +1939,10 @@ async function checkAuth() {
             }
             : null;
         
-        // Update user status display
-        const userStatusEl = document.getElementById('userStatus');
-        if (userStatusEl && currentUser) {
-            if (currentUser.isGuest) {
-                userStatusEl.textContent = '👤 Modo Convidado (Dados Locais)';
-                userStatusEl.style.display = 'block';
-            } else {
-                userStatusEl.textContent = `👤 ${currentUser.username} (${currentUser.role})`;
-                userStatusEl.style.display = 'block';
-            }
-        }
-        
         applyLoginManagementVisibility();
     } catch (error) {
-        window.location.href = '/login.html';
+        // Server not available - redirect to login
+        window.location.href = '/login/';
     }
 }
 

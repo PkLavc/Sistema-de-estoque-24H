@@ -1,17 +1,22 @@
+// Check authentication status
 async function checkAuth() {
     try {
         const response = await fetch('/api/auth/status');
         const data = await response.json();
         
-        // Só redireciona se o servidor explicitamente disser que SIM, estamos logados
         if (data.authenticated === true) {
-            window.location.href = '/dashboard.html';
+            window.location.href = '/';
         }
     } catch (error) {
-        console.log('Sessão limpa, aguardando login.');
+        // Server not available - could be GitHub Pages
+        // Check if already in guest mode
+        if (localStorage.getItem('isGuestMode') === 'true') {
+            window.location.href = '/';
+        }
     }
 }
 
+// Regular user login
 async function login(username, password) {
     try {
         const response = await fetch('/api/login', {
@@ -21,34 +26,40 @@ async function login(username, password) {
         });
 
         if (response.ok) {
-            window.location.href = '/dashboard.html';
+            window.location.href = '/';
         } else {
-            alert('Usuário ou senha incorretos');
+            showError('Usuário ou senha incorretos');
         }
     } catch (error) {
-        alert('Erro ao conectar com o servidor');
+        showError('Erro ao conectar com o servidor. Tente o modo convidado.');
     }
 }
 
+// Guest login
 async function guestLogin() {
     try {
+        // Try server-based guest login first (for Cloudflare)
         const response = await fetch('/api/login/guest', { method: 'POST' });
         if (response.ok) {
-            window.location.href = '/dashboard.html';
-        } else {
-            alert('Falha ao entrar como convidado');
+            window.location.href = '/';
+            return;
         }
     } catch (err) {
-        alert('Erro ao conectar com o servidor');
+        // Server not available - use localStorage guest mode (for GitHub Pages)
     }
+    
+    // Fallback to localStorage guest mode
+    localStorage.setItem('isGuestMode', 'true');
+    window.location.href = '/';
 }
 
-document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const u = document.getElementById('username').value;
-    const p = document.getElementById('password').value;
-    login(u, p);
-});
+function showError(message) {
+    const errorEl = document.getElementById('errorMessage');
+    if (errorEl) {
+        errorEl.textContent = message;
+        setTimeout(() => errorEl.textContent = '', 5000);
+    }
+}
 
 // Mode toggle (Login / Convidado)
 document.addEventListener('DOMContentLoaded', function() {
@@ -56,33 +67,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnGuestMode = document.getElementById('btn-guest-mode');
     const credentials = document.getElementById('credentials');
     const loginForm = document.getElementById('loginForm');
+    const btnSubmit = document.getElementById('btn-submit');
 
-    btnLoginMode.addEventListener('click', function() {
-        btnLoginMode.classList.add('active');
-        btnGuestMode.classList.remove('active');
-        credentials.style.display = '';
-        document.getElementById('btn-submit').textContent = 'Entrar';
-    });
+    if (btnLoginMode) {
+        btnLoginMode.addEventListener('click', function() {
+            btnLoginMode.classList.add('active');
+            btnGuestMode.classList.remove('active');
+            credentials.style.display = '';
+            btnSubmit.textContent = 'Entrar';
+        });
+    }
 
-    btnGuestMode.addEventListener('click', function() {
-        btnGuestMode.classList.add('active');
-        btnLoginMode.classList.remove('active');
-        credentials.style.display = 'none';
-        document.getElementById('btn-submit').textContent = 'Entrar como Convidado';
-    });
+    if (btnGuestMode) {
+        btnGuestMode.addEventListener('click', function() {
+            btnGuestMode.classList.add('active');
+            btnLoginMode.classList.remove('active');
+            credentials.style.display = 'none';
+            btnSubmit.textContent = 'Entrar como Convidado';
+        });
+    }
 
-    // Bind submit to guest when guest mode active
-    loginForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        if (btnGuestMode.classList.contains('active')) {
-            guestLogin();
-        } else {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            login(u, p);
-        }
-    });
+    // Handle form submission
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (btnGuestMode && btnGuestMode.classList.contains('active')) {
+                guestLogin();
+            } else {
+                const u = document.getElementById('username').value;
+                const p = document.getElementById('password').value;
+                login(u, p);
+            }
+        });
+    }
+
+    // Check if already authenticated
+    checkAuth();
 });
-
-// Executa apenas uma vez ao abrir
-document.addEventListener('DOMContentLoaded', checkAuth);
