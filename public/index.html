@@ -373,19 +373,13 @@
 
                 <!-- Theme Tab -->
                 <div id="settings-theme" class="settings-tab-content">
-                    <div class="theme-preview">
-                        <div class="preview-box">
-                            <h2>Prévia do tema</h2>
-                            <div class="preview-elements">
-                                <span class="lottie-icon preview-lottie-icon" id="lottie-home-preview"></span>
-                                <div class="preview-button">Botão</div>
-                                <div class="preview-card">Card de exemplo</div>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="config-panel">
                         <form id="themeForm" class="form-grid">
+                            <!-- Cores Principais -->
+                            <div class="theme-section-title">
+                                <h3>Cores Principais</h3>
+                            </div>
+
                             <div class="form-group">
                                 <label for="primaryColor">Cor Principal (Primária)</label>
                                 <div class="color-input-group">
@@ -400,6 +394,11 @@
                                     <input type="color" id="primary2Color" name="primary2" value="#cc0000">
                                     <input type="text" id="primary2ColorHex" value="#cc0000" placeholder="#cc0000">
                                 </div>
+                            </div>
+
+                            <!-- Cores de Fundo -->
+                            <div class="theme-section-title">
+                                <h3>Cores de Fundo</h3>
                             </div>
 
                             <div class="form-group">
@@ -418,12 +417,43 @@
                                 </div>
                             </div>
 
+                            <!-- Cores de Componentes -->
+                            <div class="theme-section-title">
+                                <h3>Cores de Componentes</h3>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="componentBg">Cor de Fundo - Componentes Externos (Cards, Modais)</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="componentBg" name="componentBg" value="#2a2a2a">
+                                    <input type="text" id="componentBgHex" value="#2a2a2a" placeholder="#2a2a2a">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="innerComponentBg">Cor de Fundo - Componentes Internos (Tabelas, Formulários)</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="innerComponentBg" name="innerComponentBg" value="#1a1a1a">
+                                    <input type="text" id="innerComponentBgHex" value="#1a1a1a" placeholder="#1a1a1a">
+                                </div>
+                            </div>
+
+                            <!-- Cores de Texto -->
+                            <div class="theme-section-title">
+                                <h3>Cores de Texto</h3>
+                            </div>
+
                             <div class="form-group">
                                 <label for="textColor">Cor do Texto (Menu, Labels, Páginas)</label>
                                 <div class="color-input-group">
                                     <input type="color" id="textColor" name="textColor" value="#cccccc">
                                     <input type="text" id="textColorHex" value="#cccccc" placeholder="#cccccc">
                                 </div>
+                            </div>
+
+                            <!-- Cores de Botões -->
+                            <div class="theme-section-title">
+                                <h3>Cores de Botões Secundários</h3>
                             </div>
 
                             <div class="form-group">
@@ -450,12 +480,9 @@
                                 </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="componentBg">Cor de Fundo - Componentes (Cards, Modais)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="componentBg" name="componentBg" value="#2a2a2a">
-                                    <input type="text" id="componentBgHex" value="#2a2a2a" placeholder="#2a2a2a">
-                                </div>
+                            <!-- Cores de Campos de Entrada -->
+                            <div class="theme-section-title">
+                                <h3>Cores de Campos de Entrada</h3>
                             </div>
 
                             <div class="form-group">

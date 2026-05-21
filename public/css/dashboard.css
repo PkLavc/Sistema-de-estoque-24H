@@ -1082,6 +1082,26 @@ textarea {
     font-family: monospace;
 }
 
+/* Theme section titles */
+.theme-section-title {
+    grid-column: 1 / -1;
+    margin-top: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #333;
+}
+
+.theme-section-title:first-child {
+    margin-top: 0;
+}
+
+.theme-section-title h3 {
+    color: var(--primary, #ff3333);
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
 /* Logo Upload */
 .logo-upload-panel {
     display: grid;
@@ -1167,4 +1187,10 @@ textarea {
     flex: 0 0 auto;
     width: 50px;
     justify-content: center;
+}
+
+.bottom-actions .btn-settings-icon .lottie-icon {
+    width: 48px;
+    height: 48px;
+    margin-right: 0;
 }
