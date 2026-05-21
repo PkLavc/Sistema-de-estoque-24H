@@ -1,0 +1,17 @@
+.wrangler/
+node_modules/
+tmp/
+d1-export.sql
+data/test-sessions/
+data/*.sql
+data/products.json
+database.db
+database.head.db
+*.db
+*.sqlite
+*.sqlite3
+/*.sql
+backups/
+.env
+.dev.vars
+wrangler-preview*.log
