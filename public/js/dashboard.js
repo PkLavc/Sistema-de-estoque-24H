@@ -1857,8 +1857,21 @@ async function checkAuth() {
         const res = await fetch('/api/auth/status', { credentials: 'include' });
         const data = await res.json();
         if (!data.authenticated) window.location.href = '/login.html';
+        
+        // Set guest mode in storage
+        const isGuest = data.isGuest || false;
+        if (typeof storage !== 'undefined') {
+            storage.setGuestMode(isGuest);
+        }
+        
         currentUser = data.authenticated
-            ? { userId: data.userId || null, username: data.username || '', isAdmin: !!data.isAdmin }
+            ? { 
+                userId: data.userId || null, 
+                username: data.username || '', 
+                isAdmin: !!data.isAdmin,
+                isGuest: isGuest,
+                role: isGuest ? 'guest' : (data.isAdmin ? 'admin' : 'user')
+            }
             : null;
         applyLoginManagementVisibility();
     } catch (error) {
