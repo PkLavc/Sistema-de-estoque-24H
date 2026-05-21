@@ -1873,6 +1873,19 @@ async function checkAuth() {
                 role: isGuest ? 'guest' : (data.isAdmin ? 'admin' : 'user')
             }
             : null;
+        
+        // Update user status display
+        const userStatusEl = document.getElementById('userStatus');
+        if (userStatusEl && currentUser) {
+            if (currentUser.isGuest) {
+                userStatusEl.textContent = '👤 Modo Convidado (Dados Locais)';
+                userStatusEl.style.display = 'block';
+            } else {
+                userStatusEl.textContent = `👤 ${currentUser.username} (${currentUser.role})`;
+                userStatusEl.style.display = 'block';
+            }
+        }
+        
         applyLoginManagementVisibility();
     } catch (error) {
         window.location.href = '/login.html';
@@ -1931,6 +1944,7 @@ function loadThemeSettings() {
         if (theme['primary'] && document.getElementById('primaryColor')) document.getElementById('primaryColor').value = theme['primary'];
         if (theme['primary-2'] && document.getElementById('primary2Color')) document.getElementById('primary2Color').value = theme['primary-2'];
         if (theme['bg-start'] && document.getElementById('bgStart')) document.getElementById('bgStart').value = theme['bg-start'];
+        if (theme['bg-end'] && document.getElementById('bgEnd')) document.getElementById('bgEnd').value = theme['bg-end'];
         applyTheme(theme);
     } catch (e) { console.error(e); }
 }
