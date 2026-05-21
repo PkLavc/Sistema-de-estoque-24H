@@ -10,7 +10,8 @@ function initializeLottieIcons() {
         'lottie-plus': '/assets/lottie/plus.json',
         'lottie-historical': '/assets/lottie/historical.json',
         'lottie-exit': '/assets/lottie/exit.json',
-        'lottie-settings': '/assets/lottie/settings.json'
+        'lottie-settings': '/assets/lottie/settings.json',
+        'lottie-home-preview': '/assets/lottie/home.json'
     };
 
     Object.entries(lottieConfigs).forEach(([id, path]) => {
@@ -24,12 +25,14 @@ function initializeLottieIcons() {
                 path: path
             });
             
-            // Play animation on parent hover
-            const parent = element.closest('.menu-item');
-            if (parent) {
-                parent.addEventListener('mouseenter', () => {
-                    lottieAnimations[id].goToAndPlay(0);
-                });
+            // Play animation on parent hover (except for preview)
+            if (!id.includes('preview')) {
+                const parent = element.closest('.menu-item');
+                if (parent) {
+                    parent.addEventListener('mouseenter', () => {
+                        lottieAnimations[id].goToAndPlay(0);
+                    });
+                }
             }
         }
     });
@@ -52,6 +55,8 @@ function applyCustomTheme() {
         if (logoImg) {
             logoImg.src = customLogo;
         }
+        // Update favicon
+        updateFavicon(customLogo);
     }
     
     // Apply color filters to Lottie animations via CSS filter
@@ -85,7 +90,7 @@ function applyCustomTheme() {
     const hueRotation = primaryHue - 0; // 0 is red
     
     // Apply hue rotation to all Lottie icons
-    document.querySelectorAll('.lottie-icon').forEach(icon => {
+    document.querySelectorAll('.lottie-icon, .preview-lottie-icon').forEach(icon => {
         icon.style.filter = `hue-rotate(${hueRotation}deg)`;
     });
 }
@@ -1910,6 +1915,7 @@ async function checkAuth() {
             role: 'guest'
         };
         
+        updateLogoutButton();
         applyLoginManagementVisibility();
         return;
     }
@@ -1939,10 +1945,24 @@ async function checkAuth() {
             }
             : null;
         
+        updateLogoutButton();
         applyLoginManagementVisibility();
     } catch (error) {
         // Server not available - redirect to login
         window.location.href = '/login/';
+    }
+}
+
+function updateLogoutButton() {
+    const logoutText = document.getElementById('logout-user-text');
+    if (logoutText && currentUser) {
+        const username = currentUser.username || 'Usuário';
+        logoutText.textContent = `${username} - Sair`;
+        
+        // Check if text is too long and add scrolling class
+        if (logoutText.scrollWidth > logoutText.clientWidth) {
+            logoutText.classList.add('long-text');
+        }
     }
 }
 
@@ -2043,8 +2063,16 @@ function saveThemeSettings() {
         'bg-end': bgEnd
     };
     
+    // Save to localStorage
+    localStorage.setItem('theme-primary-color', primary);
+    localStorage.setItem('theme-secondary-color', primary2);
+    localStorage.setItem('theme-bg-start', bgStart);
+    localStorage.setItem('theme-bg-end', bgEnd);
     localStorage.setItem('appTheme', JSON.stringify(theme));
+    
+    // Apply theme immediately
     applyTheme(theme);
+    applyCustomTheme();
     updateColorInputs();
     alert('Tema salvo com sucesso!');
 }
@@ -2124,13 +2152,8 @@ function saveCustomLogo() {
         return;
     }
     
-    if (isGuest) {
-        // Save to localStorage for guest
-        localStorage.setItem('custom-logo', pendingLogoData);
-    } else {
-        // For admin, save to localStorage (could be extended to save to server)
-        localStorage.setItem('custom-logo', pendingLogoData);
-    }
+    // Save to localStorage (works for both guest and admin)
+    localStorage.setItem('custom-logo', pendingLogoData);
     
     // Apply to sidebar logo
     const sidebarLogo = document.getElementById('customLogo');
@@ -2138,8 +2161,24 @@ function saveCustomLogo() {
         sidebarLogo.src = pendingLogoData;
     }
     
+    // Update favicon
+    updateFavicon(pendingLogoData);
+    
     pendingLogoData = null;
     alert('Logo salva com sucesso!');
+}
+
+function updateFavicon(logoData) {
+    // Remove existing favicon links
+    const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
+    existingFavicons.forEach(link => link.remove());
+    
+    // Create new favicon link
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/webp';
+    link.href = logoData;
+    document.head.appendChild(link);
 }
 
 function resetLogo() {
@@ -2149,6 +2188,10 @@ function resetLogo() {
     if (sidebarLogo) {
         sidebarLogo.src = '/logo.webp';
     }
+    
+    // Reset favicon to default
+    updateFavicon('/logo.webp');
+    
     pendingLogoData = null;
     alert('Logo resetada para o padrão!');
 }
