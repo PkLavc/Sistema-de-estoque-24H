@@ -3,50 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>24h Locacoes</title>
-    <link rel="icon" type="image/webp" href="assets/images/favicon.webp">
-    <link rel="stylesheet" href="css/app.css">
-    <link rel="stylesheet" href="css/theme.css">
+    <title>24h Locacoes - Dashboard</title>
+    <link rel="icon" type="image/png" href="/logo.PNG">
+    <link rel="stylesheet" href="dashboard.css?v=20260520-public-safe">
 </head>
 <body>
-    <div class="app-container">
+    <div class="dashboard-container">
         <aside class="sidebar">
             <div class="logo">
-                <img id="customLogo" src="assets/images/logo.webp" alt="24h Locacoes" class="logo-image">
+                <img src="/logo.PNG" alt="24h Locacoes" class="logo-image">
+                <p>Sistema de Controle</p>
             </div>
 
             <nav class="menu">
                 <ul>
-                    <li><a href="#home" class="menu-item active" onclick="showSection('home')">
-                        <span class="lottie-icon" id="lottie-home"></span> Eventos
-                    </a></li>
-                    <li><a href="#locacao" class="menu-item" onclick="showSection('locacao')">
-                        <span class="lottie-icon" id="lottie-rental"></span> Entrada
-                    </a></li>
-                    <li><a href="#manutencao" class="menu-item" onclick="showSection('manutencao')">
-                        <span class="lottie-icon" id="lottie-maintenance"></span> Saída
-                    </a></li>
-                    <li><a href="#banco" class="menu-item" onclick="showSection('banco')">
-                        <span class="lottie-icon" id="lottie-database"></span> Banco de Dados
-                    </a></li>
-                    <li><a href="#cadastro" class="menu-item" onclick="showSection('cadastro')">
-                        <span class="lottie-icon" id="lottie-plus"></span> Cadastrar Equipamento
-                    </a></li>
-                    <li><a href="#historico" class="menu-item" onclick="showSection('historico')">
-                        <span class="lottie-icon" id="lottie-historical"></span> Histórico
-                    </a></li>
+                    <li><a href="#" onclick="showSection('home')" class="menu-item active"><span class="icon">🏠</span> Eventos</a></li>
+                    <li><a href="#" id="rentalMenuItem" onclick="showSection('locacao')" class="menu-item"><span class="icon">📋</span> Locação</a></li>
+                    <li><a href="#" onclick="showSection('manutencao')" class="menu-item"><span class="icon">🛠️</span> Manutencao</a></li>
+                    <li><a href="#" onclick="showSection('banco')" class="menu-item"><span class="icon">📊</span> Banco de Dados</a></li>
+                    <li><a href="#" onclick="showSection('cadastro')" class="menu-item"><span class="icon">➕</span> Cadastrar Equipamento</a></li>
+                    <li><a href="#" onclick="showSection('historico')" class="menu-item"><span class="icon">🗂️</span> Historico</a></li>
+                    <li id="usersMenuItem" style="display: none;"><a href="#" onclick="showSection('usuarios')" class="menu-item"><span class="icon">&#128274;</span> Logins</a></li>
                 </ul>
             </nav>
-            
-            <div class="bottom-actions">
-                <button type="button" class="menu-item logout-button btn-logout" onclick="logout()">
-                    <span class="lottie-icon" id="lottie-exit"></span> 
-                    <span id="logout-user-text">Sair</span>
-                </button>
-                <button type="button" class="menu-item btn-settings-icon" onclick="showSection('config')">
-                    <span class="lottie-icon" id="lottie-settings"></span>
-                </button>
-            </div>
+            <button type="button" class="menu-item logout-button" onclick="logout()"><span class="icon">🚶🚪</span> Sair</button>
         </aside>
 
         <main class="main-content">
@@ -258,6 +238,55 @@
                 </div>
             </section>
 
+            <section id="usuarios" class="section">
+                <div class="section-header">
+                    <h1>Gerenciamento de Logins</h1>
+                    <button type="button" id="openUserCreateButton" class="btn-primary" onclick="toggleCreateUserForm()">Cadastrar usuario</button>
+                </div>
+
+                <div class="users-panel">
+                    <form id="createUserForm" class="form-grid user-create-form" style="display: none;">
+                        <div class="form-group">
+                            <label for="newUsername">Usuario</label>
+                            <input type="text" id="newUsername" name="username" autocomplete="off" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newUserPassword">Senha</label>
+                            <input type="password" id="newUserPassword" name="password" autocomplete="new-password" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newUserRole">Classe</label>
+                            <select id="newUserRole" name="role">
+                                <option value="user">user</option>
+                                <option value="admin">admin</option>
+                            </select>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Salvar usuario</button>
+                            <button type="button" class="btn-secondary" onclick="toggleCreateUserForm(false)">Cancelar</button>
+                        </div>
+                    </form>
+
+                    <div class="table-container">
+                        <table id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Classe</th>
+                                    <th>Nova senha</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <p id="usersMessage" class="users-message"></p>
+                </div>
+            </section>
+
             <section id="manutencao" class="section">
                 <div class="section-header">
                     <div class="section-header-content">
@@ -282,7 +311,7 @@
 
                     <div class="maintenance-list-card">
                         <div class="maintenance-list-header">
-                            <h2>Equipamentos em manutenção</h2>
+                            <h2>Equipamentos em manutenç~</h2>
                             <span id="maintenanceCount" class="maintenance-count">0 itens</span>
                         </div>
                         <div id="maintenanceList" class="maintenance-list"></div>
@@ -306,252 +335,6 @@
                             <span id="maintenanceCableCount" class="maintenance-count">0 itens</span>
                         </div>
                         <div id="maintenanceCableList" class="maintenance-list"></div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="config" class="section">
-                <div class="section-header">
-                    <h1>Configurações</h1>
-                </div>
-                
-                <div class="settings-tabs">
-                    <button type="button" class="settings-tab active" onclick="showSettingsTab('users')">Usuários</button>
-                    <button type="button" class="settings-tab" onclick="showSettingsTab('theme')">Tema</button>
-                    <button type="button" class="settings-tab" onclick="showSettingsTab('logo')">Logo</button>
-                </div>
-
-                <!-- Users Tab -->
-                <div id="settings-users" class="settings-tab-content active">
-                    <div class="section-header">
-                        <h2>Gerenciamento de Usuários</h2>
-                        <button type="button" id="openUserCreateButton" class="btn-primary" onclick="toggleCreateUserForm()">Cadastrar usuário</button>
-                    </div>
-
-                    <div class="users-panel">
-                        <form id="createUserForm" class="form-grid user-create-form" style="display: none;">
-                            <div class="form-group">
-                                <label for="newUsername">Usuário</label>
-                                <input type="text" id="newUsername" name="username" autocomplete="off" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="newUserPassword">Senha</label>
-                                <input type="password" id="newUserPassword" name="password" autocomplete="new-password" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="newUserRole">Classe</label>
-                                <select id="newUserRole" name="role">
-                                    <option value="user">user</option>
-                                    <option value="admin">admin</option>
-                                </select>
-                            </div>
-
-                            <div class="form-actions">
-                                <button type="submit" class="btn-primary">Salvar usuário</button>
-                                <button type="button" class="btn-secondary" onclick="toggleCreateUserForm(false)">Cancelar</button>
-                            </div>
-                        </form>
-
-                        <div class="table-container">
-                            <table id="usersTable">
-                                <thead>
-                                    <tr>
-                                        <th>Usuário</th>
-                                        <th>Classe</th>
-                                        <th>Nova senha</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <p id="usersMessage" class="users-message"></p>
-                    </div>
-                </div>
-
-                <!-- Theme Tab -->
-                <div id="settings-theme" class="settings-tab-content">
-                    <div class="config-panel">
-                        <form id="themeForm" class="form-grid">
-                            <!-- Cores Principais -->
-                            <div class="theme-section-title">
-                                <h3>Cores Principais</h3>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="primaryColor">Cor Principal (Primária)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="primaryColor" name="primary" value="#ff3333">
-                                    <input type="text" id="primaryColorHex" value="#ff3333" placeholder="#ff3333">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="primary2Color">Cor Secundária</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="primary2Color" name="primary2" value="#cc0000">
-                                    <input type="text" id="primary2ColorHex" value="#cc0000" placeholder="#cc0000">
-                                </div>
-                            </div>
-
-                            <!-- Cores de Fundo -->
-                            <div class="theme-section-title">
-                                <h3>Cores de Fundo</h3>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="bgStart">Cor do Menu Lateral (Sidebar)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="bgStart" name="bgStart" value="#1a1a1a">
-                                    <input type="text" id="bgStartHex" value="#1a1a1a" placeholder="#1a1a1a">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="bgEnd">Cor de Fundo Geral (Background)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="bgEnd" name="bgEnd" value="#000000">
-                                    <input type="text" id="bgEndHex" value="#000000" placeholder="#000000">
-                                </div>
-                            </div>
-
-                            <!-- Cores de Componentes -->
-                            <div class="theme-section-title">
-                                <h3>Cores de Componentes Internos</h3>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="innerComponentBg">Cor de Fundo - Componentes Internos (Tabelas, Formulários)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="innerComponentBg" name="innerComponentBg" value="#1a1a1a">
-                                    <input type="text" id="innerComponentBgHex" value="#1a1a1a" placeholder="#1a1a1a">
-                                </div>
-                            </div>
-
-                            <!-- Cores de Texto -->
-                            <div class="theme-section-title">
-                                <h3>Cores de Texto</h3>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="textColor">Cor do Texto (Menu, Labels, Páginas)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="textColor" name="textColor" value="#cccccc">
-                                    <input type="text" id="textColorHex" value="#cccccc" placeholder="#cccccc">
-                                </div>
-                            </div>
-
-                            <!-- Cores de Botões -->
-                            <div class="theme-section-title">
-                                <h3>Cores de Botões Secundários</h3>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="secondaryBtnBg">Cor de Fundo - Botões Secundários</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="secondaryBtnBg" name="secondaryBtnBg" value="#444444">
-                                    <input type="text" id="secondaryBtnBgHex" value="#444444" placeholder="#444444">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="secondaryBtnBorder">Cor da Borda - Botões Secundários</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="secondaryBtnBorder" name="secondaryBtnBorder" value="#555555">
-                                    <input type="text" id="secondaryBtnBorderHex" value="#555555" placeholder="#555555">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="secondaryBtnText">Cor do Texto - Botões Secundários</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="secondaryBtnText" name="secondaryBtnText" value="#cccccc">
-                                    <input type="text" id="secondaryBtnTextHex" value="#cccccc" placeholder="#cccccc">
-                                </div>
-                            </div>
-
-                            <!-- Cores de Campos de Entrada -->
-                            <div class="theme-section-title">
-                                <h3>Cores de Campos de Entrada</h3>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="inputBg">Cor de Fundo - Campos de Entrada</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="inputBg" name="inputBg" value="#333333">
-                                    <input type="text" id="inputBgHex" value="#333333" placeholder="#333333">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="inputBorder">Cor da Borda - Campos de Entrada</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="inputBorder" name="inputBorder" value="#555555">
-                                    <input type="text" id="inputBorderHex" value="#555555" placeholder="#555555">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="inputText">Cor do Texto - Campos de Entrada</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="inputText" name="inputText" value="#ffffff">
-                                    <input type="text" id="inputTextHex" value="#ffffff" placeholder="#ffffff">
-                                </div>
-                            </div>
-
-                            <div class="form-actions">
-                                <button type="button" class="btn-primary" onclick="saveThemeSettings()">Salvar Tema</button>
-                                <button type="button" class="btn-secondary" onclick="resetThemeSettings()">Resetar Padrão</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Logo Tab -->
-                <div id="settings-logo" class="settings-tab-content">
-                    <div class="logo-upload-panel">
-                        <div class="current-logo-preview">
-                            <h3>Logo Atual</h3>
-                            <img id="logoPreview" src="assets/images/logo.webp" alt="Logo atual" class="logo-preview-image">
-                        </div>
-                        
-                        <div class="logo-upload-form">
-                            <div class="form-group">
-                                <label for="logoUpload">Carregar Nova Logo</label>
-                                <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(event)">
-                                <p class="form-help">Formatos aceitos: JPG, PNG, WebP, SVG</p>
-                                <p id="logoUploadMessage" class="form-message"></p>
-                            </div>
-                            
-                            <div class="form-actions">
-                                <button type="button" class="btn-primary" onclick="saveCustomLogo()">Salvar Logo</button>
-                                <button type="button" class="btn-secondary" onclick="resetLogo()">Resetar Logo Padrão</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Favicon Upload Section -->
-                    <div class="logo-upload-panel" style="margin-top: 20px;">
-                        <div class="current-logo-preview">
-                            <h3>Favicon Atual</h3>
-                            <img id="faviconPreview" src="assets/images/favicon.webp" alt="Favicon atual" class="logo-preview-image">
-                        </div>
-                        
-                        <div class="logo-upload-form">
-                            <div class="form-group">
-                                <label for="faviconUpload">Carregar Novo Favicon</label>
-                                <input type="file" id="faviconUpload" accept="image/*" onchange="handleFaviconUpload(event)">
-                                <p class="form-help">Formatos aceitos: JPG, PNG, WebP, SVG</p>
-                                <p id="faviconUploadMessage" class="form-message"></p>
-                            </div>
-                            
-                            <div class="form-actions">
-                                <button type="button" class="btn-primary" onclick="saveCustomFavicon()">Salvar Favicon</button>
-                                <button type="button" class="btn-secondary" onclick="resetFavicon()">Resetar Favicon Padrão</button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </section>
@@ -616,8 +399,6 @@
         </div>
     </div>
 
-    <script src="js/storage.js"></script>
-    <script src="js/app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js" integrity="sha512-jEnuDt6jfecCjthQAJ+ed0MTVA++5ZKmlUcmDGBv2vUI/REn6FuIdixLNnQT+vKusE2hhTk2is3cFvv5wA+Sgg==" crossorigin="anonymous"></script>
+    <script src="dashboard.js?v=20260520-public-safe"></script>
 </body>
 </html>

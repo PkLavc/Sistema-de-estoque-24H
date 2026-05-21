@@ -1,0 +1,28 @@
+{
+  "name": "controle-estoque-equipamentos",
+  "version": "1.0.0",
+  "description": "Sistema de controle de estoque de equipamentos com login e banco de dados",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "dev:worker": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "cf:typegen": "wrangler types",
+    "export:d1": "node scripts/export-sqlite-to-d1.js",
+    "backup:sqlite": "node scripts/create-sqlite-backup.js",
+    "hash:secret": "node scripts/generate-bcrypt-hash.js"
+  },
+  "keywords": ["estoque", "equipamentos", "controle", "nodejs", "sqlite"],
+  "author": "Desenvolvedor",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "wrangler": "^4.11.1"
+  }
+}

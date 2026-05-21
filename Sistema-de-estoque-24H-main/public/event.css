@@ -52,7 +52,7 @@ body {
 
 .btn-primary {
     padding: 12px 30px;
-    background: linear-gradient(45deg, var(--primary), var(--primary-2));
+    background: linear-gradient(45deg, #ff3333, #cc0000);
     border: none;
     border-radius: 8px;
     color: white;
@@ -64,23 +64,23 @@ body {
 }
 
 .btn-primary:hover {
-    background: linear-gradient(45deg, var(--primary-2), var(--primary-3));
+    background: linear-gradient(45deg, #cc0000, #990000);
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
 }
 
 .btn-primary.active {
-    background: linear-gradient(45deg, var(--primary-2), var(--primary-3));
+    background: linear-gradient(45deg, #cc0000, #990000);
     box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
     transform: translateY(-2px);
 }
 
 .btn-secondary {
     padding: 12px 30px;
-    background: var(--secondary-btn-bg);
-    border: 1px solid var(--secondary-btn-border);
+    background: #333;
+    border: 1px solid #555;
     border-radius: 8px;
-    color: var(--secondary-btn-text);
+    color: #ccc;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -89,13 +89,13 @@ body {
 }
 
 .btn-secondary:hover {
-    background: color-mix(in srgb, var(--secondary-btn-bg) 80%, var(--primary) 20%);
+    background: #444;
     color: #fff;
-    border-color: var(--secondary-btn-border);
+    border-color: #666;
 }
 
 .btn-secondary.active {
-    background: linear-gradient(45deg, var(--primary), var(--primary-2));
+    background: linear-gradient(45deg, #ff3333, #cc0000);
     color: white;
     border: none;
     box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);

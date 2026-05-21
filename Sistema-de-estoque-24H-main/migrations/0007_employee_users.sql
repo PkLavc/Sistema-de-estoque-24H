@@ -1,0 +1,2 @@
+-- Usuarios reais nao sao semeados no repositorio publico.
+-- Cadastre e altere usuarios pela tela Logins no ambiente de producao.

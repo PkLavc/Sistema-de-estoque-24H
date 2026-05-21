@@ -12,7 +12,7 @@ body {
     overflow-x: auto;
 }
 
-.dashboard-container {
+.app-container {
     display: flex;
     min-height: 100vh;
     min-width: 1280px;
@@ -268,7 +268,7 @@ textarea:focus {
 
 .btn-primary {
     padding: 12px 30px;
-    background: linear-gradient(45deg, #ff3333, #cc0000);
+    background: linear-gradient(45deg, var(--primary), var(--primary-2));
     border: none;
     border-radius: 8px;
     color: white;
@@ -280,7 +280,7 @@ textarea:focus {
 }
 
 .btn-primary:hover {
-    background: linear-gradient(45deg, #cc0000, #990000);
+    background: linear-gradient(45deg, var(--primary-2), var(--primary-3));
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
 }
@@ -298,10 +298,10 @@ textarea:focus {
 .btn-danger,
 .search-button {
     padding: 12px 30px;
-    background: #333;
-    border: 1px solid #555;
+    background: var(--secondary-btn-bg);
+    border: 1px solid var(--secondary-btn-border);
     border-radius: 8px;
-    color: #ccc;
+    color: var(--secondary-btn-text);
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -312,9 +312,9 @@ textarea:focus {
 .btn-secondary:hover,
 .btn-danger:hover,
 .search-button:hover {
-    background: #444;
+    background: color-mix(in srgb, var(--secondary-btn-bg) 80%, var(--primary) 20%);
     color: #fff;
-    border-color: #666;
+    border-color: var(--secondary-btn-border);
 }
 
 .btn-small {
@@ -889,7 +889,7 @@ textarea {
         overflow-x: hidden;
     }
 
-    .dashboard-container {
+    .app-container {
         min-width: 0;
         width: 100%;
         flex-direction: column;

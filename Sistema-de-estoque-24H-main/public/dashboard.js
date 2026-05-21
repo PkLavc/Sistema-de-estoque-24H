@@ -1,121 +1,3 @@
-// Lottie animations initialization
-const lottieAnimations = {};
-
-function initializeLottieIcons() {
-    const lottieConfigs = {
-        'lottie-home': '/assets/lottie/home.json',
-        'lottie-rental': '/assets/lottie/rental.json',
-        'lottie-maintenance': '/assets/lottie/maintenance.json',
-        'lottie-database': '/assets/lottie/database.json',
-        'lottie-plus': '/assets/lottie/plus.json',
-        'lottie-historical': '/assets/lottie/historical.json',
-        'lottie-exit': '/assets/lottie/exit.json',
-        'lottie-settings': '/assets/lottie/settings.json',
-        'lottie-home-preview': '/assets/lottie/home.json'
-    };
-
-    Object.entries(lottieConfigs).forEach(([id, path]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            lottieAnimations[id] = lottie.loadAnimation({
-                container: element,
-                renderer: 'svg',
-                loop: false,
-                autoplay: false,
-                path: path
-            });
-            
-            // Play animation on parent hover (except for preview)
-            if (!id.includes('preview')) {
-                const parent = element.closest('.menu-item');
-                if (parent) {
-                    parent.addEventListener('mouseenter', () => {
-                        lottieAnimations[id].goToAndPlay(0);
-                    });
-                }
-            }
-        }
-    });
-}
-
-// Theme and customization from localStorage
-function applyCustomTheme() {
-    const primaryColor = localStorage.getItem('theme-primary-color') || '#ff3333';
-    const secondaryColor = localStorage.getItem('theme-secondary-color') || '#cc0000';
-    const customLogo = localStorage.getItem('custom-logo');
-    const customFavicon = localStorage.getItem('custom-favicon');
-    
-    // Apply colors
-    document.documentElement.style.setProperty('--primary', primaryColor);
-    document.documentElement.style.setProperty('--secondary', secondaryColor);
-    document.documentElement.style.setProperty('--primary-2', secondaryColor);
-    
-    // Apply custom logo if exists
-    if (customLogo) {
-        const logoImg = document.getElementById('customLogo');
-        if (logoImg) {
-            logoImg.src = customLogo;
-        }
-    }
-    
-    // Apply custom favicon if exists, otherwise use default
-    if (customFavicon) {
-        updateFavicon(customFavicon);
-    } else {
-        // Ensure default favicon is loaded if no custom one exists
-        updateFavicon('/assets/images/favicon.webp');
-    }
-    
-    // Update Lottie animation colors dynamically
-    updateLottieColors(primaryColor, secondaryColor);
-}
-
-// Function to update Lottie animation colors
-function updateLottieColors(primaryColor, secondaryColor) {
-    // Convert hex colors to RGB arrays for Lottie
-    const hexToRgbArray = (hex) => {
-        hex = hex.replace('#', '');
-        const r = parseInt(hex.substr(0, 2), 16) / 255;
-        const g = parseInt(hex.substr(2, 2), 16) / 255;
-        const b = parseInt(hex.substr(4, 2), 16) / 255;
-        return [r, g, b, 1];
-    };
-    
-    const primaryRgb = hexToRgbArray(primaryColor);
-    const secondaryRgb = hexToRgbArray(secondaryColor);
-    
-    // Update all loaded Lottie animations
-    Object.keys(lottieAnimations).forEach(key => {
-        const animation = lottieAnimations[key];
-        if (animation && animation.renderer && animation.renderer.elements) {
-            try {
-                // Recursively update colors in the animation data
-                const updateColors = (element) => {
-                    if (element.shape && element.shape.c) {
-                        // Check if it's marked as primary or secondary
-                        const isPrimary = element.data?.cl === 'primary' || element.data?.nm === '.primary';
-                        const isSecondary = element.data?.cl === 'secondary' || element.data?.nm === '.secondary';
-                        
-                        if (isPrimary) {
-                            element.shape.c.k = secondaryRgb; // Using secondaryColor for primary class
-                        } else if (isSecondary) {
-                            element.shape.c.k = primaryRgb; // Using primaryColor for secondary class
-                        }
-                    }
-                    
-                    if (element.elements) {
-                        element.elements.forEach(updateColors);
-                    }
-                };
-                
-                animation.renderer.elements.forEach(updateColors);
-            } catch (e) {
-                console.log('Could not update Lottie colors for', key, e);
-            }
-        }
-    });
-}
-
 const EQUIPMENT_CATEGORIES = [
     'Tripe',
     'Caixa de som',
@@ -445,7 +327,7 @@ async function loadRentalReturnAlerts() {
             credentials: 'include'
         });
         if (response.status === 401) {
-            window.location.href = '/login/';
+            window.location.href = '/login.html';
             return;
         }
         if (!response.ok) return;
@@ -634,7 +516,7 @@ async function loadEvents() {
     try {
         const response = await fetch('/api/events', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login/';
+            window.location.href = '/login.html';
             return;
         }
 
@@ -690,7 +572,7 @@ async function loadRentalEvents() {
     try {
         const response = await fetch('/api/rental-events', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login/';
+            window.location.href = '/login.html';
             return;
         }
 
@@ -773,7 +655,7 @@ async function loadHistoryEvents() {
     try {
         const response = await fetch('/api/history-events', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login/';
+            window.location.href = '/login.html';
             return;
         }
         if (!response.ok) return;
@@ -861,7 +743,7 @@ async function loadEquipments(search = '') {
     try {
         const response = await fetch(`/api/equipments?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login/';
+            window.location.href = '/login.html';
             return;
         }
 
@@ -907,7 +789,7 @@ async function loadMaintenanceEquipments() {
     try {
         const response = await fetch('/api/equipments', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login/';
+            window.location.href = '/login.html';
             return;
         }
 
@@ -1197,7 +1079,7 @@ async function loadCables(search = '') {
     try {
         const response = await fetch(`/api/cables?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login/';
+            window.location.href = '/login.html';
             return;
         }
 
@@ -1286,7 +1168,7 @@ async function loadOtherItems(search = '') {
     try {
         const response = await fetch(`/api/other-items?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login/';
+            window.location.href = '/login.html';
             return;
         }
 
@@ -1301,7 +1183,7 @@ async function loadMaintenanceCables() {
     try {
         const response = await fetch('/api/cables', { credentials: 'include' });
         if (response.status === 401) {
-            window.location.href = '/login/';
+            window.location.href = '/login.html';
             return;
         }
 
@@ -1314,18 +1196,6 @@ async function loadMaintenanceCables() {
 }
 
 async function logout() {
-    const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
-    
-    if (isGuestMode) {
-        // Guest mode - just clear localStorage and redirect
-        if (confirm('Tem certeza que deseja sair? Todos os dados locais serão mantidos.')) {
-            localStorage.removeItem('isGuestMode');
-            window.location.href = '/login/';
-        }
-        return;
-    }
-    
-    // Server logout for authenticated users
     try {
         const response = await fetch('/api/logout', {
             method: 'POST',
@@ -1339,7 +1209,7 @@ async function logout() {
 
         clearPendingItems();
         clearRelacaoContext();
-        window.location.href = '/login/';
+        window.location.href = '/login.html';
     } catch (error) {
         console.error(error);
         alert('Erro de conexao.');
@@ -1919,77 +1789,16 @@ async function deleteLoginUser(userId) {
 }
 
 async function checkAuth() {
-    // Check if in guest mode from localStorage (for GitHub Pages)
-    const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
-    
-    if (isGuestMode) {
-        // Guest mode - no server authentication needed
-        if (typeof storage !== 'undefined') {
-            storage.setGuestMode(true);
-        }
-        
-        currentUser = { 
-            userId: null, 
-            username: 'Convidado', 
-            isAdmin: false,
-            isGuest: true,
-            role: 'guest'
-        };
-        
-        updateLogoutButton();
-        applyLoginManagementVisibility();
-        return;
-    }
-    
-    // Try server authentication (only for non-GitHub Pages deployments)
     try {
         const res = await fetch('/api/auth/status', { credentials: 'include' });
         const data = await res.json();
-        if (!data.authenticated) {
-            window.location.href = '/login/';
-            return;
-        }
-        
-        // Set guest mode in storage
-        const isGuest = data.isGuest || false;
-        if (typeof storage !== 'undefined') {
-            storage.setGuestMode(isGuest);
-        }
-        
+        if (!data.authenticated) window.location.href = '/login.html';
         currentUser = data.authenticated
-            ? { 
-                userId: data.userId || null, 
-                username: data.username || '', 
-                isAdmin: !!data.isAdmin,
-                isGuest: isGuest,
-                role: isGuest ? 'guest' : (data.isAdmin ? 'admin' : 'user')
-            }
+            ? { userId: data.userId || null, username: data.username || '', isAdmin: !!data.isAdmin }
             : null;
-        
-        updateLogoutButton();
         applyLoginManagementVisibility();
     } catch (error) {
-        // Server not available - redirect to login
-        window.location.href = '/login/';
-    }
-}
-
-function updateLogoutButton() {
-    const logoutText = document.getElementById('logout-user-text');
-    if (logoutText && currentUser) {
-        const username = currentUser.username || 'Usuário';
-        logoutText.textContent = `${username} - Sair`;
-        
-        // Remove long-text class first
-        logoutText.classList.remove('long-text');
-        
-        // Use requestAnimationFrame to ensure DOM layout is complete before checking dimensions
-        requestAnimationFrame(() => {
-            // Check if text is too long and add scrolling class
-            if (logoutText.scrollWidth > logoutText.clientWidth) {
-                logoutText.classList.add('long-text');
-            }
-        });
+        window.location.href = '/login.html';
     }
 }
 
@@ -1999,388 +1808,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupMaintenanceModal();
     document.getElementById('createUserForm')?.addEventListener('submit', createLoginUser);
     await checkAuth();
-    loadThemeSettings();
-    initializeLottieIcons();
-    applyCustomTheme();
 
     const urlParams = new URLSearchParams(window.location.search);
     const requestedSection = urlParams.get('section') || window.location.hash.replace('#', '');
-    const allowedSections = ['home', 'cadastro', 'banco', 'eventos', 'historico', 'manutencao', 'locacao', 'config'];
+    const allowedSections = ['home', 'cadastro', 'banco', 'eventos', 'historico', 'manutencao', 'locacao', 'usuarios'];
     const section = allowedSections.includes(requestedSection) ? requestedSection : 'home';
     showSection(section);
-});
-
-function applyTheme(theme) {
-    try {
-        if (!theme) return;
-        const root = document.documentElement;
-        Object.keys(theme).forEach((key) => {
-            if (!theme[key]) return;
-            root.style.setProperty(`--${key}`, theme[key]);
-        });
-    } catch (e) {
-        console.error('Erro aplicando tema', e);
-    }
-}
-
-function saveThemeSettings() {
-    const primary = document.getElementById('primaryColor')?.value || '#ff3333';
-    const primary2 = document.getElementById('primary2Color')?.value || '#cc0000';
-    const bgStart = document.getElementById('bgStart')?.value || '#1a1a1a';
-    const theme = {
-        'primary': primary,
-        'primary-2': primary2,
-        'bg-start': bgStart
-    };
-    localStorage.setItem('appTheme', JSON.stringify(theme));
-    applyTheme(theme);
-}
-
-function loadThemeSettings() {
-    try {
-        const stored = localStorage.getItem('appTheme');
-        if (!stored) return;
-        const theme = JSON.parse(stored);
-        if (!theme) return;
-        
-        if (theme['primary'] && document.getElementById('primaryColor')) document.getElementById('primaryColor').value = theme['primary'];
-        if (theme['primary-2'] && document.getElementById('primary2Color')) document.getElementById('primary2Color').value = theme['primary-2'];
-        if (theme['bg-start'] && document.getElementById('bgStart')) document.getElementById('bgStart').value = theme['bg-start'];
-        if (theme['bg-end'] && document.getElementById('bgEnd')) document.getElementById('bgEnd').value = theme['bg-end'];
-        if (theme['text-color'] && document.getElementById('textColor')) document.getElementById('textColor').value = theme['text-color'];
-        if (theme['secondary-btn-bg'] && document.getElementById('secondaryBtnBg')) document.getElementById('secondaryBtnBg').value = theme['secondary-btn-bg'];
-        if (theme['secondary-btn-border'] && document.getElementById('secondaryBtnBorder')) document.getElementById('secondaryBtnBorder').value = theme['secondary-btn-border'];
-        if (theme['secondary-btn-text'] && document.getElementById('secondaryBtnText')) document.getElementById('secondaryBtnText').value = theme['secondary-btn-text'];
-        if (theme['component-bg'] && document.getElementById('componentBg')) document.getElementById('componentBg').value = theme['component-bg'];
-        if (theme['inner-component-bg'] && document.getElementById('innerComponentBg')) document.getElementById('innerComponentBg').value = theme['inner-component-bg'];
-        if (theme['input-bg'] && document.getElementById('inputBg')) document.getElementById('inputBg').value = theme['input-bg'];
-        if (theme['input-border'] && document.getElementById('inputBorder')) document.getElementById('inputBorder').value = theme['input-border'];
-        if (theme['input-text'] && document.getElementById('inputText')) document.getElementById('inputText').value = theme['input-text'];
-        
-        applyTheme(theme);
-    } catch (e) { console.error(e); }
-}
-
-// Settings tabs management
-function showSettingsTab(tabName) {
-    // Hide all tab contents
-    document.querySelectorAll('.settings-tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    
-    // Remove active class from all tabs
-    document.querySelectorAll('.settings-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    
-    // Show selected tab content
-    const content = document.getElementById(`settings-${tabName}`);
-    if (content) {
-        content.classList.add('active');
-    }
-    
-    // Mark clicked tab as active - find it by the onclick attribute
-    document.querySelectorAll('.settings-tab').forEach(tab => {
-        if (tab.getAttribute('onclick')?.includes(tabName)) {
-            tab.classList.add('active');
-        }
-    });
-}
-
-// Enhanced theme settings
-function saveThemeSettings() {
-    const primary = document.getElementById('primaryColor')?.value || '#ff3333';
-    const primary2 = document.getElementById('primary2Color')?.value || '#cc0000';
-    const bgStart = document.getElementById('bgStart')?.value || '#1a1a1a';
-    const bgEnd = document.getElementById('bgEnd')?.value || '#000000';
-    const textColor = document.getElementById('textColor')?.value || '#cccccc';
-    const secondaryBtnBg = document.getElementById('secondaryBtnBg')?.value || '#444444';
-    const secondaryBtnBorder = document.getElementById('secondaryBtnBorder')?.value || '#555555';
-    const secondaryBtnText = document.getElementById('secondaryBtnText')?.value || '#cccccc';
-    const componentBg = document.getElementById('componentBg')?.value || '#2a2a2a';
-    const innerComponentBg = document.getElementById('innerComponentBg')?.value || '#1a1a1a';
-    const inputBg = document.getElementById('inputBg')?.value || '#333333';
-    const inputBorder = document.getElementById('inputBorder')?.value || '#555555';
-    const inputText = document.getElementById('inputText')?.value || '#ffffff';
-    
-    const theme = {
-        'primary': primary,
-        'primary-2': primary2,
-        'bg-start': bgStart,
-        'bg-end': bgEnd,
-        'text-color': textColor,
-        'secondary-btn-bg': secondaryBtnBg,
-        'secondary-btn-border': secondaryBtnBorder,
-        'secondary-btn-text': secondaryBtnText,
-        'component-bg': componentBg,
-        'inner-component-bg': innerComponentBg,
-        'input-bg': inputBg,
-        'input-border': inputBorder,
-        'input-text': inputText
-    };
-    
-    // Save to localStorage
-    localStorage.setItem('theme-primary-color', primary);
-    localStorage.setItem('theme-secondary-color', primary2);
-    localStorage.setItem('theme-bg-start', bgStart);
-    localStorage.setItem('theme-bg-end', bgEnd);
-    localStorage.setItem('theme-text-color', textColor);
-    localStorage.setItem('theme-secondary-btn-bg', secondaryBtnBg);
-    localStorage.setItem('theme-secondary-btn-border', secondaryBtnBorder);
-    localStorage.setItem('theme-secondary-btn-text', secondaryBtnText);
-    localStorage.setItem('theme-component-bg', componentBg);
-    localStorage.setItem('theme-inner-component-bg', innerComponentBg);
-    localStorage.setItem('theme-input-bg', inputBg);
-    localStorage.setItem('theme-input-border', inputBorder);
-    localStorage.setItem('theme-input-text', inputText);
-    localStorage.setItem('appTheme', JSON.stringify(theme));
-    
-    // Apply theme immediately
-    applyTheme(theme);
-    applyCustomTheme();
-    updateColorInputs();
-    alert('Tema salvo com sucesso!');
-}
-
-function resetThemeSettings() {
-    localStorage.removeItem('appTheme');
-    localStorage.removeItem('theme-primary-color');
-    localStorage.removeItem('theme-secondary-color');
-    localStorage.removeItem('theme-bg-start');
-    localStorage.removeItem('theme-bg-end');
-    localStorage.removeItem('theme-text-color');
-    localStorage.removeItem('theme-secondary-btn-bg');
-    localStorage.removeItem('theme-secondary-btn-border');
-    localStorage.removeItem('theme-secondary-btn-text');
-    localStorage.removeItem('theme-component-bg');
-    localStorage.removeItem('theme-inner-component-bg');
-    localStorage.removeItem('theme-input-bg');
-    localStorage.removeItem('theme-input-border');
-    localStorage.removeItem('theme-input-text');
-    
-    const defaultTheme = {
-        'primary': '#ff3333',
-        'primary-2': '#cc0000',
-        'bg-start': '#1a1a1a',
-        'bg-end': '#000000',
-        'text-color': '#cccccc',
-        'secondary-btn-bg': '#444444',
-        'secondary-btn-border': '#555555',
-        'secondary-btn-text': '#cccccc',
-        'component-bg': '#2a2a2a',
-        'inner-component-bg': '#1a1a1a',
-        'input-bg': '#333333',
-        'input-border': '#555555',
-        'input-text': '#ffffff'
-    };
-    
-    document.getElementById('primaryColor').value = defaultTheme['primary'];
-    document.getElementById('primary2Color').value = defaultTheme['primary-2'];
-    document.getElementById('bgStart').value = defaultTheme['bg-start'];
-    document.getElementById('bgEnd').value = defaultTheme['bg-end'];
-    document.getElementById('textColor').value = defaultTheme['text-color'];
-    document.getElementById('secondaryBtnBg').value = defaultTheme['secondary-btn-bg'];
-    document.getElementById('secondaryBtnBorder').value = defaultTheme['secondary-btn-border'];
-    document.getElementById('secondaryBtnText').value = defaultTheme['secondary-btn-text'];
-    document.getElementById('componentBg').value = defaultTheme['component-bg'];
-    document.getElementById('innerComponentBg').value = defaultTheme['inner-component-bg'];
-    document.getElementById('inputBg').value = defaultTheme['input-bg'];
-    document.getElementById('inputBorder').value = defaultTheme['input-border'];
-    document.getElementById('inputText').value = defaultTheme['input-text'];
-    
-    applyTheme(defaultTheme);
-    updateColorInputs();
-    alert('Tema resetado para o padrão!');
-}
-
-function updateColorInputs() {
-    // Sync color picker with text input (just update values, listeners are set up once on DOMContentLoaded)
-    ['primary', 'primary2', 'bgStart', 'bgEnd', 'textColor', 'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText', 'componentBg', 'innerComponentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(name => {
-        const colorInput = document.getElementById(name + 'Color');
-        const hexInput = document.getElementById(name + 'ColorHex');
-        if (colorInput && hexInput) {
-            hexInput.value = colorInput.value;
-        }
-    });
-}
-
-// Logo upload handling
-let pendingLogoData = null;
-
-function handleLogoUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    // Check file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
-    if (!validTypes.includes(file.type)) {
-        document.getElementById('logoUploadMessage').textContent = 'Formato de arquivo invalido. Use JPG, PNG, WebP ou SVG.';
-        return;
-    }
-    
-    // Check file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-        document.getElementById('logoUploadMessage').textContent = 'Arquivo muito grande. Tamanho maximo: 2MB.';
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        pendingLogoData = e.target.result;
-        document.getElementById('logoPreview').src = pendingLogoData;
-        document.getElementById('logoUploadMessage').textContent = 'Logo carregada. Clique em "Salvar Logo" para aplicar.';
-        document.getElementById('logoUploadMessage').style.color = '#4CAF50';
-    };
-    reader.readAsDataURL(file);
-}
-
-function saveCustomLogo() {
-    if (!pendingLogoData) {
-        alert('Nenhuma logo foi carregada.');
-        return;
-    }
-    
-    // Check if user is guest or admin
-    const isGuest = currentUser?.role === 'guest';
-    const isAdmin = currentUser?.role === 'admin';
-    
-    if (!isGuest && !isAdmin) {
-        alert('Apenas administradores e convidados podem alterar a logo.');
-        return;
-    }
-    
-    // Save to localStorage (works for both guest and admin)
-    // TODO: Add server-side persistence for admin users when backend support is added
-    localStorage.setItem('custom-logo', pendingLogoData);
-    
-    // Apply to sidebar logo
-    const sidebarLogo = document.getElementById('customLogo');
-    if (sidebarLogo) {
-        sidebarLogo.src = pendingLogoData;
-    }
-    
-    // Note: Favicon is managed separately
-    
-    pendingLogoData = null;
-    alert('Logo salva com sucesso!');
-}
-
-function updateFavicon(logoData) {
-    // Remove existing favicon links
-    const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
-    existingFavicons.forEach(link => link.remove());
-    
-    // Create new favicon link
-    const link = document.createElement('link');
-    link.rel = 'icon';
-    link.type = 'image/webp';
-    link.href = logoData;
-    document.head.appendChild(link);
-}
-
-function resetLogo() {
-    localStorage.removeItem('custom-logo');
-    const defaultLogoSrc = '/assets/images/logo.webp';
-    
-    document.getElementById('logoPreview').src = defaultLogoSrc;
-    const sidebarLogo = document.getElementById('customLogo');
-    if (sidebarLogo) {
-        sidebarLogo.src = defaultLogoSrc;
-    }
-    
-    // Note: Favicon is managed separately
-    
-    pendingLogoData = null;
-    alert('Logo resetada para o padrão!');
-}
-
-// Favicon upload handling
-let pendingFaviconData = null;
-
-function handleFaviconUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    // Check file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
-    if (!validTypes.includes(file.type)) {
-        document.getElementById('faviconUploadMessage').textContent = 'Formato de arquivo invalido. Use JPG, PNG, WebP ou SVG.';
-        return;
-    }
-    
-    // Check file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-        document.getElementById('faviconUploadMessage').textContent = 'Arquivo muito grande. Tamanho maximo: 2MB.';
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        pendingFaviconData = e.target.result;
-        document.getElementById('faviconPreview').src = pendingFaviconData;
-        document.getElementById('faviconUploadMessage').textContent = 'Favicon carregado. Clique em "Salvar Favicon" para aplicar.';
-        document.getElementById('faviconUploadMessage').style.color = '#4CAF50';
-    };
-    reader.readAsDataURL(file);
-}
-
-function saveCustomFavicon() {
-    if (!pendingFaviconData) {
-        alert('Nenhum favicon foi carregado.');
-        return;
-    }
-    
-    // Check if user is guest or admin
-    const isGuest = currentUser?.role === 'guest';
-    const isAdmin = currentUser?.role === 'admin';
-    
-    if (!isGuest && !isAdmin) {
-        alert('Apenas administradores e convidados podem alterar o favicon.');
-        return;
-    }
-    
-    // Save to localStorage (works for both guest and admin)
-    localStorage.setItem('custom-favicon', pendingFaviconData);
-    
-    // Update favicon
-    updateFavicon(pendingFaviconData);
-    
-    pendingFaviconData = null;
-    alert('Favicon salvo com sucesso!');
-}
-
-function resetFavicon() {
-    localStorage.removeItem('custom-favicon');
-    const defaultFaviconSrc = '/assets/images/favicon.webp';
-    
-    document.getElementById('faviconPreview').src = defaultFaviconSrc;
-    
-    // Reset favicon to default
-    updateFavicon(defaultFaviconSrc);
-    
-    pendingFaviconData = null;
-    alert('Favicon resetado para o padrão!');
-}
-
-
-// Initialize color input sync
-document.addEventListener('DOMContentLoaded', () => {
-    // Sync color pickers with text inputs
-    ['primary', 'primary2', 'bgStart', 'bgEnd', 'textColor', 'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText', 'componentBg', 'innerComponentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(name => {
-        const colorInput = document.getElementById(name + 'Color');
-        const hexInput = document.getElementById(name + 'ColorHex');
-        
-        if (colorInput && hexInput) {
-            colorInput.addEventListener('input', () => {
-                hexInput.value = colorInput.value;
-            });
-            
-            hexInput.addEventListener('input', () => {
-                if (/^#[0-9A-F]{6}$/i.test(hexInput.value)) {
-                    colorInput.value = hexInput.value;
-                }
-            });
-        }
-    });
 });
 

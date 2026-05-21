@@ -1,17 +1,17 @@
 // Check authentication status
 async function checkAuth() {
     try {
-        const response = await fetch('/api/auth/status');
+        const response = await fetch('../api/auth/status');
         const data = await response.json();
         
         if (data.authenticated === true) {
-            window.location.href = '/';
+            window.location.href = '../';
         }
     } catch (error) {
         // Server not available - could be GitHub Pages
         // Check if already in guest mode
         if (localStorage.getItem('isGuestMode') === 'true') {
-            window.location.href = '/';
+            window.location.href = '../';
         }
     }
 }
@@ -19,14 +19,14 @@ async function checkAuth() {
 // Regular user login
 async function login(username, password) {
     try {
-        const response = await fetch('/api/login', {
+        const response = await fetch('../api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
 
         if (response.ok) {
-            window.location.href = '/';
+            window.location.href = '../';
         } else {
             showError('Usuário ou senha incorretos');
         }
@@ -39,9 +39,9 @@ async function login(username, password) {
 async function guestLogin() {
     try {
         // Try server-based guest login first (for Cloudflare)
-        const response = await fetch('/api/login/guest', { method: 'POST' });
+        const response = await fetch('../api/login/guest', { method: 'POST' });
         if (response.ok) {
-            window.location.href = '/';
+            window.location.href = '../';
             return;
         }
     } catch (err) {
@@ -50,7 +50,7 @@ async function guestLogin() {
     
     // Fallback to localStorage guest mode
     localStorage.setItem('isGuestMode', 'true');
-    window.location.href = '/';
+    window.location.href = '../';
 }
 
 function showError(message) {

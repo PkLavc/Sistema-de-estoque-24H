@@ -11,11 +11,34 @@
     --secondary-btn-bg: #444;
     --secondary-btn-border: #555;
     --secondary-btn-text: #ccc;
-    --component-bg: #2a2a2a;
+    --component-bg: transparent;
     --inner-component-bg: #1a1a1a;
     --input-bg: #333;
     --input-border: #555;
     --input-text: #fff;
+}
+
+html, body, .app-container, .sidebar, .menu, .list-container, .equipment-list, .event-container, .container, .maintenance-list-card {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 8px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-2);
 }
 
 /* Apply primary color to all red elements */
@@ -30,6 +53,32 @@
 .floating-create-button:hover,
 .auth-mode .mode.active:hover{
     background: linear-gradient(45deg, var(--primary-2), var(--primary-3)) !important;
+}
+
+.btn-primary.active {
+    background: linear-gradient(45deg, var(--primary-2), var(--primary-3)) !important;
+}
+
+.btn-secondary,
+.btn-danger,
+.search-button {
+    background: var(--secondary-btn-bg) !important;
+    border: 1px solid var(--secondary-btn-border) !important;
+    color: var(--secondary-btn-text) !important;
+}
+
+.btn-secondary:hover,
+.btn-danger:hover,
+.search-button:hover {
+    background: color-mix(in srgb, var(--secondary-btn-bg) 80%, var(--primary) 20%) !important;
+    color: white !important;
+    border-color: var(--secondary-btn-border) !important;
+}
+
+.btn-secondary.active {
+    background: linear-gradient(45deg, var(--primary), var(--primary-2)) !important;
+    border-color: transparent !important;
+    color: white !important;
 }
 
 /* Borders, text colors and highlights */
@@ -79,7 +128,7 @@ textarea:focus,
 }
 
 /* Panels and inputs */
-.login-box, .dashboard-container, .database-view, .maintenance-list-card { background: var(--panel-bg) !important; }
+.login-box, .app-container, .database-view, .maintenance-list-card { background: var(--panel-bg) !important; }
 .sidebar { background: var(--bg-start) !important; }
 .main-content { background: var(--bg-end) !important; }
 body{ background: var(--bg-end) !important; }
@@ -117,7 +166,7 @@ label, .form-help, .modal-subtitle, .form-message { color: var(--text-color) !im
 .database-view-card,
 .config-panel,
 .logo-upload-panel {
-    background: var(--component-bg) !important;
+    background: transparent !important;
 }
 
 /* Inner component backgrounds */

@@ -48,7 +48,7 @@ class DataStorage {
         if (this.isGuest) {
             return this._loadFromLocalStorage('events') || [];
         }
-        const response = await fetch('/api/events');
+        const response = await fetch('api/events');
         return response.json();
     }
 
@@ -60,7 +60,7 @@ class DataStorage {
             this._saveToLocalStorage('events', events);
             return { success: true, event };
         }
-        const response = await fetch('/api/events', {
+        const response = await fetch('api/events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(event)
@@ -79,7 +79,7 @@ class DataStorage {
             }
             return { success: false, error: 'Event not found' };
         }
-        const response = await fetch(`/api/events/${id}`, {
+        const response = await fetch(`api/events/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates)
@@ -94,7 +94,7 @@ class DataStorage {
             this._saveToLocalStorage('events', events);
             return { success: true };
         }
-        const response = await fetch(`/api/events/${id}`, {
+        const response = await fetch(`api/events/${id}`, {
             method: 'DELETE'
         });
         return response.json();
@@ -105,7 +105,7 @@ class DataStorage {
         if (this.isGuest) {
             return this._loadFromLocalStorage('equipments') || [];
         }
-        const response = await fetch('/api/equipments');
+        const response = await fetch('api/equipments');
         return response.json();
     }
 
@@ -117,7 +117,7 @@ class DataStorage {
             this._saveToLocalStorage('equipments', equipments);
             return { success: true, equipment };
         }
-        const response = await fetch('/api/equipments', {
+        const response = await fetch('api/equipments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(equipment)
@@ -136,7 +136,7 @@ class DataStorage {
             }
             return { success: false, error: 'Equipment not found' };
         }
-        const response = await fetch(`/api/equipments/${id}`, {
+        const response = await fetch(`api/equipments/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates)
@@ -151,7 +151,7 @@ class DataStorage {
             this._saveToLocalStorage('equipments', equipments);
             return { success: true };
         }
-        const response = await fetch(`/api/equipments/${id}`, {
+        const response = await fetch(`api/equipments/${id}`, {
             method: 'DELETE'
         });
         return response.json();
@@ -162,7 +162,7 @@ class DataStorage {
         if (this.isGuest) {
             return this._loadFromLocalStorage('cables') || [];
         }
-        const response = await fetch('/api/cables');
+        const response = await fetch('api/cables');
         return response.json();
     }
 
@@ -174,7 +174,7 @@ class DataStorage {
             this._saveToLocalStorage('cables', cables);
             return { success: true, cable };
         }
-        const response = await fetch('/api/cables', {
+        const response = await fetch('api/cables', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(cable)
@@ -193,7 +193,7 @@ class DataStorage {
             }
             return { success: false, error: 'Cable not found' };
         }
-        const response = await fetch(`/api/cables/${id}`, {
+        const response = await fetch(`api/cables/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates)
@@ -208,7 +208,7 @@ class DataStorage {
             this._saveToLocalStorage('cables', cables);
             return { success: true };
         }
-        const response = await fetch(`/api/cables/${id}`, {
+        const response = await fetch(`api/cables/${id}`, {
             method: 'DELETE'
         });
         return response.json();
@@ -219,7 +219,7 @@ class DataStorage {
         if (this.isGuest) {
             return this._loadFromLocalStorage('otherItems') || [];
         }
-        const response = await fetch('/api/other-items');
+        const response = await fetch('api/other-items');
         return response.json();
     }
 
@@ -231,7 +231,7 @@ class DataStorage {
             this._saveToLocalStorage('otherItems', items);
             return { success: true, item };
         }
-        const response = await fetch('/api/other-items', {
+        const response = await fetch('api/other-items', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(item)
@@ -250,7 +250,7 @@ class DataStorage {
             }
             return { success: false, error: 'Item not found' };
         }
-        const response = await fetch(`/api/other-items/${id}`, {
+        const response = await fetch(`api/other-items/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates)
@@ -265,7 +265,7 @@ class DataStorage {
             this._saveToLocalStorage('otherItems', items);
             return { success: true };
         }
-        const response = await fetch(`/api/other-items/${id}`, {
+        const response = await fetch(`api/other-items/${id}`, {
             method: 'DELETE'
         });
         return response.json();
@@ -276,7 +276,7 @@ class DataStorage {
         if (this.isGuest) {
             return this._loadFromLocalStorage('users') || [];
         }
-        const response = await fetch('/api/users');
+        const response = await fetch('api/users');
         if (!response.ok) return [];
         return response.json();
     }
@@ -289,7 +289,7 @@ class DataStorage {
             this._saveToLocalStorage('users', users);
             return { success: true, user };
         }
-        const response = await fetch('/api/users', {
+        const response = await fetch('api/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(user)
@@ -311,7 +311,7 @@ class DataStorage {
             }
             return { success: false, error: 'User not found' };
         }
-        const response = await fetch(`/api/users/${userId}/password`, {
+        const response = await fetch(`api/users/${userId}/password`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password: newPassword })
@@ -326,7 +326,7 @@ class DataStorage {
             this._saveToLocalStorage('users', users);
             return { success: true };
         }
-        const response = await fetch(`/api/users/${userId}`, {
+        const response = await fetch(`api/users/${userId}`, {
             method: 'DELETE'
         });
         return response.json();
