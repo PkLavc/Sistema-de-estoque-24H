@@ -2194,24 +2194,12 @@ function resetThemeSettings() {
 }
 
 function updateColorInputs() {
-    // Sync color picker with text input
+    // Sync color picker with text input (just update values, listeners are set up once on DOMContentLoaded)
     ['primary', 'primary2', 'bgStart', 'bgEnd', 'textColor', 'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText', 'componentBg', 'innerComponentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(name => {
         const colorInput = document.getElementById(name + 'Color');
         const hexInput = document.getElementById(name + 'ColorHex');
         if (colorInput && hexInput) {
             hexInput.value = colorInput.value;
-            
-            // Sync both ways: when color picker changes, update text input
-            colorInput.addEventListener('input', function() {
-                hexInput.value = this.value;
-            });
-            
-            // When text input changes, update color picker
-            hexInput.addEventListener('input', function() {
-                if (this.value.match(/^#[0-9A-Fa-f]{6}$/)) {
-                    colorInput.value = this.value;
-                }
-            });
         }
     });
 }
@@ -2378,7 +2366,7 @@ function resetFavicon() {
 // Initialize color input sync
 document.addEventListener('DOMContentLoaded', () => {
     // Sync color pickers with text inputs
-    ['primary', 'primary2', 'bgStart', 'bgEnd'].forEach(name => {
+    ['primary', 'primary2', 'bgStart', 'bgEnd', 'textColor', 'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText', 'componentBg', 'innerComponentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(name => {
         const colorInput = document.getElementById(name + 'Color');
         const hexInput = document.getElementById(name + 'ColorHex');
         
