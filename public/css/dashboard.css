@@ -963,6 +963,11 @@ textarea {
 }
 
 /* Settings Tabs */
+#config .section-header {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+}
+
 .settings-tabs {
     display: flex;
     gap: 10px;

@@ -2190,14 +2190,17 @@ function updateFavicon(logoData) {
 
 function resetLogo() {
     localStorage.removeItem('custom-logo');
-    document.getElementById('logoPreview').src = '/logo.webp';
+    const defaultLogoSrc = '/assets/images/logo.webp';
+    const defaultFaviconSrc = '/assets/images/favicon.webp';
+    
+    document.getElementById('logoPreview').src = defaultLogoSrc;
     const sidebarLogo = document.getElementById('customLogo');
     if (sidebarLogo) {
-        sidebarLogo.src = '/logo.webp';
+        sidebarLogo.src = defaultLogoSrc;
     }
     
     // Reset favicon to default
-    updateFavicon('/logo.webp');
+    updateFavicon(defaultFaviconSrc);
     
     pendingLogoData = null;
     alert('Logo resetada para o padrão!');
