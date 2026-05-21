@@ -12,6 +12,7 @@
     --secondary-btn-border: #555;
     --secondary-btn-text: #ccc;
     --component-bg: #2a2a2a;
+    --inner-component-bg: #1a1a1a;
     --input-bg: #333;
     --input-border: #555;
     --input-text: #fff;
@@ -117,6 +118,15 @@ label, .form-help, .modal-subtitle, .form-message { color: var(--text-color) !im
 .config-panel,
 .logo-upload-panel {
     background: var(--component-bg) !important;
+}
+
+/* Inner component backgrounds */
+.database-view,
+.table-container,
+.form-grid,
+.maintenance-form,
+.maintenance-list-card {
+    background: var(--inner-component-bg) !important;
 }
 
 /* Input fields and search boxes */

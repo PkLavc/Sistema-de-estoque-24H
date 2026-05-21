@@ -2052,6 +2052,7 @@ function loadThemeSettings() {
         if (theme['secondary-btn-border'] && document.getElementById('secondaryBtnBorder')) document.getElementById('secondaryBtnBorder').value = theme['secondary-btn-border'];
         if (theme['secondary-btn-text'] && document.getElementById('secondaryBtnText')) document.getElementById('secondaryBtnText').value = theme['secondary-btn-text'];
         if (theme['component-bg'] && document.getElementById('componentBg')) document.getElementById('componentBg').value = theme['component-bg'];
+        if (theme['inner-component-bg'] && document.getElementById('innerComponentBg')) document.getElementById('innerComponentBg').value = theme['inner-component-bg'];
         if (theme['input-bg'] && document.getElementById('inputBg')) document.getElementById('inputBg').value = theme['input-bg'];
         if (theme['input-border'] && document.getElementById('inputBorder')) document.getElementById('inputBorder').value = theme['input-border'];
         if (theme['input-text'] && document.getElementById('inputText')) document.getElementById('inputText').value = theme['input-text'];
@@ -2097,6 +2098,7 @@ function saveThemeSettings() {
     const secondaryBtnBorder = document.getElementById('secondaryBtnBorder')?.value || '#555555';
     const secondaryBtnText = document.getElementById('secondaryBtnText')?.value || '#cccccc';
     const componentBg = document.getElementById('componentBg')?.value || '#2a2a2a';
+    const innerComponentBg = document.getElementById('innerComponentBg')?.value || '#1a1a1a';
     const inputBg = document.getElementById('inputBg')?.value || '#333333';
     const inputBorder = document.getElementById('inputBorder')?.value || '#555555';
     const inputText = document.getElementById('inputText')?.value || '#ffffff';
@@ -2111,6 +2113,7 @@ function saveThemeSettings() {
         'secondary-btn-border': secondaryBtnBorder,
         'secondary-btn-text': secondaryBtnText,
         'component-bg': componentBg,
+        'inner-component-bg': innerComponentBg,
         'input-bg': inputBg,
         'input-border': inputBorder,
         'input-text': inputText
@@ -2126,6 +2129,7 @@ function saveThemeSettings() {
     localStorage.setItem('theme-secondary-btn-border', secondaryBtnBorder);
     localStorage.setItem('theme-secondary-btn-text', secondaryBtnText);
     localStorage.setItem('theme-component-bg', componentBg);
+    localStorage.setItem('theme-inner-component-bg', innerComponentBg);
     localStorage.setItem('theme-input-bg', inputBg);
     localStorage.setItem('theme-input-border', inputBorder);
     localStorage.setItem('theme-input-text', inputText);
@@ -2149,6 +2153,7 @@ function resetThemeSettings() {
     localStorage.removeItem('theme-secondary-btn-border');
     localStorage.removeItem('theme-secondary-btn-text');
     localStorage.removeItem('theme-component-bg');
+    localStorage.removeItem('theme-inner-component-bg');
     localStorage.removeItem('theme-input-bg');
     localStorage.removeItem('theme-input-border');
     localStorage.removeItem('theme-input-text');
@@ -2163,6 +2168,7 @@ function resetThemeSettings() {
         'secondary-btn-border': '#555555',
         'secondary-btn-text': '#cccccc',
         'component-bg': '#2a2a2a',
+        'inner-component-bg': '#1a1a1a',
         'input-bg': '#333333',
         'input-border': '#555555',
         'input-text': '#ffffff'
@@ -2177,6 +2183,7 @@ function resetThemeSettings() {
     document.getElementById('secondaryBtnBorder').value = defaultTheme['secondary-btn-border'];
     document.getElementById('secondaryBtnText').value = defaultTheme['secondary-btn-text'];
     document.getElementById('componentBg').value = defaultTheme['component-bg'];
+    document.getElementById('innerComponentBg').value = defaultTheme['inner-component-bg'];
     document.getElementById('inputBg').value = defaultTheme['input-bg'];
     document.getElementById('inputBorder').value = defaultTheme['input-border'];
     document.getElementById('inputText').value = defaultTheme['input-text'];
@@ -2188,11 +2195,23 @@ function resetThemeSettings() {
 
 function updateColorInputs() {
     // Sync color picker with text input
-    ['primary', 'primary2', 'bgStart', 'bgEnd', 'textColor', 'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText', 'componentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(name => {
+    ['primary', 'primary2', 'bgStart', 'bgEnd', 'textColor', 'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText', 'componentBg', 'innerComponentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(name => {
         const colorInput = document.getElementById(name + 'Color');
         const hexInput = document.getElementById(name + 'ColorHex');
         if (colorInput && hexInput) {
             hexInput.value = colorInput.value;
+            
+            // Sync both ways: when color picker changes, update text input
+            colorInput.addEventListener('input', function() {
+                hexInput.value = this.value;
+            });
+            
+            // When text input changes, update color picker
+            hexInput.addEventListener('input', function() {
+                if (this.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    colorInput.value = this.value;
+                }
+            });
         }
     });
 }
