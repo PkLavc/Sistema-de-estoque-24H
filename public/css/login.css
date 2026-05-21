@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+    background: linear-gradient(135deg, var(--bg-start, #1a1a1a) 0%, var(--bg-end, #000000) 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -44,7 +44,7 @@ body {
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(45deg, #ff3333, #000000);
+    background: linear-gradient(45deg, var(--primary, #ff3333), var(--bg-end, #000000));
     border-radius: 15px;
     z-index: -1;
     opacity: 0;
@@ -83,7 +83,7 @@ body {
 }
 
 .auth-mode .mode.active {
-    background: linear-gradient(45deg, #ff3333, #cc0000);
+    background: linear-gradient(45deg, var(--primary, #ff3333), var(--primary-2, #cc0000));
     border-color: transparent;
 }
 
@@ -133,7 +133,7 @@ input[type="password"]::placeholder {
 
 input[type="text"]:focus,
 input[type="password"]:focus {
-    border-color: #ff3333;
+    border-color: var(--primary, #ff3333);
     box-shadow: 0 0 10px rgba(255, 51, 51, 0.3);
     background: #333;
 }
@@ -141,7 +141,7 @@ input[type="password"]:focus {
 button {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(45deg, #ff3333, #cc0000);
+    background: linear-gradient(45deg, var(--primary, #ff3333), var(--primary-2, #cc0000));
     border: none;
     border-radius: 8px;
     color: white;
@@ -154,7 +154,7 @@ button {
 }
 
 button:hover {
-    background: linear-gradient(45deg, #cc0000, #990000);
+    background: linear-gradient(45deg, var(--primary-2, #cc0000), var(--primary-3, #990000));
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
 }
