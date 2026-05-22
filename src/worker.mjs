@@ -3,12 +3,7 @@ import bcrypt from 'bcryptjs';
 const SESSION_COOKIE_NAME = 'sessao24h';
 const SESSION_DURATION_SECONDS = 60 * 60 * 24;
 const TEST_USERNAME = 'teste';
-const PROTECTED_PAGES = new Set([
-    '/dashboard.html',
-    '/event.html',
-    '/entrada.html',
-    '/saida.html'
-]);
+const LOGIN_PAGES = new Set(['/login/', '/login/index.html']);
 
 export default {
     async fetch(request, env) {
@@ -31,12 +26,9 @@ async function handlePageRequest(request, env) {
     const url = new URL(request.url);
     const session = await getSessionFromRequest(request, env);
 
-    if ((url.pathname === '/' || url.pathname === '/index.html' || url.pathname === '/login.html') && session) {
-        return Response.redirect(new URL('/dashboard.html', url.origin), 302);
-    }
-
-    if (PROTECTED_PAGES.has(url.pathname) && !session) {
-        return Response.redirect(new URL('/login.html', url.origin), 302);
+    // Redirect authenticated users away from the login page
+    if (LOGIN_PAGES.has(url.pathname) && session) {
+        return Response.redirect(new URL('/', url.origin), 302);
     }
 
     return env.ASSETS.fetch(request);

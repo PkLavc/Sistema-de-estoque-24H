@@ -495,6 +495,7 @@ function closeRentalReturnAlert() {
 }
 
 async function loadRentalReturnAlerts() {
+    if (currentUser?.isGuest) return;
     try {
         const today = getLocalDateString();
         const response = await fetch(`api/rental-return-alerts?today=${encodeURIComponent(today)}`, {
@@ -687,6 +688,7 @@ function renderEvents(events, search = '') {
 }
 
 async function loadEvents() {
+    if (currentUser?.isGuest) return;
     try {
         const response = await fetch('api/events', { credentials: 'include' });
         if (response.status === 401) {
@@ -743,6 +745,7 @@ function renderRentalEvents(events, search = '') {
 }
 
 async function loadRentalEvents() {
+    if (currentUser?.isGuest) return;
     try {
         const response = await fetch('api/rental-events', { credentials: 'include' });
         if (response.status === 401) {
@@ -823,6 +826,7 @@ function renderHistoryEvents(events = allHistoryEvents, rentals = allHistoryRent
 }
 
 async function loadHistoryEvents() {
+    if (currentUser?.isGuest) return;
     try {
         const response = await fetch('api/history-events', { credentials: 'include' });
         if (response.status === 401) {
@@ -911,6 +915,7 @@ function renderEquipments(equipments) {
 }
 
 async function loadEquipments(search = '') {
+    if (currentUser?.isGuest) return;
     try {
         const response = await fetch(`api/equipments?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
@@ -957,6 +962,7 @@ function renderMaintenanceList(equipments) {
 }
 
 async function loadMaintenanceEquipments() {
+    if (currentUser?.isGuest) return;
     try {
         const response = await fetch('api/equipments', { credentials: 'include' });
         if (response.status === 401) {
@@ -1247,6 +1253,7 @@ function renderCableMaintenanceList(cables) {
 }
 
 async function loadCables(search = '') {
+    if (currentUser?.isGuest) return;
     try {
         const response = await fetch(`api/cables?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
@@ -1336,6 +1343,7 @@ function adicionarOutroARelacao(id, name, availableQuantity) {
 }
 
 async function loadOtherItems(search = '') {
+    if (currentUser?.isGuest) return;
     try {
         const response = await fetch(`api/other-items?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
@@ -1351,6 +1359,7 @@ async function loadOtherItems(search = '') {
 }
 
 async function loadMaintenanceCables() {
+    if (currentUser?.isGuest) return;
     try {
         const response = await fetch('api/cables', { credentials: 'include' });
         if (response.status === 401) {
