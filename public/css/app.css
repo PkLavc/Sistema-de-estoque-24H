@@ -22,10 +22,12 @@ body {
     background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
     border-right: 1px solid #333;
     padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     position: fixed;
     height: 100vh;
+    height: 100dvh;
     overflow-y: hidden;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 100;
@@ -999,6 +1001,8 @@ textarea {
         top: 0;
         width: 280px;
         height: 100vh;
+        height: 100dvh;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
         transform: translateX(-100%);
         z-index: 200;
         box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6);
