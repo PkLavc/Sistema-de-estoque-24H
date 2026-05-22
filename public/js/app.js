@@ -308,6 +308,11 @@ function showSection(sectionId) {
         sectionId = 'home';
     }
 
+    // Close mobile sidebar when navigating
+    if (window.innerWidth <= 768) {
+        closeMobileSidebar();
+    }
+
     if (sectionId !== 'banco') {
         clearRelacaoContext();
     }
@@ -1412,8 +1417,20 @@ async function logout() {
 
 function toggleSidebar() {
     const container = document.querySelector('.app-container');
-    const isCollapsed = container.classList.toggle('sidebar-collapsed');
-    localStorage.setItem('sidebarCollapsed', isCollapsed ? '1' : '0');
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+        const isOpen = container.classList.toggle('mobile-sidebar-open');
+        document.getElementById('sidebarBackdrop')?.classList.toggle('active', isOpen);
+    } else {
+        const isCollapsed = container.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', isCollapsed ? '1' : '0');
+    }
+}
+
+function closeMobileSidebar() {
+    document.querySelector('.app-container')?.classList.remove('mobile-sidebar-open');
+    document.getElementById('sidebarBackdrop')?.classList.remove('active');
 }
 
 document.addEventListener('submit', async (e) => {
@@ -2070,7 +2087,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     populateCableCategoryOptions();
     setupMaintenanceModal();
     document.getElementById('createUserForm')?.addEventListener('submit', createLoginUser);
-    if (localStorage.getItem('sidebarCollapsed') === '1') {
+    if (window.innerWidth > 768 && localStorage.getItem('sidebarCollapsed') === '1') {
         document.querySelector('.app-container')?.classList.add('sidebar-collapsed');
     }
     await checkAuth();

@@ -945,7 +945,28 @@ textarea {
     padding: 30px;
 }
 
-@media (max-width: 768px) and (orientation: portrait) {
+/* ================================================
+   MOBILE SIDEBAR BACKDROP
+   ================================================ */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 190;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+}
+
+.sidebar-backdrop.active {
+    display: block;
+}
+
+/* ================================================
+   MOBILE RESPONSIVE (max-width: 768px)
+   ================================================ */
+@media (max-width: 768px) {
     body {
         overflow-x: hidden;
     }
@@ -953,73 +974,217 @@ textarea {
     .app-container {
         min-width: 0;
         width: 100%;
-        flex-direction: column;
     }
 
+    /* Sidebar: full-height overlay, starts closed */
     .sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #333;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 280px;
+        height: 100vh;
+        transform: translateX(-100%);
+        z-index: 200;
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6);
+        border-right: 1px solid #333;
     }
 
+    /* Force sidebar closed regardless of desktop class */
+    .app-container.sidebar-collapsed .sidebar {
+        transform: translateX(-100%);
+    }
+
+    /* Mobile sidebar open state */
+    .app-container.mobile-sidebar-open .sidebar {
+        transform: translateX(0) !important;
+    }
+
+    /* Toggle button: top-left corner (hamburger position) */
+    .sidebar-toggle {
+        left: 0 !important;
+        top: 10px;
+        transform: none;
+        width: 40px;
+        height: 40px;
+        border-left: none;
+        border-radius: 0 8px 8px 0;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Icon points right (→) when sidebar is closed on mobile */
+    .sidebar-toggle-icon {
+        transform: rotate(180deg) !important;
+    }
+
+    /* Icon points left (←) when sidebar is open on mobile */
+    .app-container.mobile-sidebar-open .sidebar-toggle-icon {
+        transform: rotate(0deg) !important;
+    }
+
+    /* Main content: full width with top clearance for toggle btn */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 16px;
+        padding-top: 58px;
+        width: 100%;
+    }
+
+    /* Logo */
     .logo {
-        margin-bottom: 24px;
+        margin-bottom: 16px;
     }
 
     .logo-image {
-        width: min(280px, 80vw);
+        max-width: 180px;
     }
 
-    .main-content {
-        width: 100%;
-        padding: 20px;
-    }
-
-    .section-header,
-    .section-header-content,
-    .search-container,
-    .rental-return-alert-header,
-    .rental-alert-event-title,
-    .history-title-row,
-    .rental-date-row,
-    .maintenance-search-row,
-    .event-actions,
-    .form-actions,
-    .maintenance-list-header,
-    .maintenance-item {
+    /* Section header: stack vertically */
+    .section-header {
         flex-direction: column;
         align-items: stretch;
-    }
-
-    .database-toggle {
-        width: 100%;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
     }
 
     .section-header h1 {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
+    }
+
+    .section-header-content {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Search */
+    .search-container {
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .search-container input {
         width: 100%;
     }
 
+    /* Grids: single column */
     .events-grid,
     .form-grid {
         grid-template-columns: 1fr;
     }
 
+    .database-toggle {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .database-toggle button {
+        flex: 1 1 auto;
+    }
+
+    /* Tables: horizontal scroll */
     .table-container {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 15px;
     }
 
     table {
-        min-width: 720px;
+        min-width: 560px;
+        font-size: 0.85rem;
+    }
+
+    /* Maintenance */
+    .maintenance-search-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
     }
 
     .maintenance-form,
     .maintenance-list-card,
     .form-grid {
-        padding: 20px;
+        padding: 16px;
+    }
+
+    .maintenance-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .maintenance-list-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    /* Event / rental alert */
+    .rental-return-alert-header,
+    .rental-alert-event-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    /* Event card actions */
+    .event-actions {
+        flex-direction: column;
+    }
+
+    .event-actions button {
+        width: 100%;
+    }
+
+    /* Form actions */
+    .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-actions button {
+        width: 100%;
+    }
+
+    /* History */
+    .history-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    /* Rental date row */
+    .rental-date-row {
+        grid-template-columns: 1fr;
+    }
+
+    /* Bottom actions bar */
+    .bottom-actions {
+        padding: 12px 0 0;
+    }
+
+    /* Settings tabs: scrollable */
+    .settings-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .settings-tab {
+        white-space: nowrap;
+        font-size: 0.9rem;
+        padding: 10px 16px;
+    }
+
+    /* Logo upload */
+    .logo-upload-panel {
+        grid-template-columns: 1fr;
+    }
+
+    /* Floating action buttons: larger hit area */
+    .floating-create-button {
+        right: 16px;
+        bottom: 20px;
+        padding: 14px 22px;
+        font-size: 0.9rem;
     }
 }
 
@@ -1223,20 +1388,6 @@ textarea {
     margin-top: 10px;
     font-size: 0.9rem;
     color: var(--primary, #ff3333);
-}
-
-@media (max-width: 768px) {
-    .logo-upload-panel {
-        grid-template-columns: 1fr;
-    }
-    
-    .settings-tabs {
-        overflow-x: auto;
-    }
-    
-    .settings-tab {
-        white-space: nowrap;
-    }
 }
 
 /* Bottom action buttons */

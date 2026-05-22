@@ -21,10 +21,10 @@
                         <span class="lottie-icon" id="lottie-home"></span> Eventos
                     </a></li>
                     <li><a href="#locacao" class="menu-item" onclick="showSection('locacao')">
-                        <span class="lottie-icon" id="lottie-rental"></span> Entrada
+                        <span class="lottie-icon" id="lottie-rental"></span> Locação
                     </a></li>
                     <li><a href="#manutencao" class="menu-item" onclick="showSection('manutencao')">
-                        <span class="lottie-icon" id="lottie-maintenance"></span> Saída
+                        <span class="lottie-icon" id="lottie-maintenance"></span> Manutenção
                     </a></li>
                     <li><a href="#banco" class="menu-item" onclick="showSection('banco')">
                         <span class="lottie-icon" id="lottie-database"></span> Banco de Dados
@@ -572,8 +572,9 @@
             </section>
         </main>
 
-        <button type="button" id="floatingBtnHome" class="floating-create-button" onclick="showSection('eventos')" style="display:none">Criar evento</button>
+        <button type="button" id="floatingBtnHome" class="floating-create-button" onclick="showSection('eventos')" style="display:none">+ Criar evento</button>
         <button type="button" id="floatingBtnLocacao" class="floating-create-button" onclick="openRentalModal()" style="display:none">+ Criar Evento</button>
+        <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
     </div>
 
     <div id="maintenanceModal" class="modal-overlay" style="display: none;">
