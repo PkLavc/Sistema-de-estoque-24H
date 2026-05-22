@@ -21,6 +21,12 @@ jobs:
           rm -rf docs
           cp -r public docs
 
+      - name: Inject build version for cache busting
+        run: |
+          VERSION=$(git rev-parse --short HEAD)
+          find docs -name "*.html" -exec sed -i "s/__BUILD_VERSION__/$VERSION/g" {} \;
+          echo "Injected version: $VERSION"
+
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"

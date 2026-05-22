@@ -24,7 +24,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
+      - name: Inject build version for cache busting
+        run: |
+          VERSION=$(git rev-parse --short HEAD)
+          find public -name "*.html" -exec sed -i "s/__BUILD_VERSION__/$VERSION/g" {} \;
+          echo "Injected version: $VERSION"
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
       

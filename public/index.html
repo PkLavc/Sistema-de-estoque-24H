@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>24h Locacoes</title>
     <link rel="icon" type="image/webp" href="assets/images/favicon.webp">
-    <link rel="stylesheet" href="css/app.css">
-    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/app.css?v=__BUILD_VERSION__">
+    <link rel="stylesheet" href="css/theme.css?v=__BUILD_VERSION__">
 </head>
 <body style="visibility:hidden">
     <div class="app-container">
@@ -387,17 +387,35 @@
 
                             <div class="form-group">
                                 <label for="primaryColor">Cor Principal (Primária)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="primaryColor" name="primary" value="#ff3333">
-                                    <input type="text" id="primaryColorHex" value="#ff3333" placeholder="#ff3333">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="primaryColorSwatch" onclick="openColorPopover('primaryColor')" style="background:#ff3333"></button>
+                                    <input type="text" class="color-hex-display" id="primaryColorHex" value="#ff3333" placeholder="#ff3333">
+                                    <input type="hidden" id="primaryColor" name="primary" value="#ff3333">
+                                    <div class="color-popover" id="primaryColorPopover">
+                                        <input type="color" id="primaryColorPopoverColor" value="#ff3333" oninput="syncPickerToHex('primaryColor')">
+                                        <input type="text" class="color-popover-hex" id="primaryColorPopoverHex" value="#ff3333" oninput="syncPopoverHexToColor('primaryColor')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('primaryColor')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('primaryColor')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label for="primary2Color">Cor Secundária</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="primary2Color" name="primary2" value="#cc0000">
-                                    <input type="text" id="primary2ColorHex" value="#cc0000" placeholder="#cc0000">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="primary2ColorSwatch" onclick="openColorPopover('primary2Color')" style="background:#cc0000"></button>
+                                    <input type="text" class="color-hex-display" id="primary2ColorHex" value="#cc0000" placeholder="#cc0000">
+                                    <input type="hidden" id="primary2Color" name="primary2" value="#cc0000">
+                                    <div class="color-popover" id="primary2ColorPopover">
+                                        <input type="color" id="primary2ColorPopoverColor" value="#cc0000" oninput="syncPickerToHex('primary2Color')">
+                                        <input type="text" class="color-popover-hex" id="primary2ColorPopoverHex" value="#cc0000" oninput="syncPopoverHexToColor('primary2Color')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('primary2Color')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('primary2Color')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -408,17 +426,35 @@
 
                             <div class="form-group">
                                 <label for="bgStart">Cor do Menu Lateral (Sidebar)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="bgStart" name="bgStart" value="#1a1a1a">
-                                    <input type="text" id="bgStartHex" value="#1a1a1a" placeholder="#1a1a1a">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="bgStartSwatch" onclick="openColorPopover('bgStart')" style="background:#1a1a1a"></button>
+                                    <input type="text" class="color-hex-display" id="bgStartHex" value="#1a1a1a" placeholder="#1a1a1a">
+                                    <input type="hidden" id="bgStart" name="bgStart" value="#1a1a1a">
+                                    <div class="color-popover" id="bgStartPopover">
+                                        <input type="color" id="bgStartPopoverColor" value="#1a1a1a" oninput="syncPickerToHex('bgStart')">
+                                        <input type="text" class="color-popover-hex" id="bgStartPopoverHex" value="#1a1a1a" oninput="syncPopoverHexToColor('bgStart')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('bgStart')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('bgStart')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label for="bgEnd">Cor de Fundo Geral (Background)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="bgEnd" name="bgEnd" value="#000000">
-                                    <input type="text" id="bgEndHex" value="#000000" placeholder="#000000">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="bgEndSwatch" onclick="openColorPopover('bgEnd')" style="background:#000000"></button>
+                                    <input type="text" class="color-hex-display" id="bgEndHex" value="#000000" placeholder="#000000">
+                                    <input type="hidden" id="bgEnd" name="bgEnd" value="#000000">
+                                    <div class="color-popover" id="bgEndPopover">
+                                        <input type="color" id="bgEndPopoverColor" value="#000000" oninput="syncPickerToHex('bgEnd')">
+                                        <input type="text" class="color-popover-hex" id="bgEndPopoverHex" value="#000000" oninput="syncPopoverHexToColor('bgEnd')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('bgEnd')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('bgEnd')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -429,9 +465,18 @@
 
                             <div class="form-group">
                                 <label for="innerComponentBg">Cor de Fundo - Componentes Internos (Tabelas, Formulários)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="innerComponentBg" name="innerComponentBg" value="#1a1a1a">
-                                    <input type="text" id="innerComponentBgHex" value="#1a1a1a" placeholder="#1a1a1a">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="innerComponentBgSwatch" onclick="openColorPopover('innerComponentBg')" style="background:#1a1a1a"></button>
+                                    <input type="text" class="color-hex-display" id="innerComponentBgHex" value="#1a1a1a" placeholder="#1a1a1a">
+                                    <input type="hidden" id="innerComponentBg" name="innerComponentBg" value="#1a1a1a">
+                                    <div class="color-popover" id="innerComponentBgPopover">
+                                        <input type="color" id="innerComponentBgPopoverColor" value="#1a1a1a" oninput="syncPickerToHex('innerComponentBg')">
+                                        <input type="text" class="color-popover-hex" id="innerComponentBgPopoverHex" value="#1a1a1a" oninput="syncPopoverHexToColor('innerComponentBg')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('innerComponentBg')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('innerComponentBg')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -442,9 +487,18 @@
 
                             <div class="form-group">
                                 <label for="textColor">Cor do Texto (Menu, Labels, Páginas)</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="textColor" name="textColor" value="#cccccc">
-                                    <input type="text" id="textColorHex" value="#cccccc" placeholder="#cccccc">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="textColorSwatch" onclick="openColorPopover('textColor')" style="background:#cccccc"></button>
+                                    <input type="text" class="color-hex-display" id="textColorHex" value="#cccccc" placeholder="#cccccc">
+                                    <input type="hidden" id="textColor" name="textColor" value="#cccccc">
+                                    <div class="color-popover" id="textColorPopover">
+                                        <input type="color" id="textColorPopoverColor" value="#cccccc" oninput="syncPickerToHex('textColor')">
+                                        <input type="text" class="color-popover-hex" id="textColorPopoverHex" value="#cccccc" oninput="syncPopoverHexToColor('textColor')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('textColor')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('textColor')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -455,25 +509,52 @@
 
                             <div class="form-group">
                                 <label for="secondaryBtnBg">Cor de Fundo - Botões Secundários</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="secondaryBtnBg" name="secondaryBtnBg" value="#444444">
-                                    <input type="text" id="secondaryBtnBgHex" value="#444444" placeholder="#444444">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="secondaryBtnBgSwatch" onclick="openColorPopover('secondaryBtnBg')" style="background:#444444"></button>
+                                    <input type="text" class="color-hex-display" id="secondaryBtnBgHex" value="#444444" placeholder="#444444">
+                                    <input type="hidden" id="secondaryBtnBg" name="secondaryBtnBg" value="#444444">
+                                    <div class="color-popover" id="secondaryBtnBgPopover">
+                                        <input type="color" id="secondaryBtnBgPopoverColor" value="#444444" oninput="syncPickerToHex('secondaryBtnBg')">
+                                        <input type="text" class="color-popover-hex" id="secondaryBtnBgPopoverHex" value="#444444" oninput="syncPopoverHexToColor('secondaryBtnBg')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('secondaryBtnBg')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('secondaryBtnBg')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label for="secondaryBtnBorder">Cor da Borda - Botões Secundários</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="secondaryBtnBorder" name="secondaryBtnBorder" value="#555555">
-                                    <input type="text" id="secondaryBtnBorderHex" value="#555555" placeholder="#555555">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="secondaryBtnBorderSwatch" onclick="openColorPopover('secondaryBtnBorder')" style="background:#555555"></button>
+                                    <input type="text" class="color-hex-display" id="secondaryBtnBorderHex" value="#555555" placeholder="#555555">
+                                    <input type="hidden" id="secondaryBtnBorder" name="secondaryBtnBorder" value="#555555">
+                                    <div class="color-popover" id="secondaryBtnBorderPopover">
+                                        <input type="color" id="secondaryBtnBorderPopoverColor" value="#555555" oninput="syncPickerToHex('secondaryBtnBorder')">
+                                        <input type="text" class="color-popover-hex" id="secondaryBtnBorderPopoverHex" value="#555555" oninput="syncPopoverHexToColor('secondaryBtnBorder')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('secondaryBtnBorder')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('secondaryBtnBorder')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label for="secondaryBtnText">Cor do Texto - Botões Secundários</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="secondaryBtnText" name="secondaryBtnText" value="#cccccc">
-                                    <input type="text" id="secondaryBtnTextHex" value="#cccccc" placeholder="#cccccc">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="secondaryBtnTextSwatch" onclick="openColorPopover('secondaryBtnText')" style="background:#cccccc"></button>
+                                    <input type="text" class="color-hex-display" id="secondaryBtnTextHex" value="#cccccc" placeholder="#cccccc">
+                                    <input type="hidden" id="secondaryBtnText" name="secondaryBtnText" value="#cccccc">
+                                    <div class="color-popover" id="secondaryBtnTextPopover">
+                                        <input type="color" id="secondaryBtnTextPopoverColor" value="#cccccc" oninput="syncPickerToHex('secondaryBtnText')">
+                                        <input type="text" class="color-popover-hex" id="secondaryBtnTextPopoverHex" value="#cccccc" oninput="syncPopoverHexToColor('secondaryBtnText')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('secondaryBtnText')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('secondaryBtnText')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -484,25 +565,52 @@
 
                             <div class="form-group">
                                 <label for="inputBg">Cor de Fundo - Campos de Entrada</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="inputBg" name="inputBg" value="#333333">
-                                    <input type="text" id="inputBgHex" value="#333333" placeholder="#333333">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="inputBgSwatch" onclick="openColorPopover('inputBg')" style="background:#333333"></button>
+                                    <input type="text" class="color-hex-display" id="inputBgHex" value="#333333" placeholder="#333333">
+                                    <input type="hidden" id="inputBg" name="inputBg" value="#333333">
+                                    <div class="color-popover" id="inputBgPopover">
+                                        <input type="color" id="inputBgPopoverColor" value="#333333" oninput="syncPickerToHex('inputBg')">
+                                        <input type="text" class="color-popover-hex" id="inputBgPopoverHex" value="#333333" oninput="syncPopoverHexToColor('inputBg')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('inputBg')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('inputBg')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label for="inputBorder">Cor da Borda - Campos de Entrada</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="inputBorder" name="inputBorder" value="#555555">
-                                    <input type="text" id="inputBorderHex" value="#555555" placeholder="#555555">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="inputBorderSwatch" onclick="openColorPopover('inputBorder')" style="background:#555555"></button>
+                                    <input type="text" class="color-hex-display" id="inputBorderHex" value="#555555" placeholder="#555555">
+                                    <input type="hidden" id="inputBorder" name="inputBorder" value="#555555">
+                                    <div class="color-popover" id="inputBorderPopover">
+                                        <input type="color" id="inputBorderPopoverColor" value="#555555" oninput="syncPickerToHex('inputBorder')">
+                                        <input type="text" class="color-popover-hex" id="inputBorderPopoverHex" value="#555555" oninput="syncPopoverHexToColor('inputBorder')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('inputBorder')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('inputBorder')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label for="inputText">Cor do Texto - Campos de Entrada</label>
-                                <div class="color-input-group">
-                                    <input type="color" id="inputText" name="inputText" value="#ffffff">
-                                    <input type="text" id="inputTextHex" value="#ffffff" placeholder="#ffffff">
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="inputTextSwatch" onclick="openColorPopover('inputText')" style="background:#ffffff"></button>
+                                    <input type="text" class="color-hex-display" id="inputTextHex" value="#ffffff" placeholder="#ffffff">
+                                    <input type="hidden" id="inputText" name="inputText" value="#ffffff">
+                                    <div class="color-popover" id="inputTextPopover">
+                                        <input type="color" id="inputTextPopoverColor" value="#ffffff" oninput="syncPickerToHex('inputText')">
+                                        <input type="text" class="color-popover-hex" id="inputTextPopoverHex" value="#ffffff" oninput="syncPopoverHexToColor('inputText')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('inputText')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('inputText')">OK</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -624,7 +732,7 @@
         </div>
     </div>
 
-    <script src="js/storage.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/storage.js?v=__BUILD_VERSION__"></script>
+    <script src="js/app.js?v=__BUILD_VERSION__"></script>
 </body>
 </html>

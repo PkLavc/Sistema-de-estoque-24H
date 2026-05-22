@@ -9,6 +9,69 @@ function darkenHex(hex, amount = 15) {
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
+// ── Custom Color Picker ──────────────────────────────────────────────────────
+let _colorPickerOriginal = {};
+
+function openColorPopover(id) {
+    // Close any already-open popover
+    document.querySelectorAll('.color-popover.open').forEach(p => {
+        if (p.id !== id + 'Popover') p.classList.remove('open');
+    });
+    const mainInput = document.getElementById(id);
+    const popover   = document.getElementById(id + 'Popover');
+    if (!mainInput || !popover) return;
+
+    _colorPickerOriginal[id] = mainInput.value;
+    const pColor = document.getElementById(id + 'PopoverColor');
+    const pHex   = document.getElementById(id + 'PopoverHex');
+    if (pColor) pColor.value = mainInput.value;
+    if (pHex)   pHex.value   = mainInput.value;
+
+    popover.classList.toggle('open');
+}
+
+function syncPickerToHex(id) {
+    const pColor = document.getElementById(id + 'PopoverColor');
+    const pHex   = document.getElementById(id + 'PopoverHex');
+    if (pColor && pHex) pHex.value = pColor.value;
+}
+
+function syncPopoverHexToColor(id) {
+    const pHex   = document.getElementById(id + 'PopoverHex');
+    const pColor = document.getElementById(id + 'PopoverColor');
+    if (pHex && pColor && /^#[0-9a-fA-F]{6}$/.test(pHex.value)) {
+        pColor.value = pHex.value;
+    }
+}
+
+function confirmColorPopover(id) {
+    const pColor = document.getElementById(id + 'PopoverColor');
+    if (!pColor) return;
+    setColorValue(id, pColor.value);
+    document.getElementById(id + 'Popover')?.classList.remove('open');
+}
+
+function cancelColorPopover(id) {
+    const original = _colorPickerOriginal[id];
+    if (original) {
+        const pColor = document.getElementById(id + 'PopoverColor');
+        const pHex   = document.getElementById(id + 'PopoverHex');
+        if (pColor) pColor.value = original;
+        if (pHex)   pHex.value   = original;
+    }
+    document.getElementById(id + 'Popover')?.classList.remove('open');
+}
+
+function setColorValue(id, value) {
+    const mainInput = document.getElementById(id);
+    const swatch    = document.getElementById(id + 'Swatch');
+    const hexDisplay = document.getElementById(id + 'Hex');
+    if (mainInput)   mainInput.value          = value;
+    if (swatch)      swatch.style.background  = value;
+    if (hexDisplay)  hexDisplay.value         = value;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 async function initializeLottieIcons() {
     // Icons are now inline SVGs — no initialization needed
 }
@@ -186,15 +249,9 @@ function showSection(sectionId) {
         sectionId = 'home';
     }
 
-    // Close sidebar on navigation
+    // Close sidebar on mobile navigation (sidebar is overlay on mobile)
     if (window.innerWidth <= 768) {
         closeMobileSidebar();
-    } else {
-        const container = document.querySelector('.app-container');
-        if (container && !container.classList.contains('sidebar-collapsed')) {
-            container.classList.add('sidebar-collapsed');
-            localStorage.setItem('sidebarCollapsed', '1');
-        }
     }
 
     if (sectionId !== 'banco') {
@@ -1973,10 +2030,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('createUserForm')?.addEventListener('submit', createLoginUser);
     if (window.innerWidth > 768 && localStorage.getItem('sidebarCollapsed') === '1') {
         document.querySelector('.app-container')?.classList.add('sidebar-collapsed');
-    } else if (window.innerWidth <= 768) {
-        // Open sidebar by default on mobile
-        document.querySelector('.app-container')?.classList.add('mobile-sidebar-open');
-        document.getElementById('sidebarBackdrop')?.classList.add('active');
     }
     await checkAuth();
     loadThemeSettings();
@@ -1989,10 +2042,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const section = allowedSections.includes(requestedSection) ? requestedSection : 'home';
     showSection(section);
 
+    // Open sidebar after initial navigation so showSection doesn't close it
+    if (window.innerWidth <= 768) {
+        document.querySelector('.app-container')?.classList.add('mobile-sidebar-open');
+        document.getElementById('sidebarBackdrop')?.classList.add('active');
+    }
+
     window.addEventListener('hashchange', () => {
         const requestedHash = window.location.hash.replace('#', '');
         const targetSection = allowedSections.includes(requestedHash) ? requestedHash : 'home';
         showSection(targetSection);
+    });
+
+    // Close color popovers when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.color-picker-wrapper')) {
+            document.querySelectorAll('.color-popover.open').forEach(p => p.classList.remove('open'));
+        }
     });
 });
 
@@ -2017,18 +2083,18 @@ function loadThemeSettings() {
         const theme = JSON.parse(stored);
         if (!theme) return;
         
-        if (theme['primary'] && document.getElementById('primaryColor')) document.getElementById('primaryColor').value = theme['primary'];
-        if (theme['primary-2'] && document.getElementById('primary2Color')) document.getElementById('primary2Color').value = theme['primary-2'];
-        if (theme['bg-start'] && document.getElementById('bgStart')) document.getElementById('bgStart').value = theme['bg-start'];
-        if (theme['bg-end'] && document.getElementById('bgEnd')) document.getElementById('bgEnd').value = theme['bg-end'];
-        if (theme['text-color'] && document.getElementById('textColor')) document.getElementById('textColor').value = theme['text-color'];
-        if (theme['secondary-btn-bg'] && document.getElementById('secondaryBtnBg')) document.getElementById('secondaryBtnBg').value = theme['secondary-btn-bg'];
-        if (theme['secondary-btn-border'] && document.getElementById('secondaryBtnBorder')) document.getElementById('secondaryBtnBorder').value = theme['secondary-btn-border'];
-        if (theme['secondary-btn-text'] && document.getElementById('secondaryBtnText')) document.getElementById('secondaryBtnText').value = theme['secondary-btn-text'];
-        if (theme['inner-component-bg'] && document.getElementById('innerComponentBg')) document.getElementById('innerComponentBg').value = theme['inner-component-bg'];
-        if (theme['input-bg'] && document.getElementById('inputBg')) document.getElementById('inputBg').value = theme['input-bg'];
-        if (theme['input-border'] && document.getElementById('inputBorder')) document.getElementById('inputBorder').value = theme['input-border'];
-        if (theme['input-text'] && document.getElementById('inputText')) document.getElementById('inputText').value = theme['input-text'];
+        if (theme['primary'])            setColorValue('primaryColor',      theme['primary']);
+        if (theme['primary-2'])          setColorValue('primary2Color',     theme['primary-2']);
+        if (theme['bg-start'])           setColorValue('bgStart',           theme['bg-start']);
+        if (theme['bg-end'])             setColorValue('bgEnd',             theme['bg-end']);
+        if (theme['text-color'])         setColorValue('textColor',         theme['text-color']);
+        if (theme['secondary-btn-bg'])   setColorValue('secondaryBtnBg',    theme['secondary-btn-bg']);
+        if (theme['secondary-btn-border']) setColorValue('secondaryBtnBorder', theme['secondary-btn-border']);
+        if (theme['secondary-btn-text']) setColorValue('secondaryBtnText',  theme['secondary-btn-text']);
+        if (theme['inner-component-bg']) setColorValue('innerComponentBg',  theme['inner-component-bg']);
+        if (theme['input-bg'])           setColorValue('inputBg',           theme['input-bg']);
+        if (theme['input-border'])       setColorValue('inputBorder',       theme['input-border']);
+        if (theme['input-text'])         setColorValue('inputText',         theme['input-text']);
         
         applyTheme(theme);
     } catch (e) { console.error(e); }
@@ -2142,32 +2208,30 @@ function resetThemeSettings() {
         'input-text': '#ffffff'
     };
     
-    document.getElementById('primaryColor').value = defaultTheme['primary'];
-    document.getElementById('primary2Color').value = defaultTheme['primary-2'];
-    document.getElementById('bgStart').value = defaultTheme['bg-start'];
-    document.getElementById('bgEnd').value = defaultTheme['bg-end'];
-    document.getElementById('textColor').value = defaultTheme['text-color'];
-    document.getElementById('secondaryBtnBg').value = defaultTheme['secondary-btn-bg'];
-    document.getElementById('secondaryBtnBorder').value = defaultTheme['secondary-btn-border'];
-    document.getElementById('secondaryBtnText').value = defaultTheme['secondary-btn-text'];
-    document.getElementById('innerComponentBg').value = defaultTheme['inner-component-bg'];
-    document.getElementById('inputBg').value = defaultTheme['input-bg'];
-    document.getElementById('inputBorder').value = defaultTheme['input-border'];
-    document.getElementById('inputText').value = defaultTheme['input-text'];
+    setColorValue('primaryColor',      defaultTheme['primary']);
+    setColorValue('primary2Color',     defaultTheme['primary-2']);
+    setColorValue('bgStart',           defaultTheme['bg-start']);
+    setColorValue('bgEnd',             defaultTheme['bg-end']);
+    setColorValue('textColor',         defaultTheme['text-color']);
+    setColorValue('secondaryBtnBg',    defaultTheme['secondary-btn-bg']);
+    setColorValue('secondaryBtnBorder', defaultTheme['secondary-btn-border']);
+    setColorValue('secondaryBtnText',  defaultTheme['secondary-btn-text']);
+    setColorValue('innerComponentBg',  defaultTheme['inner-component-bg']);
+    setColorValue('inputBg',           defaultTheme['input-bg']);
+    setColorValue('inputBorder',       defaultTheme['input-border']);
+    setColorValue('inputText',         defaultTheme['input-text']);
     
     applyTheme(defaultTheme);
-    updateColorInputs();
     alert('Tema resetado para o padrão!');
 }
 
 function updateColorInputs() {
-    // Sync color picker with text input (just update values, listeners are set up once on DOMContentLoaded)
-    ['primary', 'primary2', 'bgStart', 'bgEnd', 'textColor', 'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText', 'innerComponentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(name => {
-        const colorInput = document.getElementById(name + 'Color');
-        const hexInput = document.getElementById(name + 'ColorHex');
-        if (colorInput && hexInput) {
-            hexInput.value = colorInput.value;
-        }
+    // Sync swatch + hex display with the hidden color input value
+    ['primaryColor', 'primary2Color', 'bgStart', 'bgEnd', 'textColor',
+     'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText',
+     'innerComponentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(id => {
+        const colorInput = document.getElementById(id);
+        if (colorInput) setColorValue(id, colorInput.value);
     });
 }
 
