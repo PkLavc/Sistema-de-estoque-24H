@@ -232,10 +232,26 @@ body {
 }
 
 .lottie-icon {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     margin-right: 10px;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary, #ff3333);
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+}
+
+.lottie-icon svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+}
+
+.menu-item:hover .lottie-icon,
+.menu-item.active .lottie-icon {
+    transform: scale(1.15);
 }
 
 .main-content {
@@ -999,16 +1015,22 @@ textarea {
         transform: translateX(0) !important;
     }
 
-    /* Toggle button: top-left corner (hamburger position) */
+    /* Toggle button: vertically centered on left edge when sidebar is closed */
     .sidebar-toggle {
         left: 0 !important;
-        top: 10px;
-        transform: none;
+        top: 50%;
+        transform: translateY(-50%);
         width: 40px;
-        height: 40px;
+        height: 56px;
         border-left: none;
-        border-radius: 0 8px 8px 0;
+        border-radius: 0 10px 10px 0;
         box-shadow: 2px 0 8px rgba(0, 0, 0, 0.4);
+    }
+
+    /* When sidebar is open: button slides to the right edge of the sidebar */
+    .app-container.mobile-sidebar-open .sidebar-toggle {
+        left: 280px !important;
+        transform: translateY(-50%);
     }
 
     /* Icon points right (→) when sidebar is closed on mobile */
@@ -1021,11 +1043,10 @@ textarea {
         transform: rotate(0deg) !important;
     }
 
-    /* Main content: full width with top clearance for toggle btn */
+    /* Main content: full width, no top padding for toggle (it's on the side) */
     .main-content {
         margin-left: 0 !important;
         padding: 16px;
-        padding-top: 58px;
         width: 100%;
     }
 
@@ -1402,7 +1423,12 @@ textarea {
 }
 
 .bottom-actions .btn-settings-icon .lottie-icon {
-    width: 48px;
-    height: 48px;
+    width: 32px;
+    height: 32px;
     margin-right: 0;
+}
+
+.bottom-actions .btn-settings-icon .lottie-icon svg {
+    width: 32px;
+    height: 32px;
 }

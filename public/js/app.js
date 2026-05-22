@@ -1,39 +1,3 @@
-// Lottie animations initialization
-const lottieAnimations = {};
-const lottieAnimationData = {};
-const lottieConfigPaths = {
-    'lottie-home': 'home.json',
-    'lottie-rental': 'rental.json',
-    'lottie-maintenance': 'maintenance.json',
-    'lottie-database': 'database.json',
-    'lottie-plus': 'plus.json',
-    'lottie-historical': 'historical.json',
-    'lottie-exit': 'exit.json',
-    'lottie-settings': 'settings.json',
-    'lottie-home-preview': 'home.json'
-};
-
-function getLottieScriptUrl() {
-    const scriptEl = document.currentScript || Array.from(document.getElementsByTagName('script')).find(el => el.src && el.src.includes('app.js'));
-    return scriptEl ? new URL(scriptEl.src, window.location.href) : new URL('js/app.js', window.location.href);
-}
-
-function resolveLottiePath(filename) {
-    const scriptUrl = getLottieScriptUrl();
-    return new URL(`../assets/lottie/${filename}`, scriptUrl).href;
-}
-
-function hexToRgbArray(hex) {
-    hex = hex.replace('#', '');
-    if (hex.length === 3) {
-        hex = hex.split('').map((char) => char + char).join('');
-    }
-    const r = parseInt(hex.substr(0, 2), 16) / 255;
-    const g = parseInt(hex.substr(2, 2), 16) / 255;
-    const b = parseInt(hex.substr(4, 2), 16) / 255;
-    return [r, g, b, 1];
-}
-
 function darkenHex(hex, amount = 15) {
     hex = hex.replace('#', '');
     if (hex.length === 3) {
@@ -45,98 +9,12 @@ function darkenHex(hex, amount = 15) {
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-function patchLottieColors(data, primaryColor, secondaryColor) {
-    const primaryRgb = hexToRgbArray(primaryColor);
-    const secondaryRgb = hexToRgbArray(secondaryColor);
-
-    const clone = JSON.parse(JSON.stringify(data));
-
-    const patchNode = (node) => {
-        if (!node || typeof node !== 'object') return;
-
-        // Check if node has a class name that indicates secondary color
-        const isSecondaryShape = node.cl === 'secondary' || (node.nm && typeof node.nm === 'string' && /secondary/i.test(node.nm));
-        const colorValue = isSecondaryShape ? secondaryRgb : primaryRgb;
-
-        // Patch stroke and fill colors
-        if (node.c && Array.isArray(node.c.k) && node.c.k.length >= 3) {
-            node.c.k = colorValue.slice(0, node.c.k.length);
-        }
-
-        // Patch gradient colors
-        if (node.g && Array.isArray(node.g.k)) {
-            node.g.k = node.g.k.map((stop) => {
-                if (Array.isArray(stop) && stop.length >= 4 && stop.every((item) => typeof item === 'number')) {
-                    const prefix = stop.slice(0, stop.length - 4);
-                    return [...prefix, ...colorValue.slice(0, 4)];
-                }
-                patchNode(stop);
-                return stop;
-            });
-        }
-
-        // Recursively patch all child nodes
-        if (Array.isArray(node)) {
-            node.forEach(patchNode);
-        } else {
-            Object.values(node).forEach(patchNode);
-        }
-    };
-
-    patchNode(clone);
-    return clone;
-}
-
-function createLottieAnimation(id, data, primaryColor, secondaryColor) {
-    const element = document.getElementById(id);
-    if (!element) return null;
-    const animationData = patchLottieColors(data, primaryColor, secondaryColor);
-
-    return lottie.loadAnimation({
-        container: element,
-        renderer: 'svg',
-        loop: false,
-        autoplay: false,
-        animationData
-    });
-}
-
 async function initializeLottieIcons() {
-    const primaryColor = localStorage.getItem('theme-primary-color') || '#ff3333';
-    const secondaryColor = localStorage.getItem('theme-secondary-color') || '#cc0000';
-
-    await Promise.all(Object.entries(lottieConfigPaths).map(async ([id, filename]) => {
-        const element = document.getElementById(id);
-        if (!element) return;
-
-        const path = resolveLottiePath(filename);
-        try {
-            const response = await fetch(path);
-            const animationData = await response.json();
-            lottieAnimationData[id] = animationData;
-            lottieAnimations[id] = createLottieAnimation(id, animationData, primaryColor, secondaryColor);
-        } catch (e) {
-            console.error('Erro ao carregar animação Lottie', id, path, e);
-        }
-
-        if (!id.includes('preview')) {
-            const parent = element.closest('.menu-item');
-            if (parent) {
-                parent.addEventListener('mouseenter', () => {
-                    lottieAnimations[id]?.goToAndPlay(0);
-                });
-            }
-        }
-    }));
+    // Icons are now inline SVGs — no initialization needed
 }
 
-function reloadLottieAnimations(primaryColor, secondaryColor) {
-    Object.entries(lottieAnimationData).forEach(([id, animationData]) => {
-        const element = document.getElementById(id);
-        if (!element) return;
-        lottieAnimations[id]?.destroy();
-        lottieAnimations[id] = createLottieAnimation(id, animationData, primaryColor, secondaryColor);
-    });
+function reloadLottieAnimations(_primaryColor, _secondaryColor) {
+    // Icon colors update automatically via CSS variable --primary
 }
 
 // Theme and customization from localStorage
@@ -308,9 +186,15 @@ function showSection(sectionId) {
         sectionId = 'home';
     }
 
-    // Close mobile sidebar when navigating
+    // Close sidebar on navigation
     if (window.innerWidth <= 768) {
         closeMobileSidebar();
+    } else {
+        const container = document.querySelector('.app-container');
+        if (container && !container.classList.contains('sidebar-collapsed')) {
+            container.classList.add('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', '1');
+        }
     }
 
     if (sectionId !== 'banco') {
@@ -2089,6 +1973,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('createUserForm')?.addEventListener('submit', createLoginUser);
     if (window.innerWidth > 768 && localStorage.getItem('sidebarCollapsed') === '1') {
         document.querySelector('.app-container')?.classList.add('sidebar-collapsed');
+    } else if (window.innerWidth <= 768) {
+        // Open sidebar by default on mobile
+        document.querySelector('.app-container')?.classList.add('mobile-sidebar-open');
+        document.getElementById('sidebarBackdrop')?.classList.add('active');
     }
     await checkAuth();
     loadThemeSettings();

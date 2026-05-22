@@ -11,10 +11,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-width: 560px;
     padding: 20px;
-    overflow-x: auto;
-    overflow-y: auto;
+    overflow: hidden;
     color: #ffffff;
 }
 
@@ -179,8 +177,7 @@ button:active {
 @media (max-width: 768px) and (orientation: portrait) {
     body {
         min-width: 0;
-        align-items: flex-start;
-        overflow-x: hidden;
+        overflow: hidden;
         padding: 16px;
     }
 
