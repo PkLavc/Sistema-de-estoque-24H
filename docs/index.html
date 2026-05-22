@@ -10,7 +10,7 @@
 </head>
 <body style="visibility:hidden">
     <div class="app-container">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="logo">
                 <img id="customLogo" src="assets/images/logo.webp" alt="24h Locacoes" class="logo-image">
             </div>
@@ -49,6 +49,12 @@
             </div>
         </aside>
 
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Alternar menu">
+            <svg class="sidebar-toggle-icon" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 1L1 7L7 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
         <main class="main-content">
             <section id="home" class="section active">
                 <div class="section-header">
@@ -60,7 +66,6 @@
 
                 <div id="rentalReturnAlert" class="rental-return-alert" style="display: none;"></div>
                 <div class="events-grid" id="eventsGrid"></div>
-                <button type="button" class="floating-create-button" onclick="showSection('eventos')">Criar evento</button>
             </section>
 
             <section id="cadastro" class="section">
@@ -564,9 +569,11 @@
                 </div>
 
                 <div class="events-grid" id="rentalEventsGrid"></div>
-                <button type="button" class="floating-create-button" onclick="openRentalModal()">+ Criar Evento</button>
             </section>
         </main>
+
+        <button type="button" id="floatingBtnHome" class="floating-create-button" onclick="showSection('eventos')" style="display:none">Criar evento</button>
+        <button type="button" id="floatingBtnLocacao" class="floating-create-button" onclick="openRentalModal()" style="display:none">+ Criar Evento</button>
     </div>
 
     <div id="maintenanceModal" class="modal-overlay" style="display: none;">

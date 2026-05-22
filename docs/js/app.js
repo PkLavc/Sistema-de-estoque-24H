@@ -341,6 +341,11 @@ function showSection(sectionId) {
         loadRentalReturnAlerts();
     }
     if (!['home', 'locacao'].includes(sectionId)) loadRentalReturnAlerts();
+
+    const floatingBtnHome = document.getElementById('floatingBtnHome');
+    const floatingBtnLocacao = document.getElementById('floatingBtnLocacao');
+    if (floatingBtnHome) floatingBtnHome.style.display = sectionId === 'home' ? '' : 'none';
+    if (floatingBtnLocacao) floatingBtnLocacao.style.display = sectionId === 'locacao' ? '' : 'none';
 }
 
 function clearRelacaoContext() {
@@ -1379,11 +1384,8 @@ async function logout() {
     const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
     
     if (isGuestMode) {
-        // Guest mode - just clear localStorage and redirect
-        if (confirm('Tem certeza que deseja sair? Todos os dados locais serão mantidos.')) {
-            localStorage.removeItem('isGuestMode');
-            window.location.href = 'login/';
-        }
+        localStorage.removeItem('isGuestMode');
+        window.location.href = 'login/';
         return;
     }
     
@@ -1406,6 +1408,12 @@ async function logout() {
         console.error(error);
         alert('Erro de conexao.');
     }
+}
+
+function toggleSidebar() {
+    const container = document.querySelector('.app-container');
+    const isCollapsed = container.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('sidebarCollapsed', isCollapsed ? '1' : '0');
 }
 
 document.addEventListener('submit', async (e) => {
@@ -2062,6 +2070,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     populateCableCategoryOptions();
     setupMaintenanceModal();
     document.getElementById('createUserForm')?.addEventListener('submit', createLoginUser);
+    if (localStorage.getItem('sidebarCollapsed') === '1') {
+        document.querySelector('.app-container')?.classList.add('sidebar-collapsed');
+    }
     await checkAuth();
     loadThemeSettings();
     await initializeLottieIcons();
