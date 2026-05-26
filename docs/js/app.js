@@ -2048,8 +2048,13 @@ const PLANS_WITH_ADS = ['start'];
 
 function applyAdVisibility(plan) {
     const showAds = PLANS_WITH_ADS.includes(plan);
+    const container = document.querySelector('.app-container');
+    if (container) container.classList.toggle('has-ad', showAds);
     const banner = document.getElementById('adBanner');
-    if (banner) banner.style.display = showAds ? '' : 'none';
+    if (banner && showAds && !banner.dataset.initialized) {
+        banner.dataset.initialized = '1';
+        banner.innerHTML = `<div class="ad-slot"><span class="ad-label">Publicidade</span><div class="ad-image-placeholder">Espa&ccedil;o Publicit&aacute;rio</div><a class="ad-upgrade-link" href="#" onclick="showSection('empresas');return false;">✨ Remover an&uacute;ncios &mdash; Upgrade para Pro</a></div>`;
+    }
 }
 
 function formatCnpj(raw) {
@@ -2157,11 +2162,11 @@ function openCompanyEdit(companyId) {
     const title = document.getElementById('companyEditTitle');
     if (title) title.textContent = `Editar: ${company.name || company.nome || ''}`;
 
-    const isGestor = currentUser?.isGestorAdmin;
+    const canEditPlan = currentUser?.isGestorAdmin || currentUser?.isGuest;
     const planSection = document.getElementById('editCompanyPlanSection');
     const planGroup   = document.getElementById('editCompanyPlanGroup');
-    if (planSection) planSection.style.display = isGestor ? '' : 'none';
-    if (planGroup)   planGroup.style.display   = isGestor ? '' : 'none';
+    if (planSection) planSection.style.display = canEditPlan ? '' : 'none';
+    if (planGroup)   planGroup.style.display   = canEditPlan ? '' : 'none';
 
     populateCompanyEditForm(company);
     if (panel) {
@@ -2260,6 +2265,10 @@ async function saveCompanyEdit(event) {
                 ? _companiesList
                 : _companiesList.filter(c => Number(c.id) === Number(currentUser?.companyId));
             renderCompanies(visibleCompanies, isGestor);
+            if (payload.plan && Number(_editingCompanyId) === Number(currentUser?.companyId)) {
+                currentUser.companyPlan = payload.plan;
+                applyAdVisibility(payload.plan);
+            }
             setCompanyEditMessage('Dados salvos com sucesso.', 'success');
             return;
         }
@@ -2275,6 +2284,10 @@ async function saveCompanyEdit(event) {
             return;
         }
         await loadCompanies();
+        if (payload.plan && Number(_editingCompanyId) === Number(currentUser?.companyId)) {
+            currentUser.companyPlan = payload.plan;
+            applyAdVisibility(payload.plan);
+        }
         setCompanyEditMessage('Dados salvos com sucesso.', 'success');
     } catch (e) {
         console.error(e);
@@ -2417,8 +2430,16 @@ async function checkAuth() {
             isGestorAdmin: false,
             isGuest: true,
             role: 'guest',
-            companyId: 2
+            companyId: 2,
+            companyPlan: 'pro'
         };
+
+        if (typeof storage !== 'undefined') {
+            const companies = await storage.getCompanies();
+            const guestCo = companies.find(c => Number(c.id) === 2);
+            currentUser.companyPlan = guestCo?.plan || 'pro';
+        }
+        applyAdVisibility(currentUser.companyPlan);
         
         updateLogoutButton();
         applyLoginManagementVisibility();
@@ -2449,9 +2470,11 @@ async function checkAuth() {
                 isGestorAdmin: !!data.isGestorAdmin,
                 isGuest: isGuest,
                 role: isGuest ? 'guest' : (data.role || (data.isAdmin ? 'admin' : 'user')),
-                companyId: data.companyId || null
+                companyId: data.companyId || null,
+                companyPlan: data.companyPlan || null
             }
             : null;
+        applyAdVisibility(data.companyPlan || 'pro');
         
         updateLogoutButton();
         applyLoginManagementVisibility();

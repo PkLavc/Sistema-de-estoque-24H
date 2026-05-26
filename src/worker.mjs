@@ -72,6 +72,11 @@ async function handleApiRequest(request, env) {
     if (pathname === '/api/auth/status' && request.method === 'GET') {
         const session = await getSessionFromRequest(request, env);
         const effectiveRole = getEffectiveRole(session);
+        let companyPlan = null;
+        if (session?.company_id) {
+            const co = await queryFirst(env, 'SELECT plan FROM companies WHERE id = ?', [session.company_id]);
+            companyPlan = co?.plan ?? null;
+        }
         return json({
             authenticated: !!session,
             isTestUser: session?.username === TEST_USERNAME,
@@ -80,7 +85,8 @@ async function handleApiRequest(request, env) {
             role: effectiveRole,
             isAdmin: effectiveRole === 'admin' || effectiveRole === 'gestor_admin',
             isGestorAdmin: effectiveRole === 'gestor_admin',
-            companyId: session?.company_id || null
+            companyId: session?.company_id || null,
+            companyPlan
         });
     }
 

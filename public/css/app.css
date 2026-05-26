@@ -631,16 +631,154 @@ textarea:focus {
 }
 
 .ad-banner {
+    display: none;
+    position: fixed;
+    z-index: 15;
+    background: #0e0e0e;
+    overflow: hidden;
+}
+
+/* ── Sidebar OPEN → ad as bottom bar ───────────────────────────────────── */
+.app-container.has-ad .ad-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    bottom: 0;
+    left: 340px;
+    right: 0;
+    height: 90px;
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Adjust main-content bottom padding to not hide behind bottom ad */
+.app-container.has-ad:not(.sidebar-collapsed) .main-content {
+    padding-bottom: 110px;
+}
+
+/* Floating buttons above the bottom ad */
+.app-container.has-ad:not(.sidebar-collapsed) .floating-create-button {
+    bottom: calc(90px + 32px);
+}
+
+/* ── Sidebar COLLAPSED → ad as right column ─────────────────────────────── */
+.app-container.has-ad.sidebar-collapsed .ad-banner {
+    flex-direction: column;
+    top: 0;
+    bottom: 0;
+    left: auto;
+    right: 0;
+    width: 200px;
+    height: 100vh;
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.09);
+    justify-content: flex-start;
+    padding-top: 16px;
+    overflow-y: auto;
+}
+
+/* Shrink main-content to not go behind right ad */
+.app-container.has-ad.sidebar-collapsed .main-content {
+    margin-right: 200px;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Floating buttons to the left of the right ad */
+.app-container.has-ad.sidebar-collapsed .floating-create-button {
+    right: calc(200px + 32px);
+    bottom: 32px;
+}
+
+/* ── Ad inner content ─────────────────────────────────────────────────── */
+.ad-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     width: 100%;
-    min-height: 60px;
-    background: rgba(255,255,255,0.03);
-    border-bottom: 1px solid rgba(255,255,255,0.07);
+    height: 100%;
+    padding: 8px 12px;
+}
+
+.ad-label {
+    font-size: 0.6rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    line-height: 1;
+    align-self: flex-start;
+}
+
+.ad-image-placeholder {
+    flex: 1;
+    width: 100%;
+    min-height: 40px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.78rem;
-    color: #666;
-    letter-spacing: 0.05em;
+    color: #444;
+    font-size: 0.72rem;
+    text-align: center;
+    padding: 6px;
+}
+
+.ad-upgrade-link {
+    font-size: 0.68rem;
+    color: var(--primary, #ff3333);
+    text-decoration: none;
+    text-align: center;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+    line-height: 1.3;
+}
+
+.ad-upgrade-link:hover {
+    opacity: 1;
+}
+
+/* Right-column vertical ad: stack ad slots */
+.app-container.has-ad.sidebar-collapsed .ad-slot {
+    height: auto;
+    min-height: 200px;
+    padding: 12px;
+}
+
+.app-container.has-ad.sidebar-collapsed .ad-image-placeholder {
+    min-height: 140px;
+}
+
+/* ── Mobile: full-width bottom bar ─────────────────────────────────────── */
+@media (max-width: 768px) {
+    .app-container.has-ad .ad-banner,
+    .app-container.has-ad.sidebar-collapsed .ad-banner {
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 72px !important;
+        border-left: none !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.09) !important;
+        flex-direction: column !important;
+        padding-top: 0 !important;
+        overflow: hidden !important;
+    }
+    .app-container.has-ad .main-content,
+    .app-container.has-ad.sidebar-collapsed .main-content {
+        margin-right: 0 !important;
+        padding-bottom: 92px !important;
+    }
+    .app-container.has-ad .floating-create-button,
+    .app-container.has-ad.sidebar-collapsed .floating-create-button {
+        right: 32px !important;
+        bottom: calc(72px + 20px) !important;
+    }
 }
 
 .user-role-badge {
