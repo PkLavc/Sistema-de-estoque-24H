@@ -594,6 +594,53 @@ textarea:focus {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    align-items: center;
+}
+
+.company-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+.company-edit-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.company-edit-panel {
+    margin-top: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 20px;
+    background: var(--inner-component-bg, #1a1a1a);
+}
+
+.company-edit-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.company-edit-panel-header h3 {
+    margin: 0;
+}
+
+.ad-banner {
+    width: 100%;
+    min-height: 60px;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    color: #666;
+    letter-spacing: 0.05em;
 }
 
 .user-role-badge {

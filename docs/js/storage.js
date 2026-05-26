@@ -332,10 +332,157 @@ class DataStorage {
         return response.json();
     }
 
-    // Clear all guest data
+    // Pre-populate guest mode with demo companies and users (only on first activation)
+    seedGuestData() {
+        if (this._loadFromLocalStorage('companies')) return;
+
+        const companies = [
+            {
+                id: 1, cnpj: '12345678000195', name: 'TechSystem Gestão',
+                legal_name: 'TechSystem Soluções em Gestão LTDA', trade_name: 'TechSystem',
+                state_registration: '123.456.789.112', municipal_registration: '987654321',
+                phone: '(11) 3000-0001', phone2: '(11) 99000-0001',
+                email: 'contato@techsystem.com.br', website: 'https://techsystem.com.br',
+                zip_code: '01310-100', address: 'Av. Paulista', address_number: '1000',
+                address_complement: 'Sala 501', neighborhood: 'Bela Vista',
+                city: 'São Paulo', state: 'SP', country: 'Brasil',
+                legal_representative: 'Ricardo Souza',
+                accounting_email: 'contabil@techsystem.com.br',
+                system_admin_email: 'ti@techsystem.com.br',
+                company_admin_email: 'admin@techsystem.com.br',
+                is_owner: 1, plan: 'ultra', created_at: '2024-01-01T00:00:00.000Z'
+            },
+            {
+                id: 2, cnpj: '98765432000155', name: 'Eventos Luz & Som',
+                legal_name: 'Luz e Som Produções e Eventos EIRELI', trade_name: 'Luz & Som Eventos',
+                state_registration: '654.321.987.000', municipal_registration: '123456789',
+                phone: '(21) 3200-4500', phone2: '(21) 98200-4500',
+                email: 'contato@luzsom.com.br', website: 'https://luzsom.com.br',
+                zip_code: '20040-020', address: 'Rua da Assembleia', address_number: '50',
+                address_complement: 'Andar 8', neighborhood: 'Centro',
+                city: 'Rio de Janeiro', state: 'RJ', country: 'Brasil',
+                legal_representative: 'Fernanda Lima',
+                accounting_email: 'financeiro@luzsom.com.br',
+                system_admin_email: 'sistema@luzsom.com.br',
+                company_admin_email: 'admin@luzsom.com.br',
+                is_owner: 0, plan: 'pro', created_at: '2024-03-15T00:00:00.000Z'
+            },
+            {
+                id: 3, cnpj: '11222333000181', name: 'MultiShow Produções',
+                legal_name: 'MultiShow Entretenimento LTDA', trade_name: 'MultiShow',
+                state_registration: '111.222.333.000', municipal_registration: '111222333',
+                phone: '(31) 3300-7700', email: 'contato@multishow.com.br',
+                zip_code: '30112-010', address: 'Av. Afonso Pena', address_number: '1500',
+                neighborhood: 'Centro', city: 'Belo Horizonte', state: 'MG', country: 'Brasil',
+                legal_representative: 'Paulo Mendes',
+                accounting_email: 'financeiro@multishow.com.br',
+                is_owner: 0, plan: 'start', created_at: '2024-05-10T00:00:00.000Z'
+            },
+            {
+                id: 4, cnpj: '44555666000173', name: 'SomPro Locações',
+                legal_name: 'SomPro Equipamentos e Locações LTDA', trade_name: 'SomPro',
+                state_registration: '444.555.666.777', municipal_registration: '444555666',
+                phone: '(41) 3100-5500', email: 'contato@sompro.com.br',
+                website: 'https://sompro.com.br',
+                zip_code: '80010-010', address: 'Rua XV de Novembro', address_number: '800',
+                neighborhood: 'Centro', city: 'Curitiba', state: 'PR', country: 'Brasil',
+                legal_representative: 'Gustavo Alves',
+                accounting_email: 'financeiro@sompro.com.br',
+                is_owner: 0, plan: 'pro', created_at: '2024-07-20T00:00:00.000Z'
+            }
+        ];
+
+        const users = [
+            { id: 101, username: 'convidado',       role: 'admin', company_id: 2, company_name: 'Eventos Luz & Som', created_at: '2024-03-15T00:00:00.000Z' },
+            { id: 102, username: 'carlos.oliveira', role: 'user',  company_id: 2, company_name: 'Eventos Luz & Som', created_at: '2024-03-16T00:00:00.000Z' },
+            { id: 103, username: 'ana.santos',      role: 'user',  company_id: 2, company_name: 'Eventos Luz & Som', created_at: '2024-04-01T00:00:00.000Z' },
+            { id: 104, username: 'lucas.ferreira',  role: 'user',  company_id: 2, company_name: 'Eventos Luz & Som', created_at: '2024-04-10T00:00:00.000Z' },
+            { id: 105, username: 'mariana.costa',   role: 'user',  company_id: 2, company_name: 'Eventos Luz & Som', created_at: '2024-05-05T00:00:00.000Z' }
+        ];
+
+        this._saveToLocalStorage('companies', companies);
+        this._saveToLocalStorage('users', users);
+    }
+
+    // Clear all guest data (and re-seed demo data)
     clearGuestData() {
-        const keys = ['events', 'equipments', 'cables', 'otherItems', 'users'];
+        const keys = ['events', 'equipments', 'cables', 'otherItems', 'users', 'companies'];
         keys.forEach(key => this._deleteFromLocalStorage(key));
+        this.seedGuestData();
+    }
+
+    // Companies API
+    async getCompanies() {
+        if (this.isGuest) {
+            return this._loadFromLocalStorage('companies') || [];
+        }
+        const response = await fetch('api/companies', { credentials: 'include' });
+        if (!response.ok) return [];
+        const data = await response.json().catch(() => ({}));
+        return Array.isArray(data.companies) ? data.companies : [];
+    }
+
+    async getCompany(id) {
+        if (this.isGuest) {
+            const companies = this._loadFromLocalStorage('companies') || [];
+            return companies.find(c => c.id === id) || null;
+        }
+        const response = await fetch(`api/companies/${id}`, { credentials: 'include' });
+        if (!response.ok) return null;
+        const data = await response.json().catch(() => ({}));
+        return data.company || data;
+    }
+
+    async createCompany(company) {
+        if (this.isGuest) {
+            const companies = this._loadFromLocalStorage('companies') || [];
+            company.id = Date.now();
+            company.is_owner = 0;
+            companies.push(company);
+            this._saveToLocalStorage('companies', companies);
+            return { success: true, company };
+        }
+        const response = await fetch('api/companies', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(company)
+        });
+        return response.json();
+    }
+
+    async updateCompany(id, updates) {
+        if (this.isGuest) {
+            const companies = this._loadFromLocalStorage('companies') || [];
+            const index = companies.findIndex(c => c.id === id);
+            if (index !== -1) {
+                companies[index] = { ...companies[index], ...updates };
+                this._saveToLocalStorage('companies', companies);
+                return { success: true };
+            }
+            return { success: false, error: 'Company not found' };
+        }
+        const response = await fetch(`api/companies/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(updates)
+        });
+        return response.json();
+    }
+
+    async deleteCompany(id) {
+        if (this.isGuest) {
+            let companies = this._loadFromLocalStorage('companies') || [];
+            companies = companies.filter(c => c.id !== id);
+            this._saveToLocalStorage('companies', companies);
+            return { success: true };
+        }
+        const response = await fetch(`api/companies/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        return response.json();
     }
 }
 

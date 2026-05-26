@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -60,8 +60,8 @@
     </script>
 
     <link rel="icon" type="image/webp" href="assets/images/favicon.webp">
-    <link rel="stylesheet" href="css/app.css?v=__BUILD_VERSION__">
-    <link rel="stylesheet" href="css/theme.css?v=__BUILD_VERSION__">
+    <link rel="stylesheet" href="css/app.css?v=29b2b7d">
+    <link rel="stylesheet" href="css/theme.css?v=29b2b7d">
 </head>
 <body style="visibility:hidden">
     <div class="app-container">
@@ -111,6 +111,10 @@
         </button>
 
         <main class="main-content">
+            <!-- Ad banner: shown for demo/start plans, hidden for pro/ultra -->
+            <div id="adBanner" class="ad-banner" style="display:none;" aria-label="Publicidade">
+                <!-- Ad content injected here -->
+            </div>
             <section id="home" class="section active">
                 <div class="section-header">
                     <h1>Eventos Cadastrados</h1>
@@ -374,11 +378,15 @@
                 <div class="section-header">
                     <h1>Configurações</h1>
                 </div>
+
+                <!-- message shown to regular users who have no settings -->
+                <p id="settingsNoAccess" class="users-message" style="display:none;">Nenhuma configuração disponível para o seu perfil no momento.</p>
                 
-                <div class="settings-tabs">
-                    <button type="button" class="settings-tab active" onclick="showSettingsTab('users')">Usuários</button>
-                    <button type="button" class="settings-tab" onclick="showSettingsTab('theme')">Tema</button>
-                    <button type="button" class="settings-tab" onclick="showSettingsTab('logo')">Logo</button>
+                <div class="settings-tabs" id="settingsTabsBar">
+                    <button type="button" id="settingsTabUsers" class="settings-tab active" onclick="showSettingsTab('users')">Usuários</button>
+                    <button type="button" id="settingsTabTheme" class="settings-tab" onclick="showSettingsTab('theme')">Tema</button>
+                    <button type="button" id="settingsTabLogo" class="settings-tab" onclick="showSettingsTab('logo')">Logo</button>
+                    <button type="button" id="settingsTabEmpresas" class="settings-tab" onclick="showSettingsTab('empresas')">Empresas</button>
                 </div>
 
                 <!-- Users Tab -->
@@ -403,8 +411,16 @@
                             <div class="form-group">
                                 <label for="newUserRole">Classe</label>
                                 <select id="newUserRole" name="role">
-                                    <option value="user">user</option>
-                                    <option value="admin">admin</option>
+                                    <option value="user">Usuário</option>
+                                    <option value="admin">Admin (Empresa)</option>
+                                    <option value="gestor_admin" id="newUserRoleGestor" style="display:none;">Admin (Gestor)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="newUserCompanyGroup" style="display:none;">
+                                <label for="newUserCompany">Empresa</label>
+                                <select id="newUserCompany" name="company_id">
+                                    <option value="">-- Sem empresa (Gestor) --</option>
                                 </select>
                             </div>
 
@@ -420,6 +436,7 @@
                                     <tr>
                                         <th>Usuário</th>
                                         <th>Classe</th>
+                                        <th id="usersTableCompanyHeader" style="display:none;">Empresa</th>
                                         <th>Nova senha</th>
                                         <th></th>
                                     </tr>
@@ -722,6 +739,355 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Empresas Tab (gestor_admin only) -->
+                <div id="settings-empresas" class="settings-tab-content">
+                    <div class="section-header">
+                        <h2>Gerenciamento de Empresas</h2>
+                        <button type="button" id="openCompanyCreateButton" class="btn-primary" onclick="toggleCreateCompanyForm()">Cadastrar empresa</button>
+                    </div>
+
+                    <div class="users-panel">
+                        <!-- Create form -->
+                        <form id="createCompanyForm" class="form-grid user-create-form" style="display: none;" onsubmit="createCompany(event)">
+                            <div class="theme-section-title"><h3>Identificação</h3></div>
+                            <div class="form-group">
+                                <label for="newCompanyCnpj">CNPJ <span style="color:var(--primary)">*</span></label>
+                                <input type="text" id="newCompanyCnpj" name="cnpj" placeholder="00.000.000/0000-00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyName">Nome Fantasia <span style="color:var(--primary)">*</span></label>
+                                <input type="text" id="newCompanyName" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyLegalName">Razão Social</label>
+                                <input type="text" id="newCompanyLegalName" name="legal_name">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyTradeName">Nome Fantasia (Alternativo)</label>
+                                <input type="text" id="newCompanyTradeName" name="trade_name">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyStateReg">Inscrição Estadual</label>
+                                <input type="text" id="newCompanyStateReg" name="state_registration">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyMunicipalReg">Inscrição Municipal</label>
+                                <input type="text" id="newCompanyMunicipalReg" name="municipal_registration">
+                            </div>
+
+                            <div class="theme-section-title"><h3>Endereço</h3></div>
+                            <div class="form-group">
+                                <label for="newCompanyZipCode">CEP</label>
+                                <input type="text" id="newCompanyZipCode" name="zip_code" placeholder="00000-000">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyAddress">Logradouro</label>
+                                <input type="text" id="newCompanyAddress" name="address">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyAddressNumber">Número</label>
+                                <input type="text" id="newCompanyAddressNumber" name="address_number">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyAddressComplement">Complemento</label>
+                                <input type="text" id="newCompanyAddressComplement" name="address_complement">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyNeighborhood">Bairro</label>
+                                <input type="text" id="newCompanyNeighborhood" name="neighborhood">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyCity">Cidade</label>
+                                <input type="text" id="newCompanyCity" name="city">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyState">Estado (UF)</label>
+                                <select id="newCompanyState" name="state">
+                                    <option value="">-- Selecione --</option>
+                                    <option value="AC">AC – Acre</option>
+                                    <option value="AL">AL – Alagoas</option>
+                                    <option value="AP">AP – Amapá</option>
+                                    <option value="AM">AM – Amazonas</option>
+                                    <option value="BA">BA – Bahia</option>
+                                    <option value="CE">CE – Ceará</option>
+                                    <option value="DF">DF – Distrito Federal</option>
+                                    <option value="ES">ES – Espírito Santo</option>
+                                    <option value="GO">GO – Goiás</option>
+                                    <option value="MA">MA – Maranhão</option>
+                                    <option value="MT">MT – Mato Grosso</option>
+                                    <option value="MS">MS – Mato Grosso do Sul</option>
+                                    <option value="MG">MG – Minas Gerais</option>
+                                    <option value="PA">PA – Pará</option>
+                                    <option value="PB">PB – Paraíba</option>
+                                    <option value="PR">PR – Paraná</option>
+                                    <option value="PE">PE – Pernambuco</option>
+                                    <option value="PI">PI – Piauí</option>
+                                    <option value="RJ">RJ – Rio de Janeiro</option>
+                                    <option value="RN">RN – Rio Grande do Norte</option>
+                                    <option value="RS">RS – Rio Grande do Sul</option>
+                                    <option value="RO">RO – Rondônia</option>
+                                    <option value="RR">RR – Roraima</option>
+                                    <option value="SC">SC – Santa Catarina</option>
+                                    <option value="SP" selected>SP – São Paulo</option>
+                                    <option value="SE">SE – Sergipe</option>
+                                    <option value="TO">TO – Tocantins</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyCountry">País</label>
+                                <select id="newCompanyCountry" name="country">
+                                    <option value="Brasil" selected>Brasil</option>
+                                    <option value="Argentina">Argentina</option>
+                                    <option value="Chile">Chile</option>
+                                    <option value="Colômbia">Colômbia</option>
+                                    <option value="Estados Unidos">Estados Unidos</option>
+                                    <option value="México">México</option>
+                                    <option value="Paraguai">Paraguai</option>
+                                    <option value="Peru">Peru</option>
+                                    <option value="Portugal">Portugal</option>
+                                    <option value="Uruguai">Uruguai</option>
+                                    <option value="Venezuela">Venezuela</option>
+                                    <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+
+                            <div class="theme-section-title"><h3>Contato</h3></div>
+                            <div class="form-group">
+                                <label for="newCompanyPhone">Telefone</label>
+                                <input type="tel" id="newCompanyPhone" name="phone">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyPhone2">Telefone 2</label>
+                                <input type="tel" id="newCompanyPhone2" name="phone2">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyEmail">E-mail Geral</label>
+                                <input type="email" id="newCompanyEmail" name="email">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyWebsite">Website</label>
+                                <input type="url" id="newCompanyWebsite" name="website" placeholder="https://...">
+                            </div>
+
+                            <div class="theme-section-title"><h3>Responsáveis</h3></div>
+                            <div class="form-group">
+                                <label for="newCompanyLegalRep">Representante Legal</label>
+                                <input type="text" id="newCompanyLegalRep" name="legal_representative">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyAccountingEmail">E-mail Contabilidade</label>
+                                <input type="email" id="newCompanyAccountingEmail" name="accounting_email">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanySysAdminEmail">E-mail Responsável do Sistema</label>
+                                <input type="email" id="newCompanySysAdminEmail" name="system_admin_email">
+                            </div>
+                            <div class="form-group">
+                                <label for="newCompanyAdminEmail">E-mail Responsável da Empresa</label>
+                                <input type="email" id="newCompanyAdminEmail" name="company_admin_email">
+                            </div>
+
+                            <div class="theme-section-title"><h3>Plano</h3></div>
+                            <div class="form-group">
+                                <label for="newCompanyPlan">Plano de Assinatura</label>
+                                <select id="newCompanyPlan" name="plan">
+                                    <option value="start">Start</option>
+                                    <option value="pro" selected>Pro</option>
+                                    <option value="ultra">Ultra</option>
+                                </select>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">Salvar empresa</button>
+                                <button type="button" class="btn-secondary" onclick="toggleCreateCompanyForm(false)">Cancelar</button>
+                            </div>
+                        </form>
+
+                        <!-- Companies list -->
+                        <div class="table-container">
+                            <table id="companiesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>CNPJ</th>
+                                        <th>Cidade</th>
+                                        <th>Plano</th>
+                                        <th>Tipo</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Inline edit panel -->
+                        <div id="companyEditPanel" class="company-edit-panel" style="display:none;">
+                            <div class="company-edit-panel-header">
+                                <h3 id="companyEditTitle">Editar Empresa</h3>
+                                <button type="button" class="btn-secondary btn-small" onclick="closeCompanyEdit()">Fechar</button>
+                            </div>
+                            <form id="companyEditForm" class="form-grid" onsubmit="saveCompanyEdit(event)">
+                                <div class="theme-section-title"><h3>Identificação</h3></div>
+                                <div class="form-group">
+                                    <label>CNPJ</label>
+                                    <input type="text" id="editCompanyCnpj" disabled>
+                                    <p class="form-help">O CNPJ não pode ser alterado.</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyName">Nome Fantasia <span style="color:var(--primary)">*</span></label>
+                                    <input type="text" id="editCompanyName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyLegalName">Razão Social</label>
+                                    <input type="text" id="editCompanyLegalName">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyTradeName">Nome Fantasia (Alternativo)</label>
+                                    <input type="text" id="editCompanyTradeName">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyStateReg">Inscrição Estadual</label>
+                                    <input type="text" id="editCompanyStateReg">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyMunicipalReg">Inscrição Municipal</label>
+                                    <input type="text" id="editCompanyMunicipalReg">
+                                </div>
+
+                                <div class="theme-section-title"><h3>Endereço</h3></div>
+                                <div class="form-group">
+                                    <label for="editCompanyZipCode">CEP</label>
+                                    <input type="text" id="editCompanyZipCode" placeholder="00000-000">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyAddress">Logradouro</label>
+                                    <input type="text" id="editCompanyAddress">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyAddressNumber">Número</label>
+                                    <input type="text" id="editCompanyAddressNumber">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyAddressComplement">Complemento</label>
+                                    <input type="text" id="editCompanyAddressComplement">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyNeighborhood">Bairro</label>
+                                    <input type="text" id="editCompanyNeighborhood">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyCity">Cidade</label>
+                                    <input type="text" id="editCompanyCity">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyState">Estado (UF)</label>
+                                    <select id="editCompanyState">
+                                        <option value="">-- Selecione --</option>
+                                        <option value="AC">AC – Acre</option>
+                                        <option value="AL">AL – Alagoas</option>
+                                        <option value="AP">AP – Amapá</option>
+                                        <option value="AM">AM – Amazonas</option>
+                                        <option value="BA">BA – Bahia</option>
+                                        <option value="CE">CE – Ceará</option>
+                                        <option value="DF">DF – Distrito Federal</option>
+                                        <option value="ES">ES – Espírito Santo</option>
+                                        <option value="GO">GO – Goiás</option>
+                                        <option value="MA">MA – Maranhão</option>
+                                        <option value="MT">MT – Mato Grosso</option>
+                                        <option value="MS">MS – Mato Grosso do Sul</option>
+                                        <option value="MG">MG – Minas Gerais</option>
+                                        <option value="PA">PA – Pará</option>
+                                        <option value="PB">PB – Paraíba</option>
+                                        <option value="PR">PR – Paraná</option>
+                                        <option value="PE">PE – Pernambuco</option>
+                                        <option value="PI">PI – Piauí</option>
+                                        <option value="RJ">RJ – Rio de Janeiro</option>
+                                        <option value="RN">RN – Rio Grande do Norte</option>
+                                        <option value="RS">RS – Rio Grande do Sul</option>
+                                        <option value="RO">RO – Rondônia</option>
+                                        <option value="RR">RR – Roraima</option>
+                                        <option value="SC">SC – Santa Catarina</option>
+                                        <option value="SP">SP – São Paulo</option>
+                                        <option value="SE">SE – Sergipe</option>
+                                        <option value="TO">TO – Tocantins</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyCountry">País</label>
+                                    <select id="editCompanyCountry">
+                                        <option value="Brasil">Brasil</option>
+                                        <option value="Argentina">Argentina</option>
+                                        <option value="Chile">Chile</option>
+                                        <option value="Colômbia">Colômbia</option>
+                                        <option value="Estados Unidos">Estados Unidos</option>
+                                        <option value="México">México</option>
+                                        <option value="Paraguai">Paraguai</option>
+                                        <option value="Peru">Peru</option>
+                                        <option value="Portugal">Portugal</option>
+                                        <option value="Uruguai">Uruguai</option>
+                                        <option value="Venezuela">Venezuela</option>
+                                        <option value="Outro">Outro</option>
+                                    </select>
+                                </div>
+
+                                <div class="theme-section-title"><h3>Contato</h3></div>
+                                <div class="form-group">
+                                    <label for="editCompanyPhone">Telefone</label>
+                                    <input type="tel" id="editCompanyPhone">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyPhone2">Telefone 2</label>
+                                    <input type="tel" id="editCompanyPhone2">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyEmail">E-mail Geral</label>
+                                    <input type="email" id="editCompanyEmail">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyWebsite">Website</label>
+                                    <input type="url" id="editCompanyWebsite" placeholder="https://...">
+                                </div>
+
+                                <div class="theme-section-title"><h3>Responsáveis</h3></div>
+                                <div class="form-group">
+                                    <label for="editCompanyLegalRep">Representante Legal</label>
+                                    <input type="text" id="editCompanyLegalRep">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyAccountingEmail">E-mail Contabilidade</label>
+                                    <input type="email" id="editCompanyAccountingEmail">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanySysAdminEmail">E-mail Responsável do Sistema</label>
+                                    <input type="email" id="editCompanySysAdminEmail">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCompanyAdminEmail">E-mail Responsável da Empresa</label>
+                                    <input type="email" id="editCompanyAdminEmail">
+                                </div>
+
+                                <div class="theme-section-title" id="editCompanyPlanSection"><h3>Plano</h3></div>
+                                <div class="form-group" id="editCompanyPlanGroup">
+                                    <label for="editCompanyPlan">Plano de Assinatura</label>
+                                    <select id="editCompanyPlan">
+                                        <option value="start">Start</option>
+                                        <option value="pro">Pro</option>
+                                        <option value="ultra">Ultra</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">Salvar alterações</button>
+                                    <button type="button" class="btn-secondary" onclick="closeCompanyEdit()">Cancelar</button>
+                                </div>
+                            </form>
+                            <p id="companyEditMessage" class="users-message"></p>
+                        </div>
+
+                        <p id="companiesMessage" class="users-message"></p>
+                    </div>
+                </div>
             </section>
             <section id="locacao" class="section">
                 <div class="section-header">
@@ -787,7 +1153,7 @@
         </div>
     </div>
 
-    <script src="js/storage.js?v=__BUILD_VERSION__"></script>
-    <script src="js/app.js?v=__BUILD_VERSION__"></script>
+    <script src="js/storage.js?v=29b2b7d"></script>
+    <script src="js/app.js?v=29b2b7d"></script>
 </body>
 </html>

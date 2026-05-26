@@ -48,12 +48,16 @@ async function handleApiRequest(request, env) {
 
     if (pathname === '/api/auth/status' && request.method === 'GET') {
         const session = await getSessionFromRequest(request, env);
+        const effectiveRole = getEffectiveRole(session);
         return json({
             authenticated: !!session,
             isTestUser: session?.username === TEST_USERNAME,
             userId: session?.user_id || null,
             username: session?.username || null,
-            isAdmin: session?.role === 'admin'
+            role: effectiveRole,
+            isAdmin: effectiveRole === 'admin' || effectiveRole === 'gestor_admin',
+            isGestorAdmin: effectiveRole === 'gestor_admin',
+            companyId: session?.company_id || null
         });
     }
 
@@ -62,20 +66,37 @@ async function handleApiRequest(request, env) {
         return json({ error: 'Nao autorizado' }, 401);
     }
 
+    // null for gestor_admin (sees all companies); Number for company-scoped users
+    const cid = session.company_id ? Number(session.company_id) : null;
+
     if (pathname === '/api/users' && request.method === 'GET') {
         if (!isAdminSession(session)) {
             return json({ error: 'Acesso restrito a administradores' }, 403);
         }
 
-        const users = await queryAll(
-            env,
-            `SELECT id, username, COALESCE(role, 'user') AS role
-             FROM users
-             ORDER BY lower(username) ASC`
-        );
+        let users;
+        if (isGestorAdminSession(session)) {
+            users = await queryAll(
+                env,
+                `SELECT id, username, COALESCE(role, 'user') AS role, company_id
+                 FROM users
+                 ORDER BY lower(username) ASC`
+            );
+        } else {
+            // company admin: only users of their own company
+            users = await queryAll(
+                env,
+                `SELECT id, username, COALESCE(role, 'user') AS role, company_id
+                 FROM users
+                 WHERE company_id = ?
+                 ORDER BY lower(username) ASC`,
+                [session.company_id]
+            );
+        }
         return json({
             users,
-            canChangePasswords: isAdminSession(session)
+            canChangePasswords: isAdminSession(session),
+            isGestorAdmin: isGestorAdminSession(session)
         });
     }
 
@@ -87,7 +108,28 @@ async function handleApiRequest(request, env) {
         const body = await readJson(request);
         const username = String(body.username || '').trim();
         const password = String(body.password || '');
-        const role = String(body.role || 'user').trim() === 'admin' ? 'admin' : 'user';
+        const bodyRole = String(body.role || 'user').trim();
+        const bodyCompanyId = body.company_id ? Number(body.company_id) : null;
+
+        // Validate role assignment
+        let role;
+        if (isGestorAdminSession(session)) {
+            // gestor can assign any role
+            const validRoles = ['user', 'admin', 'gestor_admin'];
+            role = validRoles.includes(bodyRole) ? bodyRole : 'user';
+        } else {
+            // company admin can only assign 'user' or 'admin' within their company
+            role = bodyRole === 'admin' ? 'admin' : 'user';
+        }
+
+        // Determine company_id
+        let companyId;
+        if (isGestorAdminSession(session)) {
+            companyId = bodyCompanyId || null;
+        } else {
+            // company admin always creates users in their own company
+            companyId = session.company_id || null;
+        }
 
         if (!username) return json({ error: 'Usuario e obrigatorio' }, 400);
         if (password.trim().length < 4) {
@@ -102,10 +144,10 @@ async function handleApiRequest(request, env) {
         const passwordHash = bcrypt.hashSync(password, 10);
         const result = await execute(
             env,
-            'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-            [username, passwordHash, role]
+            'INSERT INTO users (username, password, role, company_id) VALUES (?, ?, ?, ?)',
+            [username, passwordHash, role, companyId]
         );
-        return json({ id: result.meta.last_row_id, username, role, success: true });
+        return json({ id: result.meta.last_row_id, username, role, company_id: companyId, success: true });
     }
 
     const userPasswordMatch = pathname.match(/^\/api\/users\/(\d+)\/password$/);
@@ -140,16 +182,26 @@ async function handleApiRequest(request, env) {
         const userId = Number(userMatch[1]);
         if (!userId) return json({ error: 'Usuario invalido' }, 400);
 
-        const user = await queryFirst(env, 'SELECT id, username, COALESCE(role, "user") AS role FROM users WHERE id = ?', [userId]);
+        const user = await queryFirst(env, 'SELECT id, username, COALESCE(role, "user") AS role, company_id FROM users WHERE id = ?', [userId]);
         if (!user) return json({ error: 'Usuario nao encontrado' }, 404);
         if (Number(user.id) === Number(session.user_id)) {
             return json({ error: 'Voce nao pode excluir seu proprio usuario' }, 400);
         }
 
-        if (user.role === 'admin') {
-            const adminCount = await queryFirst(env, 'SELECT COUNT(*) AS total FROM users WHERE role = "admin"');
-            if (Number(adminCount?.total) <= 1) {
-                return json({ error: 'Nao e possivel excluir o ultimo administrador' }, 400);
+        // Company admin can only delete users of their own company
+        if (!isGestorAdminSession(session)) {
+            if (Number(user.company_id) !== Number(session.company_id)) {
+                return json({ error: 'Sem permissao para excluir este usuario' }, 403);
+            }
+        }
+
+        if (getEffectiveRole(user) === 'gestor_admin' || (user.role === 'admin' && !user.company_id)) {
+            const gestorCount = await queryFirst(
+                env,
+                'SELECT COUNT(*) AS total FROM users WHERE (role = "gestor_admin" OR (role = "admin" AND company_id IS NULL))'
+            );
+            if (Number(gestorCount?.total) <= 1) {
+                return json({ error: 'Nao e possivel excluir o ultimo administrador gestor' }, 400);
             }
         }
 
@@ -158,8 +210,161 @@ async function handleApiRequest(request, env) {
         return json({ success: true });
     }
 
+    // ── Companies ────────────────────────────────────────────────────────────
+
+    if (pathname === '/api/companies' && request.method === 'GET') {
+        if (!isAdminSession(session)) {
+            return json({ error: 'Acesso restrito a administradores' }, 403);
+        }
+
+        let companies;
+        if (isGestorAdminSession(session)) {
+            companies = await queryAll(env, 'SELECT * FROM companies ORDER BY is_owner DESC, lower(name) ASC');
+        } else {
+            // company admin: only their own company
+            companies = await queryAll(
+                env,
+                'SELECT * FROM companies WHERE id = ?',
+                [session.company_id]
+            );
+        }
+        return json(companies);
+    }
+
+    if (pathname === '/api/companies' && request.method === 'POST') {
+        if (!isGestorAdminSession(session)) {
+            return json({ error: 'Apenas a empresa gestora pode criar empresas' }, 403);
+        }
+
+        const body = await readJson(request);
+        const cnpj = sanitizeCnpj(String(body.cnpj || ''));
+        const name = String(body.name || '').trim();
+
+        if (!name) return json({ error: 'Nome e obrigatorio' }, 400);
+        if (!cnpj || !validateCnpj(cnpj)) {
+            return json({ error: 'CNPJ invalido' }, 400);
+        }
+
+        const existing = await queryFirst(env, 'SELECT id FROM companies WHERE cnpj = ?', [cnpj]);
+        if (existing) return json({ error: 'Ja existe uma empresa com esse CNPJ' }, 409);
+
+        const validPlans = ['start', 'pro', 'ultra'];
+        const plan = validPlans.includes(body.plan) ? body.plan : 'pro';
+
+        const s = v => String(v || '').trim() || null;
+        try {
+            const result = await execute(
+                env,
+                `INSERT INTO companies
+                 (cnpj, name, trade_name, legal_name, state_registration, municipal_registration,
+                  phone, phone2, email, website, legal_representative,
+                  accounting_email, system_admin_email, company_admin_email,
+                  zip_code, address, address_number, address_complement,
+                  neighborhood, city, state, country,
+                  is_owner, plan)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                [
+                    cnpj, name, s(body.trade_name), s(body.legal_name),
+                    s(body.state_registration), s(body.municipal_registration),
+                    s(body.phone), s(body.phone2), s(body.email), s(body.website),
+                    s(body.legal_representative),
+                    s(body.accounting_email), s(body.system_admin_email), s(body.company_admin_email),
+                    s(body.zip_code), s(body.address), s(body.address_number), s(body.address_complement),
+                    s(body.neighborhood), s(body.city), s(body.state), s(body.country) || 'Brasil',
+                    body.is_owner ? 1 : 0, plan
+                ]
+            );
+            return json({ id: result.meta.last_row_id, success: true });
+        } catch (error) {
+            return handleDatabaseError(error, 'Ja existe uma empresa com esse CNPJ');
+        }
+    }
+
+    const companyMatch = pathname.match(/^\/api\/companies\/(\d+)$/);
+
+    if (companyMatch && request.method === 'GET') {
+        if (!isAdminSession(session)) {
+            return json({ error: 'Acesso restrito a administradores' }, 403);
+        }
+
+        const companyId = Number(companyMatch[1]);
+        if (!isGestorAdminSession(session) && Number(session.company_id) !== companyId) {
+            return json({ error: 'Sem permissao para ver esta empresa' }, 403);
+        }
+
+        const company = await queryFirst(env, 'SELECT * FROM companies WHERE id = ?', [companyId]);
+        if (!company) return json({ error: 'Empresa nao encontrada' }, 404);
+        return json(company);
+    }
+
+    if (companyMatch && request.method === 'PATCH') {
+        if (!isAdminSession(session)) {
+            return json({ error: 'Acesso restrito a administradores' }, 403);
+        }
+
+        const companyId = Number(companyMatch[1]);
+        if (!isGestorAdminSession(session) && Number(session.company_id) !== companyId) {
+            return json({ error: 'Sem permissao para editar esta empresa' }, 403);
+        }
+
+        const company = await queryFirst(env, 'SELECT * FROM companies WHERE id = ?', [companyId]);
+        if (!company) return json({ error: 'Empresa nao encontrada' }, 404);
+
+        const body = await readJson(request);
+        const name = String(body.name || company.name || '').trim();
+        if (!name) return json({ error: 'Nome e obrigatorio' }, 400);
+
+        const validPlans = ['start', 'pro', 'ultra'];
+        const plan = validPlans.includes(body.plan) ? body.plan : company.plan;
+
+        // CNPJ is immutable — skip any change if provided
+        const s = v => String(v || '').trim() || null;
+        await execute(
+            env,
+            `UPDATE companies
+             SET name = ?, trade_name = ?, legal_name = ?, state_registration = ?,
+                 municipal_registration = ?, phone = ?, phone2 = ?, email = ?, website = ?,
+                 legal_representative = ?, accounting_email = ?,
+                 system_admin_email = ?, company_admin_email = ?,
+                 zip_code = ?, address = ?, address_number = ?, address_complement = ?,
+                 neighborhood = ?, city = ?, state = ?, country = ?, plan = ?
+             WHERE id = ?`,
+            [
+                name, s(body.trade_name), s(body.legal_name), s(body.state_registration),
+                s(body.municipal_registration), s(body.phone), s(body.phone2),
+                s(body.email), s(body.website), s(body.legal_representative),
+                s(body.accounting_email), s(body.system_admin_email), s(body.company_admin_email),
+                s(body.zip_code), s(body.address), s(body.address_number), s(body.address_complement),
+                s(body.neighborhood), s(body.city), s(body.state), s(body.country) || 'Brasil',
+                plan,
+                companyId
+            ]
+        );
+        return json({ success: true });
+    }
+
+    if (companyMatch && request.method === 'DELETE') {
+        if (!isGestorAdminSession(session)) {
+            return json({ error: 'Apenas a empresa gestora pode excluir empresas' }, 403);
+        }
+
+        const companyId = Number(companyMatch[1]);
+        const company = await queryFirst(env, 'SELECT * FROM companies WHERE id = ?', [companyId]);
+        if (!company) return json({ error: 'Empresa nao encontrada' }, 404);
+        if (company.is_owner) {
+            return json({ error: 'Nao e possivel excluir a empresa gestora' }, 400);
+        }
+
+        // Unlink users from this company before deleting
+        await execute(env, 'UPDATE users SET company_id = NULL WHERE company_id = ?', [companyId]);
+        await execute(env, 'DELETE FROM companies WHERE id = ?', [companyId]);
+        return json({ success: true });
+    }
+
+    // ── End Companies ────────────────────────────────────────────────────────
+
     if (pathname === '/api/events' && request.method === 'GET') {
-        const rows = await getEventsByCompletion(env, 'event', false);
+        const rows = await getEventsByCompletion(env, 'event', false, cid);
         return json(rows);
     }
 
@@ -167,7 +372,6 @@ async function handleApiRequest(request, env) {
         const body = await readJson(request);
         const name = String(body.name || '').trim();
         const date = String(body.date || '').trim();
-        const session = await getSessionFromRequest(request, env);
 
         if (!name || !date) {
             return json({ error: 'Nome e data sao obrigatorios' }, 400);
@@ -175,21 +379,21 @@ async function handleApiRequest(request, env) {
 
         const result = await execute(
             env,
-            "INSERT INTO events (name, date, created_by_username, event_type) VALUES (?, ?, ?, 'event')",
-            [name, date, session?.username || null]
+            "INSERT INTO events (name, date, created_by_username, event_type, company_id) VALUES (?, ?, ?, 'event', ?)",
+            [name, date, session.username || null, cid]
         );
         return json({ id: result.meta.last_row_id, success: true });
     }
 
     if (pathname === '/api/rental-events' && request.method === 'GET') {
-        const rows = await getEventsByCompletion(env, 'rental', false);
+        const rows = await getEventsByCompletion(env, 'rental', false, cid);
         return json(rows);
     }
 
     if (pathname === '/api/history-events' && request.method === 'GET') {
         const [events, rentals] = await Promise.all([
-            getEventsByCompletion(env, 'event', true),
-            getEventsByCompletion(env, 'rental', true)
+            getEventsByCompletion(env, 'event', true, cid),
+            getEventsByCompletion(env, 'rental', true, cid)
         ]);
         return json({ events, rentals });
     }
@@ -200,7 +404,7 @@ async function handleApiRequest(request, env) {
             return json({ error: 'Data invalida' }, 400);
         }
 
-        const alerts = await getRentalReturnAlerts(env, today);
+        const alerts = await getRentalReturnAlerts(env, today, cid);
         return json(alerts);
     }
 
@@ -209,7 +413,6 @@ async function handleApiRequest(request, env) {
         const name = String(body.name || '').trim();
         const withdrawalDate = String(body.withdrawalDate || '').trim();
         const returnDate = String(body.returnDate || '').trim();
-        const session = await getSessionFromRequest(request, env);
 
         if (!name || !withdrawalDate || !returnDate) {
             return json({ error: 'Nome, data de retirada e data de devolucao sao obrigatorios' }, 400);
@@ -221,19 +424,20 @@ async function handleApiRequest(request, env) {
 
         const result = await execute(
             env,
-            `INSERT INTO events (name, date, created_by_username, event_type, withdrawal_date, return_date)
-             VALUES (?, ?, ?, 'rental', ?, ?)`,
-            [name, withdrawalDate, session?.username || null, withdrawalDate, returnDate]
+            `INSERT INTO events (name, date, created_by_username, event_type, withdrawal_date, return_date, company_id)
+             VALUES (?, ?, ?, 'rental', ?, ?, ?)`,
+            [name, withdrawalDate, session.username || null, withdrawalDate, returnDate, cid]
         );
         return json({ id: result.meta.last_row_id, success: true });
     }
 
     const rentalEventMatch = pathname.match(/^\/api\/rental-events\/(\d+)$/);
     if (rentalEventMatch && request.method === 'GET') {
+        const cidWhere = cid !== null ? 'AND company_id = ?' : '';
         const event = await queryFirst(
             env,
-            "SELECT * FROM events WHERE id = ? AND COALESCE(event_type, 'event') = 'rental'",
-            [Number(rentalEventMatch[1])]
+            `SELECT * FROM events WHERE id = ? AND COALESCE(event_type, 'event') = 'rental' ${cidWhere}`,
+            cid !== null ? [Number(rentalEventMatch[1]), cid] : [Number(rentalEventMatch[1])]
         );
         if (!event) return json({ error: 'Locação nao encontrada' }, 404);
         return json(event);
@@ -248,10 +452,11 @@ async function handleApiRequest(request, env) {
         }
 
         const eventId = Number(rentalEventMatch[1]);
+        const rentalCidWhere = cid !== null ? 'AND company_id = ?' : '';
         const event = await queryFirst(
             env,
-            "SELECT id FROM events WHERE id = ? AND COALESCE(event_type, 'event') = 'rental'",
-            [eventId]
+            `SELECT id FROM events WHERE id = ? AND COALESCE(event_type, 'event') = 'rental' ${rentalCidWhere}`,
+            cid !== null ? [eventId, cid] : [eventId]
         );
         if (!event) return json({ error: 'Locação nao encontrada' }, 404);
 
@@ -261,7 +466,12 @@ async function handleApiRequest(request, env) {
 
     const eventMatch = pathname.match(/^\/api\/events\/(\d+)$/);
     if (eventMatch && request.method === 'GET') {
-        const event = await queryFirst(env, 'SELECT * FROM events WHERE id = ?', [Number(eventMatch[1])]);
+        const cidWhere = cid !== null ? 'AND company_id = ?' : '';
+        const event = await queryFirst(
+            env,
+            `SELECT * FROM events WHERE id = ? ${cidWhere}`,
+            cid !== null ? [Number(eventMatch[1]), cid] : [Number(eventMatch[1])]
+        );
         if (!event) return json({ error: 'Evento nao encontrado' }, 404);
         return json(event);
     }
@@ -407,12 +617,20 @@ async function handleApiRequest(request, env) {
 
     if (eventMatch && request.method === 'DELETE') {
         const eventId = Number(eventMatch[1]);
+        const eventCidWhere = cid !== null ? 'AND company_id = ?' : '';
+        const eventExists = await queryFirst(
+            env,
+            `SELECT id FROM events WHERE id = ? ${eventCidWhere}`,
+            cid !== null ? [eventId, cid] : [eventId]
+        );
+        if (!eventExists) return json({ error: 'Evento nao encontrado' }, 404);
         await deleteEventRecords(env, eventId);
         return json({ success: true });
     }
 
     if (pathname === '/api/equipments' && request.method === 'GET') {
         const search = String(url.searchParams.get('search') || '').trim();
+        const cidWhere = cid !== null ? 'AND equipments.company_id = ?' : '';
         const rows = await queryAll(
             env,
             `SELECT
@@ -449,9 +667,12 @@ async function handleApiRequest(request, env) {
                     LIMIT 1
                 ) AS maintenance_description
              FROM equipments
-             WHERE name LIKE ? OR barcode LIKE ? OR category LIKE ?
+             WHERE (name LIKE ? OR barcode LIKE ? OR category LIKE ?)
+               ${cidWhere}
              ORDER BY category ASC, name ASC`,
-            [`%${search}%`, `%${search}%`, `%${search}%`]
+            cid !== null
+                ? [`%${search}%`, `%${search}%`, `%${search}%`, cid]
+                : [`%${search}%`, `%${search}%`, `%${search}%`]
         );
         return json(rows);
     }
@@ -469,8 +690,8 @@ async function handleApiRequest(request, env) {
         try {
             const result = await execute(
                 env,
-                'INSERT INTO equipments (name, barcode, current_status, category) VALUES (?, ?, ?, ?)',
-                [name, barcode, 'Disponivel', category]
+                'INSERT INTO equipments (name, barcode, current_status, category, company_id) VALUES (?, ?, ?, ?, ?)',
+                [name, barcode, 'Disponivel', category, cid]
             );
             return json({ id: result.meta.last_row_id, success: true });
         } catch (error) {
@@ -490,6 +711,9 @@ async function handleApiRequest(request, env) {
 
         const equipment = await queryFirst(env, 'SELECT * FROM equipments WHERE id = ?', [equipmentId]);
         if (!equipment) return json({ message: 'Equipamento nao encontrado' }, 404);
+        if (cid !== null && Number(equipment.company_id) !== cid) {
+            return json({ error: 'Acesso negado' }, 403);
+        }
 
         await execute(env, 'UPDATE equipments SET current_status = ? WHERE id = ?', [status, equipmentId]);
         return json({ success: true });
@@ -497,6 +721,7 @@ async function handleApiRequest(request, env) {
 
     if (pathname === '/api/cables' && request.method === 'GET') {
         const search = String(url.searchParams.get('search') || '').trim();
+        const cidWhere = cid !== null ? 'AND cables.company_id = ?' : '';
         const rows = await queryAll(
             env,
             `SELECT
@@ -510,9 +735,12 @@ async function handleApiRequest(request, env) {
                     LIMIT 1
                 ) AS maintenance_description
              FROM cables
-             WHERE name LIKE ? OR category LIKE ?
+             WHERE (name LIKE ? OR category LIKE ?)
+               ${cidWhere}
              ORDER BY category ASC, name ASC`,
-            [`%${search}%`, `%${search}%`]
+            cid !== null
+                ? [`%${search}%`, `%${search}%`, cid]
+                : [`%${search}%`, `%${search}%`]
         );
         return json(rows);
     }
@@ -531,9 +759,9 @@ async function handleApiRequest(request, env) {
         try {
             const result = await execute(
                 env,
-                `INSERT INTO cables (name, quantity, available_quantity, category, updated_at)
-                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-                [name, quantity, quantity, category]
+                `INSERT INTO cables (name, quantity, available_quantity, category, company_id, updated_at)
+                 VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                [name, quantity, quantity, category, cid]
             );
             return json({ id: result.meta.last_row_id, success: true });
         } catch (error) {
@@ -554,6 +782,9 @@ async function handleApiRequest(request, env) {
 
         const cable = await queryFirst(env, 'SELECT * FROM cables WHERE id = ?', [cableId]);
         if (!cable) return json({ message: 'Cabo nao encontrado' }, 404);
+        if (cid !== null && Number(cable.company_id) !== cid) {
+            return json({ error: 'Acesso negado' }, 403);
+        }
 
         await execute(
             env,
@@ -576,6 +807,9 @@ async function handleApiRequest(request, env) {
 
         const cable = await queryFirst(env, 'SELECT * FROM cables WHERE id = ?', [cableId]);
         if (!cable) return json({ message: 'Cabo nao encontrado' }, 404);
+        if (cid !== null && Number(cable.company_id) !== cid) {
+            return json({ error: 'Acesso negado' }, 403);
+        }
 
         await execute(env, 'DELETE FROM cable_event_movements WHERE cable_id = ?', [cableId]);
         await execute(env, 'DELETE FROM cable_maintenances WHERE cable_id = ?', [cableId]);
@@ -585,13 +819,15 @@ async function handleApiRequest(request, env) {
 
     if (pathname === '/api/other-items' && request.method === 'GET') {
         const search = String(url.searchParams.get('search') || '').trim();
+        const cidWhere = cid !== null ? 'AND company_id = ?' : '';
         const rows = await queryAll(
             env,
             `SELECT *
              FROM other_items
-             WHERE name LIKE ?
+             WHERE (name LIKE ?)
+               ${cidWhere}
              ORDER BY name ASC`,
-            [`%${search}%`]
+            cid !== null ? [`%${search}%`, cid] : [`%${search}%`]
         );
         return json(rows);
     }
@@ -609,9 +845,9 @@ async function handleApiRequest(request, env) {
         try {
             const result = await execute(
                 env,
-                `INSERT INTO other_items (name, quantity, available_quantity, updated_at)
-                 VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
-                [name, quantity, quantity]
+                `INSERT INTO other_items (name, quantity, available_quantity, company_id, updated_at)
+                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                [name, quantity, quantity, cid]
             );
             return json({ id: result.meta.last_row_id, success: true });
         } catch (error) {
@@ -632,6 +868,9 @@ async function handleApiRequest(request, env) {
 
         const item = await queryFirst(env, 'SELECT * FROM other_items WHERE id = ?', [itemId]);
         if (!item) return json({ message: 'Item nao encontrado' }, 404);
+        if (cid !== null && Number(item.company_id) !== cid) {
+            return json({ error: 'Acesso negado' }, 403);
+        }
 
         await execute(
             env,
@@ -654,6 +893,9 @@ async function handleApiRequest(request, env) {
 
         const item = await queryFirst(env, 'SELECT * FROM other_items WHERE id = ?', [itemId]);
         if (!item) return json({ message: 'Item nao encontrado' }, 404);
+        if (cid !== null && Number(item.company_id) !== cid) {
+            return json({ error: 'Acesso negado' }, 403);
+        }
 
         await execute(env, 'DELETE FROM other_item_event_movements WHERE item_id = ?', [itemId]);
         await execute(env, 'DELETE FROM other_items WHERE id = ?', [itemId]);
@@ -671,6 +913,9 @@ async function handleApiRequest(request, env) {
 
         const equipment = await queryFirst(env, 'SELECT * FROM equipments WHERE id = ?', [equipmentId]);
         if (!equipment) return json({ message: 'Equipamento nao encontrado' }, 404);
+        if (cid !== null && Number(equipment.company_id) !== cid) {
+            return json({ error: 'Acesso negado' }, 403);
+        }
 
         await execute(env, 'DELETE FROM equipment_events WHERE equipment_id = ?', [equipmentId]);
         await execute(env, 'DELETE FROM maintenances WHERE equipment_id = ?', [equipmentId]);
@@ -685,8 +930,7 @@ async function handleApiRequest(request, env) {
         const equipmentId = Number(body.equipmentId);
         const barcode = String(body.barcode || '').trim();
         const eventId = Number(body.eventId);
-        const session = await getSessionFromRequest(request, env);
-        const performedByUsername = session?.username || null;
+        const performedByUsername = session.username || null;
 
         if ((!equipmentId && !barcode) || !eventId) {
             return json({ message: 'equipmentId ou codigo de barras e eventId sao obrigatorios' }, 400);
@@ -700,6 +944,12 @@ async function handleApiRequest(request, env) {
 
         if (!equipment) return json({ message: 'Equipamento nao encontrado' }, 404);
         if (!event) return json({ message: 'Evento nao encontrado' }, 404);
+        if (cid !== null && Number(equipment.company_id) !== cid) {
+            return json({ message: 'Equipamento nao pertence a sua empresa' }, 403);
+        }
+        if (cid !== null && Number(event.company_id) !== cid) {
+            return json({ message: 'Evento nao pertence a sua empresa' }, 403);
+        }
 
         if (type === 'saida') {
             if (!isAvailableStatus(equipment.current_status)) {
@@ -755,6 +1005,12 @@ async function handleApiRequest(request, env) {
 
         if (!cable) return json({ message: 'Cabo nao encontrado' }, 404);
         if (!event) return json({ message: 'Evento nao encontrado' }, 404);
+        if (cid !== null && Number(cable.company_id) !== cid) {
+            return json({ message: 'Cabo nao pertence a sua empresa' }, 403);
+        }
+        if (cid !== null && Number(event.company_id) !== cid) {
+            return json({ message: 'Evento nao pertence a sua empresa' }, 403);
+        }
 
         if (type === 'saida') {
             if (Number(cable.available_quantity) < quantity) {
@@ -816,6 +1072,12 @@ async function handleApiRequest(request, env) {
 
         if (!item) return json({ message: 'Item nao encontrado' }, 404);
         if (!event) return json({ message: 'Evento nao encontrado' }, 404);
+        if (cid !== null && Number(item.company_id) !== cid) {
+            return json({ message: 'Item nao pertence a sua empresa' }, 403);
+        }
+        if (cid !== null && Number(event.company_id) !== cid) {
+            return json({ message: 'Evento nao pertence a sua empresa' }, 403);
+        }
 
         if (type === 'saida') {
             if (Number(item.available_quantity) < quantity) {
@@ -871,6 +1133,9 @@ async function handleApiRequest(request, env) {
 
         const equipment = await queryFirst(env, 'SELECT * FROM equipments WHERE id = ?', [equipmentId]);
         if (!equipment) return json({ message: 'Equipamento nao encontrado' }, 404);
+        if (cid !== null && Number(equipment.company_id) !== cid) {
+            return json({ error: 'Acesso negado' }, 403);
+        }
 
         await execute(
             env,
@@ -892,6 +1157,9 @@ async function handleApiRequest(request, env) {
 
         const cable = await queryFirst(env, 'SELECT * FROM cables WHERE id = ?', [cableId]);
         if (!cable) return json({ message: 'Cabo nao encontrado' }, 404);
+        if (cid !== null && Number(cable.company_id) !== cid) {
+            return json({ error: 'Acesso negado' }, 403);
+        }
 
         await execute(
             env,
@@ -908,6 +1176,9 @@ async function handleApiRequest(request, env) {
 
         const equipment = await queryFirst(env, 'SELECT * FROM equipments WHERE id = ?', [equipmentId]);
         if (!equipment) return json({ message: 'Equipamento nao encontrado' }, 404);
+        if (cid !== null && Number(equipment.company_id) !== cid) {
+            return json({ error: 'Acesso negado' }, 403);
+        }
 
         await execute(
             env,
@@ -928,6 +1199,9 @@ async function handleApiRequest(request, env) {
 
         const cable = await queryFirst(env, 'SELECT * FROM cables WHERE id = ?', [cableId]);
         if (!cable) return json({ message: 'Cabo nao encontrado' }, 404);
+        if (cid !== null && Number(cable.company_id) !== cid) {
+            return json({ error: 'Acesso negado' }, 403);
+        }
 
         await execute(
             env,
@@ -1034,7 +1308,9 @@ async function getSessionFromRequest(request, env) {
 
     const session = await queryFirst(
         env,
-        `SELECT sessions.id, sessions.user_id, sessions.expires_at, users.username, COALESCE(users.role, 'user') AS role
+        `SELECT sessions.id, sessions.user_id, sessions.expires_at, users.username,
+                COALESCE(users.role, 'user') AS role,
+                users.company_id
          FROM sessions
          INNER JOIN users ON users.id = sessions.user_id
          WHERE sessions.id = ?
@@ -1050,7 +1326,20 @@ async function getSessionFromRequest(request, env) {
 }
 
 function isAdminSession(session) {
-    return session?.role === 'admin';
+    const role = getEffectiveRole(session);
+    return role === 'admin' || role === 'gestor_admin';
+}
+
+function isGestorAdminSession(session) {
+    return getEffectiveRole(session) === 'gestor_admin';
+}
+
+// Backward-compat: existing admin users with no company_id are treated as gestor_admin
+function getEffectiveRole(session) {
+    if (!session) return null;
+    const role = session.role || 'user';
+    if (role === 'admin' && !session.company_id) return 'gestor_admin';
+    return role;
 }
 
 async function cleanupExpiredSessions(env) {
@@ -1292,13 +1581,15 @@ async function verifyDeletePassword(password, env) {
     return bcrypt.compare(password, passwordHash);
 }
 
-async function getEventsByCompletion(env, eventType, completed) {
+async function getEventsByCompletion(env, eventType, completed, companyId = null) {
     const orderBy = eventType === 'rental'
         ? 'ORDER BY COALESCE(e.return_date, e.date) DESC, e.id DESC'
         : 'ORDER BY e.date DESC, e.id DESC';
     const completionFilter = completed
         ? 'COALESCE(movements.movement_count, 0) > 0 AND COALESCE(pending.pending_quantity, 0) = 0'
         : '(COALESCE(movements.movement_count, 0) = 0 OR COALESCE(pending.pending_quantity, 0) > 0)';
+    const companyWhere = companyId !== null ? 'AND e.company_id = ?' : '';
+    const params = companyId !== null ? [eventType, companyId] : [eventType];
 
     return queryAll(
         env,
@@ -1342,12 +1633,14 @@ async function getEventsByCompletion(env, eventType, completed) {
          ) pending ON pending.event_id = e.id
          WHERE COALESCE(e.event_type, 'event') = ?
            AND ${completionFilter}
+           ${companyWhere}
          ${orderBy}`,
-        [eventType]
+        params
     );
 }
 
-async function getRentalReturnAlerts(env, today) {
+async function getRentalReturnAlerts(env, today, companyId = null) {
+    const companyWhere = companyId !== null ? 'AND company_id = ?' : '';
     const rentalEvents = await queryAll(
         env,
         `SELECT *
@@ -1355,8 +1648,9 @@ async function getRentalReturnAlerts(env, today) {
          WHERE COALESCE(event_type, 'event') = 'rental'
            AND return_date IS NOT NULL
            AND return_date <= ?
+           ${companyWhere}
          ORDER BY return_date ASC, id ASC`,
-        [today]
+        companyId !== null ? [today, companyId] : [today]
     );
 
     const alerts = [];
@@ -1577,4 +1871,27 @@ function handleDatabaseError(error, duplicateMessage) {
 
     console.error('Database error:', error);
     return json({ error: message || 'Erro no banco de dados' }, 500);
+}
+
+function sanitizeCnpj(value) {
+    return String(value || '').replace(/\D/g, '');
+}
+
+function validateCnpj(cnpj) {
+    cnpj = sanitizeCnpj(cnpj);
+    if (cnpj.length !== 14) return false;
+    if (/^(\d)\1+$/.test(cnpj)) return false;
+
+    const calcDigit = (cnpj, weights) => {
+        let sum = 0;
+        for (let i = 0; i < weights.length; i++) sum += Number(cnpj[i]) * weights[i];
+        const rem = sum % 11;
+        return rem < 2 ? 0 : 11 - rem;
+    };
+
+    const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    if (calcDigit(cnpj, w1) !== Number(cnpj[12])) return false;
+    if (calcDigit(cnpj, w2) !== Number(cnpj[13])) return false;
+    return true;
 }

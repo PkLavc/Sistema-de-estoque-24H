@@ -1,4 +1,4 @@
-function darkenHex(hex, amount = 15) {
+﻿function darkenHex(hex, amount = 15) {
     hex = hex.replace('#', '');
     if (hex.length === 3) {
         hex = hex.split('').map((char) => char + char).join('');
@@ -245,9 +245,7 @@ function populateCableCategoryOptions(cables = allCables) {
 }
 
 function showSection(sectionId) {
-    if (sectionId === 'usuarios' && !currentUser?.isAdmin) {
-        sectionId = 'home';
-    }
+    // no redirect needed for config — role-based tabs handle access
 
     // Close sidebar on mobile navigation (sidebar is overlay on mobile)
     if (window.innerWidth <= 768) {
@@ -281,6 +279,11 @@ function showSection(sectionId) {
     if (sectionId === 'banco') setBancoTab(activeBancoTab);
     if (sectionId === 'historico') loadHistoryEvents();
     if (sectionId === 'usuarios') loadLoginUsers();
+    if (sectionId === 'config') {
+        const isAdmin = currentUser?.isAdmin || currentUser?.isGestorAdmin;
+        if (isAdmin) loadLoginUsers();
+        if (currentUser?.isGestorAdmin || currentUser?.isAdmin) loadCompanies();
+    }
     if (sectionId === 'manutencao') setMaintenanceTab(activeMaintenanceTab);
     if (sectionId === 'locacao') {
         loadRentalEvents();
@@ -1756,10 +1759,46 @@ function formatDateTime(dateStr) {
 }
 
 function applyLoginManagementVisibility() {
+    const role = currentUser?.role || 'user';
+    const isGestor = currentUser?.isGestorAdmin;
+    const isAdmin  = isGestor || currentUser?.isAdmin;
+
+    // Users menu item (sidebar)
     const menuItem = document.getElementById('usersMenuItem');
-    if (menuItem) {
-        menuItem.style.display = currentUser?.isAdmin ? '' : 'none';
+    if (menuItem) menuItem.style.display = isAdmin ? '' : 'none';
+
+    // Settings tabs visibility
+    const tabUsers    = document.getElementById('settingsTabUsers');
+    const tabTheme    = document.getElementById('settingsTabTheme');
+    const tabLogo     = document.getElementById('settingsTabLogo');
+    const tabEmpresas = document.getElementById('settingsTabEmpresas');
+    const noAccess    = document.getElementById('settingsNoAccess');
+    const tabsBar     = document.getElementById('settingsTabsBar');
+
+    if (role === 'user' && !isAdmin) {
+        if (tabsBar)     tabsBar.style.display    = 'none';
+        if (noAccess)    noAccess.style.display    = '';
+        if (tabUsers)    tabUsers.style.display    = 'none';
+        if (tabTheme)    tabTheme.style.display    = 'none';
+        if (tabLogo)     tabLogo.style.display     = 'none';
+        if (tabEmpresas) tabEmpresas.style.display = 'none';
+    } else {
+        if (tabsBar)  tabsBar.style.display  = '';
+        if (noAccess) noAccess.style.display = 'none';
+        if (tabUsers)   tabUsers.style.display   = '';
+        if (tabTheme)   tabTheme.style.display   = '';
+        if (tabLogo)    tabLogo.style.display    = '';
+        // empresas tab: visible to gestor_admin and regular admins (to manage their own company)
+        if (tabEmpresas) tabEmpresas.style.display = (isGestor || currentUser?.isAdmin) ? '' : 'none';
     }
+
+    // In user creation form: show gestor option and company selector only for gestor_admin
+    const roleGestorOption = document.getElementById('newUserRoleGestor');
+    const companyGroup     = document.getElementById('newUserCompanyGroup');
+    const companyHeader    = document.getElementById('usersTableCompanyHeader');
+    if (roleGestorOption) roleGestorOption.style.display = isGestor ? '' : 'none';
+    if (companyGroup)     companyGroup.style.display     = isGestor ? '' : 'none';
+    if (companyHeader)    companyHeader.style.display    = isGestor ? '' : 'none';
 }
 
 function setUsersMessage(message, type = '') {
@@ -1784,7 +1823,18 @@ function toggleCreateUserForm(forceOpen) {
 }
 
 async function loadLoginUsers() {
-    if (!currentUser?.isAdmin) return;
+    if (!currentUser?.isAdmin && !currentUser?.isGestorAdmin && !currentUser?.isGuest) return;
+
+    // Guest mode: load from localStorage
+    if (currentUser?.isGuest) {
+        loginUsers = await storage.getUsers();
+        canChangeUserPasswords = true;
+        const createButton = document.getElementById('openUserCreateButton');
+        if (createButton) createButton.style.display = '';
+        renderLoginUsers();
+        setUsersMessage('');
+        return;
+    }
 
     try {
         const response = await fetch('api/users', { credentials: 'include' });
@@ -1812,15 +1862,24 @@ function renderLoginUsers() {
     const tbody = document.querySelector('#usersTable tbody');
     if (!tbody) return;
 
+    const isGestor = currentUser?.isGestorAdmin || currentUser?.role === 'guest';
+    const companyHeader = document.getElementById('usersTableCompanyHeader');
+    if (companyHeader) companyHeader.style.display = isGestor ? '' : 'none';
+
+    const roleLabels = { gestor_admin: 'Admin Gestor', admin: 'Admin Empresa', user: 'Usuário' };
+
     tbody.innerHTML = '';
     loginUsers.forEach((user) => {
         const userId = Number(user.id);
-        const canEdit = canChangeUserPasswords && currentUser?.isAdmin;
+        const canEdit = canChangeUserPasswords && (currentUser?.isAdmin || isGestor);
         const canDelete = canEdit && Number(user.id) !== Number(currentUser?.userId);
+        const roleLabel = roleLabels[user.role] || escapeHtml(user.role || 'user');
+        const companyCell = isGestor ? `<td>${escapeHtml(user.company_name || user.company_id || '—')}</td>` : '';
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${escapeHtml(user.username)}</td>
-            <td><span class="user-role-badge ${user.role === 'admin' ? 'admin' : ''}">${escapeHtml(user.role || 'user')}</span></td>
+            <td><span class="user-role-badge ${user.role === 'admin' || user.role === 'gestor_admin' ? 'admin' : ''}">${roleLabel}</span></td>
+            ${companyCell}
             <td>
                 <input
                     type="password"
@@ -1848,6 +1907,14 @@ async function changeUserPassword(userId) {
         return;
     }
 
+    // Guest mode: update in localStorage
+    if (currentUser?.isGuest) {
+        await storage.updateUserPassword(Number(userId), password);
+        if (input) input.value = '';
+        setUsersMessage('Senha atualizada.', 'success');
+        return;
+    }
+
     try {
         const response = await fetch(`api/users/${Number(userId)}/password`, {
             method: 'PATCH',
@@ -1871,7 +1938,8 @@ async function changeUserPassword(userId) {
 
 async function createLoginUser(event) {
     event.preventDefault();
-    if (!canChangeUserPasswords || !currentUser?.isAdmin) {
+    const isGestor = currentUser?.isGestorAdmin || currentUser?.role === 'guest';
+    if (!canChangeUserPasswords || (!currentUser?.isAdmin && !isGestor)) {
         setUsersMessage('Apenas administradores podem cadastrar usuarios.', 'error');
         return;
     }
@@ -1879,6 +1947,8 @@ async function createLoginUser(event) {
     const username = String(document.getElementById('newUsername')?.value || '').trim();
     const password = String(document.getElementById('newUserPassword')?.value || '');
     const role = String(document.getElementById('newUserRole')?.value || 'user').trim();
+    const companyIdRaw = document.getElementById('newUserCompany')?.value;
+    const company_id = companyIdRaw ? Number(companyIdRaw) : null;
 
     if (!username) {
         setUsersMessage('Informe o usuario.', 'error');
@@ -1890,12 +1960,29 @@ async function createLoginUser(event) {
         return;
     }
 
+    // Guest mode: save to localStorage
+    if (currentUser?.isGuest) {
+        const companies = await storage.getCompanies();
+        const effectiveCompanyId = company_id || currentUser.companyId;
+        const companyObj = companies.find(c => Number(c.id) === Number(effectiveCompanyId));
+        await storage.createUser({
+            username, role,
+            company_id: effectiveCompanyId,
+            company_name: companyObj?.name || '',
+            created_at: new Date().toISOString()
+        });
+        toggleCreateUserForm(false);
+        await loadLoginUsers();
+        setUsersMessage('Usuario cadastrado com sucesso.', 'success');
+        return;
+    }
+
     try {
         const response = await fetch('api/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ username, password, role })
+            body: JSON.stringify({ username, password, role, company_id })
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
@@ -1927,6 +2014,14 @@ async function deleteLoginUser(userId) {
     const confirmed = window.confirm(`Excluir o usuario ${user.username}?`);
     if (!confirmed) return;
 
+    // Guest mode: delete from localStorage
+    if (currentUser?.isGuest) {
+        await storage.deleteUser(Number(userId));
+        await loadLoginUsers();
+        setUsersMessage('Usuario excluido.', 'success');
+        return;
+    }
+
     try {
         const response = await fetch(`api/users/${Number(userId)}`, {
             method: 'DELETE',
@@ -1946,6 +2041,364 @@ async function deleteLoginUser(userId) {
     }
 }
 
+// ── Company management ───────────────────────────────────────────────────────
+
+const PLAN_LABELS = { start: 'Start', pro: 'Pro', ultra: 'Ultra' };
+const PLANS_WITH_ADS = ['start'];
+
+function applyAdVisibility(plan) {
+    const showAds = PLANS_WITH_ADS.includes(plan);
+    const banner = document.getElementById('adBanner');
+    if (banner) banner.style.display = showAds ? '' : 'none';
+}
+
+function formatCnpj(raw) {
+    const d = String(raw || '').replace(/\D/g, '').padStart(14, '0');
+    return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12,14)}`;
+}
+
+function setCompaniesMessage(msg, type = '') {
+    const el = document.getElementById('companiesMessage');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.className = `users-message ${type}`.trim();
+}
+
+function setCompanyEditMessage(msg, type = '') {
+    const el = document.getElementById('companyEditMessage');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.className = `users-message ${type}`.trim();
+}
+
+function toggleCreateCompanyForm(forceOpen) {
+    const form = document.getElementById('createCompanyForm');
+    if (!form) return;
+    const shouldOpen = typeof forceOpen === 'boolean'
+        ? forceOpen
+        : form.style.display === 'none';
+    form.style.display = shouldOpen ? '' : 'none';
+    if (!shouldOpen) form.reset();
+}
+
+let _companiesList = [];
+
+async function loadCompanies() {
+    const isGestor = currentUser?.isGestorAdmin;
+    const isAdmin  = isGestor || currentUser?.isAdmin;
+    if (!isAdmin) return;
+
+    // Hide/show create button based on role
+    const createBtn = document.getElementById('openCompanyCreateButton');
+    if (createBtn) createBtn.style.display = isGestor ? '' : 'none';
+
+    try {
+        if (currentUser?.isGuest) {
+            _companiesList = (typeof storage !== 'undefined')
+                ? (await storage.getCompanies() || [])
+                : [];
+        } else {
+            const res = await fetch('api/companies', { credentials: 'include' });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                setCompaniesMessage(data.error || 'Erro ao carregar empresas.', 'error');
+                return;
+            }
+            _companiesList = Array.isArray(data) ? data : (Array.isArray(data.companies) ? data.companies : []);
+        }
+        // Non-gestors see only their own company
+        const visibleCompanies = isGestor
+            ? _companiesList
+            : _companiesList.filter(c => Number(c.id) === Number(currentUser?.companyId));
+        renderCompanies(visibleCompanies, isGestor);
+        populateUserCompanySelect(_companiesList);
+        setCompaniesMessage('');
+    } catch (e) {
+        console.error(e);
+        setCompaniesMessage('Erro de conexao.', 'error');
+    }
+}
+
+const _planBadgeClass = { start: '', pro: 'admin', ultra: 'admin' };
+
+function renderCompanies(companies, isGestor = false) {
+    const tbody = document.querySelector('#companiesTable tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    companies.forEach(c => {
+        const planLabel = PLAN_LABELS[c.plan] || c.plan || '\u2014';
+        const planClass = _planBadgeClass[c.plan] || '';
+        const row = document.createElement('tr');
+        const deleteBtn = isGestor
+            ? `<button type="button" class="btn-danger user-password-button" onclick="deleteCompany(${Number(c.id)})" ${(c.is_owner || c.is_gestora) ? 'disabled title="Empresa gestora n\u00e3o pode ser exclu\u00edda"' : ''}>Excluir</button>`
+            : '';
+        row.innerHTML = `
+            <td>${escapeHtml(c.name || c.nome || '\u2014')}</td>
+            <td>${escapeHtml(c.cnpj ? formatCnpj(c.cnpj) : '\u2014')}</td>
+            <td>${escapeHtml(c.city || '\u2014')}</td>
+            <td><span class="user-role-badge ${planClass}">${planLabel}</span></td>
+            <td>${(c.is_owner || c.is_gestora) ? '<span class="user-role-badge admin">Gestora</span>' : 'Cliente'}</td>
+            <td class="user-actions-cell">
+                <button type="button" class="company-edit-btn" onclick="openCompanyEdit(${Number(c.id)})" title="Editar empresa">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                ${deleteBtn}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function openCompanyEdit(companyId) {
+    const company = _companiesList.find(c => Number(c.id) === Number(companyId));
+    if (!company) return;
+
+    const panel = document.getElementById('companyEditPanel');
+    const title = document.getElementById('companyEditTitle');
+    if (title) title.textContent = `Editar: ${company.name || company.nome || ''}`;
+
+    const isGestor = currentUser?.isGestorAdmin;
+    const planSection = document.getElementById('editCompanyPlanSection');
+    const planGroup   = document.getElementById('editCompanyPlanGroup');
+    if (planSection) planSection.style.display = isGestor ? '' : 'none';
+    if (planGroup)   planGroup.style.display   = isGestor ? '' : 'none';
+
+    populateCompanyEditForm(company);
+    if (panel) {
+        panel.style.display = '';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    setCompanyEditMessage('');
+}
+
+function closeCompanyEdit() {
+    const panel = document.getElementById('companyEditPanel');
+    if (panel) panel.style.display = 'none';
+    const form = document.getElementById('companyEditForm');
+    if (form) form.reset();
+    setCompanyEditMessage('');
+    _editingCompanyId = null;
+}
+
+let _editingCompanyId = null;
+
+function populateCompanyEditForm(company) {
+    _editingCompanyId = company.id;
+    const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val || '';
+    };
+    set('editCompanyCnpj',              company.cnpj ? formatCnpj(company.cnpj) : '');
+    set('editCompanyName',              company.name || company.nome);
+    set('editCompanyLegalName',         company.legal_name || company.razao_social);
+    set('editCompanyTradeName',         company.trade_name);
+    set('editCompanyStateReg',          company.state_registration || company.inscricao_estadual);
+    set('editCompanyMunicipalReg',      company.municipal_registration);
+    set('editCompanyZipCode',           company.zip_code);
+    set('editCompanyAddress',           company.address);
+    set('editCompanyAddressNumber',     company.address_number);
+    set('editCompanyAddressComplement', company.address_complement);
+    set('editCompanyNeighborhood',      company.neighborhood);
+    set('editCompanyCity',              company.city);
+    set('editCompanyState',             company.state);
+    set('editCompanyCountry',           company.country || 'Brasil');
+    set('editCompanyPhone',             company.phone || company.telefone);
+    set('editCompanyPhone2',            company.phone2);
+    set('editCompanyEmail',             company.email);
+    set('editCompanyWebsite',           company.website);
+    set('editCompanyLegalRep',          company.legal_representative || company.representante_legal);
+    set('editCompanyAccountingEmail',   company.accounting_email || company.email_contabilidade);
+    set('editCompanySysAdminEmail',     company.system_admin_email || company.email_responsavel_sistema);
+    set('editCompanyAdminEmail',        company.company_admin_email || company.email_responsavel_empresa);
+    const planEl = document.getElementById('editCompanyPlan');
+    if (planEl) planEl.value = company.plan || 'pro';
+}
+
+async function saveCompanyEdit(event) {
+    event.preventDefault();
+    if (!_editingCompanyId) return;
+
+    const get = id => String(document.getElementById(id)?.value || '').trim();
+    const isGestor = currentUser?.isGestorAdmin || currentUser?.role === 'guest';
+    const payload = {
+        name:                   get('editCompanyName'),
+        legal_name:             get('editCompanyLegalName'),
+        trade_name:             get('editCompanyTradeName'),
+        state_registration:     get('editCompanyStateReg'),
+        municipal_registration: get('editCompanyMunicipalReg'),
+        zip_code:               get('editCompanyZipCode'),
+        address:                get('editCompanyAddress'),
+        address_number:         get('editCompanyAddressNumber'),
+        address_complement:     get('editCompanyAddressComplement'),
+        neighborhood:           get('editCompanyNeighborhood'),
+        city:                   get('editCompanyCity'),
+        state:                  get('editCompanyState'),
+        country:                get('editCompanyCountry') || 'Brasil',
+        phone:                  get('editCompanyPhone'),
+        phone2:                 get('editCompanyPhone2'),
+        email:                  get('editCompanyEmail'),
+        website:                get('editCompanyWebsite'),
+        legal_representative:   get('editCompanyLegalRep'),
+        accounting_email:       get('editCompanyAccountingEmail'),
+        system_admin_email:     get('editCompanySysAdminEmail'),
+        company_admin_email:    get('editCompanyAdminEmail'),
+    };
+    if (isGestor) payload.plan = get('editCompanyPlan');
+
+    if (!payload.name) {
+        setCompanyEditMessage('O nome fantasia \u00e9 obrigat\u00f3rio.', 'error');
+        return;
+    }
+
+    try {
+        if (currentUser?.isGuest) {
+            if (typeof storage !== 'undefined') await storage.updateCompany(_editingCompanyId, payload);
+            const idx = _companiesList.findIndex(c => Number(c.id) === Number(_editingCompanyId));
+            if (idx !== -1) _companiesList[idx] = { ..._companiesList[idx], ...payload };
+            const isGestor = currentUser?.isGestorAdmin;
+            const visibleCompanies = isGestor
+                ? _companiesList
+                : _companiesList.filter(c => Number(c.id) === Number(currentUser?.companyId));
+            renderCompanies(visibleCompanies, isGestor);
+            setCompanyEditMessage('Dados salvos com sucesso.', 'success');
+            return;
+        }
+        const res = await fetch(`api/companies/${Number(_editingCompanyId)}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            setCompanyEditMessage(data.error || 'Erro ao salvar dados.', 'error');
+            return;
+        }
+        await loadCompanies();
+        setCompanyEditMessage('Dados salvos com sucesso.', 'success');
+    } catch (e) {
+        console.error(e);
+        setCompanyEditMessage('Erro de conexao.', 'error');
+    }
+}
+
+function populateUserCompanySelect(companies) {
+    const select = document.getElementById('newUserCompany');
+    if (!select) return;
+    select.innerHTML = '<option value="">-- Sem empresa (Gestor) --</option>';
+    companies.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = escapeHtml(c.name || c.nome || '');
+        select.appendChild(opt);
+    });
+}
+
+async function createCompany(event) {
+    event.preventDefault();
+    const isGestor = currentUser?.isGestorAdmin || currentUser?.role === 'guest';
+    if (!isGestor) {
+        setCompaniesMessage('Apenas o gestor pode cadastrar empresas.', 'error');
+        return;
+    }
+
+    const get = id => String(document.getElementById(id)?.value || '').trim();
+    const payload = {
+        cnpj:                   get('newCompanyCnpj'),
+        name:                   get('newCompanyName'),
+        legal_name:             get('newCompanyLegalName'),
+        trade_name:             get('newCompanyTradeName'),
+        state_registration:     get('newCompanyStateReg'),
+        municipal_registration: get('newCompanyMunicipalReg'),
+        zip_code:               get('newCompanyZipCode'),
+        address:                get('newCompanyAddress'),
+        address_number:         get('newCompanyAddressNumber'),
+        address_complement:     get('newCompanyAddressComplement'),
+        neighborhood:           get('newCompanyNeighborhood'),
+        city:                   get('newCompanyCity'),
+        state:                  get('newCompanyState'),
+        country:                get('newCompanyCountry') || 'Brasil',
+        phone:                  get('newCompanyPhone'),
+        phone2:                 get('newCompanyPhone2'),
+        email:                  get('newCompanyEmail'),
+        website:                get('newCompanyWebsite'),
+        legal_representative:   get('newCompanyLegalRep'),
+        accounting_email:       get('newCompanyAccountingEmail'),
+        system_admin_email:     get('newCompanySysAdminEmail'),
+        company_admin_email:    get('newCompanyAdminEmail'),
+        plan:                   get('newCompanyPlan') || 'pro',
+    };
+
+    if (!payload.cnpj || !payload.name) {
+        setCompaniesMessage('CNPJ e Nome Fantasia s\u00e3o obrigat\u00f3rios.', 'error');
+        return;
+    }
+
+    try {
+        if (currentUser?.isGuest) {
+            if (typeof storage !== 'undefined') await storage.createCompany(payload);
+            toggleCreateCompanyForm(false);
+            await loadCompanies();
+            setCompaniesMessage('Empresa cadastrada com sucesso.', 'success');
+            return;
+        }
+        const res = await fetch('api/companies', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            setCompaniesMessage(data.error || 'Erro ao cadastrar empresa.', 'error');
+            return;
+        }
+        toggleCreateCompanyForm(false);
+        await loadCompanies();
+        setCompaniesMessage('Empresa cadastrada com sucesso.', 'success');
+    } catch (e) {
+        console.error(e);
+        setCompaniesMessage('Erro de conexao.', 'error');
+    }
+}
+
+async function deleteCompany(companyId) {
+    const company = _companiesList.find(c => Number(c.id) === Number(companyId));
+    if (!company) {
+        setCompaniesMessage('Empresa n\u00e3o encontrada.', 'error');
+        return;
+    }
+    if (company.is_owner || company.is_gestora) {
+        setCompaniesMessage('N\u00e3o \u00e9 poss\u00edvel excluir a empresa gestora.', 'error');
+        return;
+    }
+    if (!window.confirm(`Excluir a empresa "${company.name || company.nome}"?`)) return;
+
+    try {
+        if (currentUser?.isGuest) {
+            if (typeof storage !== 'undefined') await storage.deleteCompany(companyId);
+            await loadCompanies();
+            setCompaniesMessage('Empresa exclu\u00edda.', 'success');
+            return;
+        }
+        const res = await fetch(`api/companies/${Number(companyId)}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            setCompaniesMessage(data.error || 'Erro ao excluir empresa.', 'error');
+            return;
+        }
+        await loadCompanies();
+        setCompaniesMessage('Empresa exclu\u00edda.', 'success');
+    } catch (e) {
+        console.error(e);
+        setCompaniesMessage('Erro de conexao.', 'error');
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function checkAuth() {
     // Check if in guest mode from localStorage (for GitHub Pages)
     const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
@@ -1954,14 +2407,17 @@ async function checkAuth() {
         // Guest mode - no server authentication needed
         if (typeof storage !== 'undefined') {
             storage.setGuestMode(true);
+            storage.seedGuestData();
         }
         
         currentUser = { 
-            userId: null, 
+            userId: 101, 
             username: 'Convidado', 
-            isAdmin: false,
+            isAdmin: true,
+            isGestorAdmin: false,
             isGuest: true,
-            role: 'guest'
+            role: 'guest',
+            companyId: 2
         };
         
         updateLogoutButton();
@@ -1990,8 +2446,10 @@ async function checkAuth() {
                 userId: data.userId || null, 
                 username: data.username || '', 
                 isAdmin: !!data.isAdmin,
+                isGestorAdmin: !!data.isGestorAdmin,
                 isGuest: isGuest,
-                role: isGuest ? 'guest' : (data.isAdmin ? 'admin' : 'user')
+                role: isGuest ? 'guest' : (data.role || (data.isAdmin ? 'admin' : 'user')),
+                companyId: data.companyId || null
             }
             : null;
         
@@ -2124,6 +2582,10 @@ function showSettingsTab(tabName) {
             tab.classList.add('active');
         }
     });
+
+    // Trigger data loads
+    if (tabName === 'empresas') loadCompanies();
+    if (tabName === 'users')    loadLoginUsers();
 }
 
 // Enhanced theme settings
