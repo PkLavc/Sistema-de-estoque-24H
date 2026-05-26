@@ -5,6 +5,29 @@ const SESSION_DURATION_SECONDS = 60 * 60 * 24;
 const TEST_USERNAME = 'teste';
 const LOGIN_PAGES = new Set(['/login/', '/login/index.html']);
 
+// Lockout durations in seconds for each tier (groups of 3 failures)
+const LOCKOUT_TIERS = [
+    180,      // tier 0 — 3 failures  → 3 minutes
+    300,      // tier 1 — 6 failures  → 5 minutes
+    600,      // tier 2 — 9 failures  → 10 minutes
+    3600,     // tier 3 — 12 failures → 60 minutes
+    86400,    // tier 4 — 15 failures → 1 day
+    604800,   // tier 5 — 18 failures → 1 week
+    2592000,  // tier 6 — 21 failures → 1 month (30 days)
+    7776000,  // tier 7 — 24 failures → 3 months (90 days)
+];
+const YEAR_SECONDS = 365 * 24 * 3600; // tier 8+ → 1 year per extra tier
+
+// Returns the lockout duration in seconds for the given cumulative failure count.
+// Every multiple of 3 failures advances to the next tier.
+function getLockoutSeconds(failedCount) {
+    if (failedCount <= 0) return 0;
+    const tier = Math.floor(failedCount / 3) - 1;
+    if (tier < 0) return 0;
+    if (tier < LOCKOUT_TIERS.length) return LOCKOUT_TIERS[tier];
+    return (tier - LOCKOUT_TIERS.length + 1) * YEAR_SECONDS;
+}
+
 export default {
     async fetch(request, env) {
         try {
@@ -1226,10 +1249,60 @@ async function login(request, env) {
         return json({ error: 'Usuario e senha sao obrigatorios' }, 400);
     }
 
+    // Ensure the login_attempts table exists (created by migration 0016)
+    await env.DB.exec(
+        `CREATE TABLE IF NOT EXISTS login_attempts (
+            username TEXT PRIMARY KEY,
+            failed_count INTEGER NOT NULL DEFAULT 0,
+            locked_until TEXT,
+            last_failed_at TEXT
+        )`
+    );
+
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    // Check for active lockout before verifying credentials
+    const attempt = await queryFirst(
+        env,
+        'SELECT failed_count, locked_until FROM login_attempts WHERE username = ?',
+        [username]
+    );
+
+    if (attempt && attempt.locked_until) {
+        const lockedUntilSec = Math.floor(new Date(attempt.locked_until).getTime() / 1000);
+        if (nowSec < lockedUntilSec) {
+            const remainingSeconds = lockedUntilSec - nowSec;
+            return json({ error: 'Incorreto', remainingSeconds }, 429);
+        }
+    }
+
     const user = await queryFirst(env, 'SELECT * FROM users WHERE username = ?', [username]);
     if (!user || !bcrypt.compareSync(password, user.password)) {
-        return json({ error: 'Incorreto' }, 401);
+        const currentFailed = (attempt?.failed_count || 0) + 1;
+        const lockoutSeconds = getLockoutSeconds(currentFailed);
+        const lockedUntil = lockoutSeconds > 0
+            ? toSqliteDate(new Date((nowSec + lockoutSeconds) * 1000))
+            : null;
+
+        await execute(
+            env,
+            `INSERT INTO login_attempts (username, failed_count, locked_until, last_failed_at)
+             VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+             ON CONFLICT(username) DO UPDATE SET
+                 failed_count   = excluded.failed_count,
+                 locked_until   = excluded.locked_until,
+                 last_failed_at = excluded.last_failed_at`,
+            [username, currentFailed, lockedUntil]
+        );
+
+        return json(
+            { error: 'Incorreto', remainingSeconds: lockoutSeconds > 0 ? lockoutSeconds : null },
+            401
+        );
     }
+
+    // Credentials correct — clear any lockout record
+    await execute(env, 'DELETE FROM login_attempts WHERE username = ?', [username]);
 
     await cleanupExpiredSessions(env);
     await cleanupCurrentSessionBeforeLogin(request, env);

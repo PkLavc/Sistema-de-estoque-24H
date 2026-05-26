@@ -18,6 +18,41 @@ async function checkAuth() {
     }
 }
 
+// Returns a human-readable Portuguese string for a duration in seconds
+function formatLockoutTime(seconds) {
+    const YEAR = 365 * 24 * 3600;
+    const MONTH = 30 * 24 * 3600;
+    const WEEK = 7 * 24 * 3600;
+    const DAY = 24 * 3600;
+    const HOUR = 3600;
+    const MIN = 60;
+    if (seconds >= YEAR) {
+        const n = Math.ceil(seconds / YEAR);
+        return n === 1 ? '1 ano' : `${n} anos`;
+    }
+    if (seconds >= MONTH) {
+        const n = Math.ceil(seconds / MONTH);
+        return n === 1 ? '1 mês' : `${n} meses`;
+    }
+    if (seconds >= WEEK) {
+        const n = Math.ceil(seconds / WEEK);
+        return n === 1 ? '1 semana' : `${n} semanas`;
+    }
+    if (seconds >= DAY) {
+        const n = Math.ceil(seconds / DAY);
+        return n === 1 ? '1 dia' : `${n} dias`;
+    }
+    if (seconds >= HOUR) {
+        const n = Math.ceil(seconds / HOUR);
+        return n === 1 ? '1 hora' : `${n} horas`;
+    }
+    if (seconds >= MIN) {
+        const n = Math.ceil(seconds / MIN);
+        return n === 1 ? '1 minuto' : `${n} minutos`;
+    }
+    return `${seconds} segundo${seconds !== 1 ? 's' : ''}`;
+}
+
 // Regular user login
 async function login(username, password) {
     try {
@@ -30,7 +65,14 @@ async function login(username, password) {
         if (response.ok) {
             window.location.href = '../';
         } else {
-            showError('Usuário ou senha incorretos');
+            let msg = 'Usuário ou senha incorretos';
+            try {
+                const data = await response.json();
+                if (data.remainingSeconds > 0) {
+                    msg += ` — aguarde ${formatLockoutTime(data.remainingSeconds)}`;
+                }
+            } catch (_) { /* ignore parse error */ }
+            showError(msg);
         }
     } catch (error) {
         showError('Erro ao conectar com o servidor. Tente o modo convidado.');
