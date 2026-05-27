@@ -431,7 +431,13 @@ function showSection(sectionId) {
     });
 
     const targetSection = document.getElementById(sectionId);
-    if (targetSection) targetSection.classList.add('active');
+    if (targetSection) {
+        targetSection.classList.add('active');
+    } else {
+        // Fallback: show home to prevent blank screen if section doesn't exist
+        sectionId = 'home';
+        document.getElementById('home')?.classList.add('active');
+    }
 
     document.querySelectorAll('.menu-item').forEach((item) => {
         item.classList.remove('active');
@@ -3655,6 +3661,7 @@ async function checkAuth() {
     const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
     
     if (isGuestMode) {
+        try {
         // Guest mode - no server authentication needed
         if (typeof storage !== 'undefined') {
             storage.setGuestMode(true);
@@ -3682,6 +3689,12 @@ async function checkAuth() {
         updateLogoutButton();
         applyLoginManagementVisibility();
         document.body.style.visibility = 'visible';
+        } catch (e) {
+            console.error('Guest mode init error:', e);
+            // Corrupted localStorage — clear and reload so the user can start fresh
+            localStorage.removeItem('isGuestMode');
+            window.location.href = 'login/';
+        }
         return;
     }
     

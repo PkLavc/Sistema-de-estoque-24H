@@ -2115,10 +2115,11 @@ textarea {
         white-space: nowrap;
         font-size: 0.86rem;
         padding: 9px 10px;
-        border-bottom: none;
+        border-bottom: none !important;
     }
 
     .settings-tab.active {
+        border-bottom: none !important;
         box-shadow: inset 0 -3px 0 0 var(--primary, #ff3333);
     }
 
