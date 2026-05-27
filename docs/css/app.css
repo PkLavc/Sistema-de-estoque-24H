@@ -1015,11 +1015,19 @@ textarea:focus {
     background: var(--inner-component-bg, #1a1a1a);
 }
 
+.modal-card.company-edit-panel {
+    margin-top: 0;
+    border-color: #454545;
+    border-radius: 18px;
+    padding: 28px;
+}
+
 .company-edit-panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 16px;
+    padding-right: 46px;
 }
 .company-edit-panel-header h3 {
     margin: 0;
@@ -1620,6 +1628,14 @@ textarea {
 
 .create-modal-card .form-actions {
     grid-column: 1 / -1;
+}
+
+.user-manage-modal-card {
+    width: min(100%, 760px);
+}
+
+.user-manage-actions {
+    flex-wrap: wrap;
 }
 
 .empty-state,

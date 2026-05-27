@@ -610,6 +610,32 @@ function setRentalMenuAlertState(hasAlerts) {
     document.getElementById('rentalMenuItem')?.classList.toggle('rental-return-pulse', hasAlerts);
 }
 
+function rentalShouldPulse(event) {
+    const daysUntilReturn = getDaysBetween(event?.return_date);
+    return daysUntilReturn !== null && daysUntilReturn <= 0;
+}
+
+function setRentalMenuAlertStateFromRentals(rentals = []) {
+    setRentalMenuAlertState(Array.isArray(rentals) && rentals.some(rentalShouldPulse));
+}
+
+async function refreshRentalMenuPulseState() {
+    if (currentUser?.isGuest) {
+        const rentals = (await storage.getEvents()).filter((event) => event.event_type === 'rental');
+        setRentalMenuAlertStateFromRentals(rentals);
+        return;
+    }
+
+    try {
+        const response = await fetch('api/rental-events', { credentials: 'include' });
+        if (!response.ok) return;
+        const rentals = await response.json();
+        setRentalMenuAlertStateFromRentals(rentals);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 function getRentalAlertItemText(item) {
     const quantity = Math.max(1, Number(item.quantity) || 1);
     const prefix = quantity > 1 ? `${quantity}x ` : '';
@@ -678,7 +704,10 @@ function closeRentalReturnAlert() {
 }
 
 async function loadRentalReturnAlerts() {
-    if (currentUser?.isGuest) return;
+    if (currentUser?.isGuest) {
+        await refreshRentalMenuPulseState();
+        return;
+    }
     try {
         const today = getLocalDateString();
         const response = await fetch(`api/rental-return-alerts?today=${encodeURIComponent(today)}`, {
@@ -692,6 +721,7 @@ async function loadRentalReturnAlerts() {
 
         rentalReturnAlerts = await response.json();
         renderRentalReturnAlert();
+        await refreshRentalMenuPulseState();
     } catch (error) {
         console.error(error);
     }
@@ -1167,7 +1197,9 @@ function closeCreationModals() {
         eventModal.classList.remove('active');
     }
     toggleCreateUserForm(false);
+    closeUserManageModal();
     toggleCreateCompanyForm(false);
+    closeCompanyEdit();
 }
 
 function setCadastroTab(tab) {
@@ -1448,6 +1480,7 @@ async function loadEvents() {
 function renderRentalEvents(events, search = '') {
     const grid = document.getElementById('rentalEventsGrid');
     if (!grid) return;
+    setRentalMenuAlertStateFromRentals(events);
 
     const normalizedSearch = search.toLowerCase();
     const filtered = sortItems(events.filter((event) => {
@@ -1467,9 +1500,8 @@ function renderRentalEvents(events, search = '') {
     }
 
     filtered.forEach((event) => {
-        const daysUntilReturn = getDaysBetween(event.return_date);
         const card = document.createElement('div');
-        card.className = `event-card${daysUntilReturn !== null && daysUntilReturn <= 0 ? ' rental-due-alert' : ''}`;
+        card.className = `event-card${rentalShouldPulse(event) ? ' rental-due-alert' : ''}`;
         card.innerHTML = `
             <div class="card-top">
                 <h3>${escapeHtml(event.name)}</h3>
@@ -2835,11 +2867,15 @@ function applyLoginManagementVisibility() {
 
     // In user creation form: show gestor option and company selector only for gestor_admin
     const roleGestorOption = document.getElementById('newUserRoleGestor');
+    const manageRoleGestorOption = document.getElementById('manageUserRoleGestor');
     const companyGroup     = document.getElementById('newUserCompanyGroup');
+    const manageCompanyGroup = document.getElementById('manageUserCompanyGroup');
     const companyHeader    = document.getElementById('usersTableCompanyHeader');
     if (roleGestorOption) roleGestorOption.style.display = isGestor ? '' : 'none';
+    if (manageRoleGestorOption) manageRoleGestorOption.style.display = isGestor ? '' : 'none';
     if (companyGroup)     companyGroup.style.display     = isGestor ? '' : 'none';
-    if (companyHeader)    companyHeader.style.display    = isGestor ? '' : 'none';
+    if (manageCompanyGroup) manageCompanyGroup.style.display = isGestor ? '' : 'none';
+    if (companyHeader)    companyHeader.style.display    = '';
 }
 
 function setUsersMessage(message, type = '') {
@@ -2901,45 +2937,190 @@ async function loadLoginUsers() {
     }
 }
 
+const USER_ROLE_LABELS = { gestor_admin: 'Admin Gestor', admin: 'Admin Empresa', user: 'Usuário' };
+let _editingUserId = null;
+
+function getUserRoleLabel(role) {
+    return USER_ROLE_LABELS[role] || role || 'user';
+}
+
+function getCompanyNameById(companyId) {
+    const company = _companiesList.find((item) => Number(item.id) === Number(companyId));
+    return company?.name || company?.nome || '';
+}
+
+function getUserCompanyLabel(user) {
+    if (user.company_name) return user.company_name;
+    if (user.company_id) return getCompanyNameById(user.company_id) || `#${user.company_id}`;
+    return user.role === 'gestor_admin' ? 'Gestora' : '—';
+}
+
 function renderLoginUsers() {
     const tbody = document.querySelector('#usersTable tbody');
     if (!tbody) return;
 
     const isGestor = currentUser?.isGestorAdmin || currentUser?.role === 'guest';
     const companyHeader = document.getElementById('usersTableCompanyHeader');
-    if (companyHeader) companyHeader.style.display = isGestor ? '' : 'none';
-
-    const roleLabels = { gestor_admin: 'Admin Gestor', admin: 'Admin Empresa', user: 'Usuário' };
+    if (companyHeader) companyHeader.style.display = '';
 
     tbody.innerHTML = '';
     loginUsers.forEach((user) => {
         const userId = Number(user.id);
         const canEdit = canChangeUserPasswords && (currentUser?.isAdmin || isGestor);
-        const canDelete = canEdit && Number(user.id) !== Number(currentUser?.userId);
-        const roleLabel = roleLabels[user.role] || escapeHtml(user.role || 'user');
-        const companyCell = isGestor ? `<td>${escapeHtml(user.company_name || user.company_id || '—')}</td>` : '';
+        const roleLabel = getUserRoleLabel(user.role);
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${escapeHtml(user.username)}</td>
-            <td><span class="user-role-badge ${user.role === 'admin' || user.role === 'gestor_admin' ? 'admin' : ''}">${roleLabel}</span></td>
-            ${companyCell}
-            <td>
-                <input
-                    type="password"
-                    id="userPassword_${userId}"
-                    class="user-password-input"
-                    placeholder="${canEdit ? 'Nova senha' : 'Restrito'}"
-                    autocomplete="new-password"
-                    ${canEdit ? '' : 'disabled'}
-                >
-            </td>
+            <td><span class="user-role-badge ${user.role === 'admin' || user.role === 'gestor_admin' ? 'admin' : ''}">${escapeHtml(roleLabel)}</span></td>
+            <td>${escapeHtml(getUserCompanyLabel(user))}</td>
             <td class="user-actions-cell">
-                <button type="button" class="btn-primary user-password-button" onclick="changeUserPassword(${userId})" ${canEdit ? '' : 'disabled'}>Salvar</button>
-                <button type="button" class="btn-danger user-password-button" onclick="deleteLoginUser(${userId})" ${canDelete ? '' : 'disabled'}>Excluir</button>
+                <button type="button" class="btn-primary user-password-button" onclick="openUserManage(${userId})" ${canEdit ? '' : 'disabled'}>Gerenciar</button>
             </td>
         `;
         tbody.appendChild(row);
     });
+}
+
+function openUserManage(userId) {
+    const user = loginUsers.find((item) => Number(item.id) === Number(userId));
+    if (!user) {
+        setUsersMessage('Usuario nao encontrado.', 'error');
+        return;
+    }
+
+    _editingUserId = Number(userId);
+    populateUserCompanySelect(_companiesList);
+
+    const isGestor = currentUser?.isGestorAdmin || currentUser?.role === 'guest';
+    const title = document.getElementById('userManageTitle');
+    const nameInput = document.getElementById('manageUsername');
+    const roleSelect = document.getElementById('manageUserRole');
+    const gestorOption = document.getElementById('manageUserRoleGestor');
+    const companyGroup = document.getElementById('manageUserCompanyGroup');
+    const companySelect = document.getElementById('manageUserCompany');
+    const passwordInput = document.getElementById('manageUserPassword');
+    const deleteButton = document.getElementById('manageUserDeleteButton');
+
+    if (title) title.textContent = `Gerenciar: ${user.username || ''}`;
+    if (nameInput) nameInput.value = user.username || '';
+    if (roleSelect) roleSelect.value = user.role || 'user';
+    if (gestorOption) gestorOption.style.display = isGestor ? '' : 'none';
+    if (companyGroup) companyGroup.style.display = isGestor ? '' : 'none';
+    if (companySelect) {
+        if (user.company_id && ![...companySelect.options].some((option) => Number(option.value) === Number(user.company_id))) {
+            const option = document.createElement('option');
+            option.value = user.company_id;
+            option.textContent = getUserCompanyLabel(user);
+            companySelect.appendChild(option);
+        }
+        companySelect.value = user.company_id || '';
+    }
+    if (passwordInput) passwordInput.value = '';
+    if (deleteButton) {
+        const canDelete = Number(user.id) !== Number(currentUser?.userId);
+        deleteButton.style.display = canDelete ? '' : 'none';
+    }
+
+    const modal = document.getElementById('userManageModal');
+    if (modal) modal.style.display = 'flex';
+    setUsersMessage('');
+}
+
+function closeUserManageModal() {
+    const modal = document.getElementById('userManageModal');
+    if (modal) modal.style.display = 'none';
+    document.getElementById('userManageForm')?.reset();
+    _editingUserId = null;
+}
+
+async function saveManagedUser(event) {
+    event.preventDefault();
+    const user = loginUsers.find((item) => Number(item.id) === Number(_editingUserId));
+    if (!user) {
+        setUsersMessage('Usuario nao encontrado.', 'error');
+        return;
+    }
+
+    const isGestor = currentUser?.isGestorAdmin || currentUser?.role === 'guest';
+    const username = String(document.getElementById('manageUsername')?.value || '').trim();
+    const role = String(document.getElementById('manageUserRole')?.value || 'user').trim();
+    const companyIdRaw = document.getElementById('manageUserCompany')?.value || '';
+    const password = String(document.getElementById('manageUserPassword')?.value || '');
+    const company_id = isGestor
+        ? (companyIdRaw ? Number(companyIdRaw) : null)
+        : (user.company_id || currentUser?.companyId || null);
+
+    if (!username) {
+        setUsersMessage('Informe o nome do usuario.', 'error');
+        return;
+    }
+
+    if (isGestor && role !== 'gestor_admin' && !company_id) {
+        setUsersMessage('Selecione uma empresa para usuarios de empresa.', 'error');
+        return;
+    }
+
+    if (password && password.trim().length < 4) {
+        setUsersMessage('A nova senha deve ter pelo menos 4 caracteres.', 'error');
+        return;
+    }
+
+    const companyObj = _companiesList.find((company) => Number(company.id) === Number(company_id));
+    const payload = {
+        username,
+        role,
+        company_id,
+        company_name: companyObj?.name || companyObj?.nome || ''
+    };
+
+    try {
+        if (currentUser?.isGuest) {
+            await storage.updateUser(Number(_editingUserId), payload);
+            if (password) await storage.updateUserPassword(Number(_editingUserId), password);
+        } else {
+            const response = await fetch(`api/users/${Number(_editingUserId)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                setUsersMessage(data.error || 'Nao foi possivel salvar o usuario.', 'error');
+                return;
+            }
+
+            if (password) {
+                const passwordResponse = await fetch(`api/users/${Number(_editingUserId)}/password`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ password })
+                });
+                const passwordData = await passwordResponse.json().catch(() => ({}));
+                if (!passwordResponse.ok) {
+                    setUsersMessage(passwordData.error || 'Dados salvos, mas nao foi possivel alterar a senha.', 'error');
+                    return;
+                }
+            }
+        }
+
+        closeUserManageModal();
+        await loadLoginUsers();
+        setUsersMessage(password ? 'Usuario e senha atualizados com sucesso.' : 'Usuario atualizado com sucesso.', 'success');
+    } catch (error) {
+        console.error(error);
+        setUsersMessage('Erro de conexao.', 'error');
+    }
+}
+
+async function deleteManagedUser() {
+    if (!_editingUserId) return;
+    const userId = Number(_editingUserId);
+    await deleteLoginUser(userId);
+    if (!loginUsers.some((item) => Number(item.id) === userId)) {
+        closeUserManageModal();
+    }
 }
 
 async function changeUserPassword(userId) {
@@ -3162,6 +3343,7 @@ async function loadCompanies() {
             : _companiesList.filter(c => Number(c.id) === Number(currentUser?.companyId));
         renderCompanies(visibleCompanies, isGestor);
         populateUserCompanySelect(_companiesList);
+        renderLoginUsers();
         setCompaniesMessage('');
     } catch (e) {
         console.error(e);
@@ -3215,8 +3397,7 @@ function openCompanyEdit(companyId) {
 
     populateCompanyEditForm(company);
     if (panel) {
-        panel.style.display = '';
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        panel.style.display = 'flex';
     }
     setCompanyEditMessage('');
 }
@@ -3341,14 +3522,23 @@ async function saveCompanyEdit(event) {
 }
 
 function populateUserCompanySelect(companies) {
-    const select = document.getElementById('newUserCompany');
-    if (!select) return;
-    select.innerHTML = '<option value="">-- Sem empresa (Gestor) --</option>';
-    companies.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = escapeHtml(c.name || c.nome || '');
-        select.appendChild(opt);
+    const selects = [
+        document.getElementById('newUserCompany'),
+        document.getElementById('manageUserCompany')
+    ].filter(Boolean);
+
+    selects.forEach((select) => {
+        const previousValue = select.value;
+        select.innerHTML = '<option value="">-- Sem empresa (Gestor) --</option>';
+        companies.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name || c.nome || '';
+            select.appendChild(opt);
+        });
+        if ([...select.options].some((option) => option.value === previousValue)) {
+            select.value = previousValue;
+        }
     });
 }
 

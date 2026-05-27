@@ -312,9 +312,30 @@ class DataStorage {
             return { success: false, error: 'User not found' };
         }
         const response = await fetch(`api/users/${userId}/password`, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ password: newPassword })
+        });
+        return response.json();
+    }
+
+    async updateUser(userId, updates) {
+        if (this.isGuest) {
+            const users = this._loadFromLocalStorage('users') || [];
+            const index = users.findIndex(u => Number(u.id) === Number(userId));
+            if (index !== -1) {
+                users[index] = { ...users[index], ...updates };
+                this._saveToLocalStorage('users', users);
+                return { success: true, user: users[index] };
+            }
+            return { success: false, error: 'User not found' };
+        }
+        const response = await fetch(`api/users/${userId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(updates)
         });
         return response.json();
     }
@@ -327,7 +348,8 @@ class DataStorage {
             return { success: true };
         }
         const response = await fetch(`api/users/${userId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         return response.json();
     }

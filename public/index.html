@@ -512,14 +512,53 @@
                             </div>
                         </div>
 
+                        <div id="userManageModal" class="modal-overlay" style="display: none;">
+                            <div class="modal-card create-modal-card user-manage-modal-card">
+                                <button type="button" class="modal-close" onclick="closeUserManageModal()" aria-label="Fechar">X</button>
+                                <h2 id="userManageTitle">Gerenciar usuário</h2>
+                                <form id="userManageForm" class="form-grid user-create-form" onsubmit="saveManagedUser(event)">
+                                    <div class="form-group">
+                                        <label for="manageUsername">Nome</label>
+                                        <input type="text" id="manageUsername" autocomplete="off" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="manageUserRole">Classe</label>
+                                        <select id="manageUserRole">
+                                            <option value="user">Usuário</option>
+                                            <option value="admin">Admin (Empresa)</option>
+                                            <option value="gestor_admin" id="manageUserRoleGestor" style="display:none;">Admin (Gestor)</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group" id="manageUserCompanyGroup" style="display:none;">
+                                        <label for="manageUserCompany">Empresa</label>
+                                        <select id="manageUserCompany">
+                                            <option value="">-- Sem empresa (Gestor) --</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="manageUserPassword">Nova senha</label>
+                                        <input type="password" id="manageUserPassword" autocomplete="new-password" placeholder="Deixe vazio para manter">
+                                    </div>
+
+                                    <div class="form-actions user-manage-actions">
+                                        <button type="submit" class="btn-primary">Salvar alterações</button>
+                                        <button type="button" class="btn-danger" id="manageUserDeleteButton" onclick="deleteManagedUser()">Excluir usuário</button>
+                                        <button type="button" class="btn-secondary" onclick="closeUserManageModal()">Cancelar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
                         <div class="table-container">
                             <table id="usersTable">
                                 <thead>
                                     <tr>
-                                        <th>Usuário</th>
+                                        <th>Nome</th>
                                         <th>Classe</th>
-                                        <th id="usersTableCompanyHeader" style="display:none;">Empresa</th>
-                                        <th>Nova senha</th>
+                                        <th id="usersTableCompanyHeader">Empresa</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -1099,8 +1138,9 @@
                             </table>
                         </div>
 
-                        <!-- Inline edit panel -->
-                        <div id="companyEditPanel" class="company-edit-panel" style="display:none;">
+                        <div id="companyEditPanel" class="modal-overlay" style="display:none;">
+                            <div class="modal-card create-modal-card company-create-modal-card company-edit-panel">
+                            <button type="button" class="modal-close" onclick="closeCompanyEdit()" aria-label="Fechar">X</button>
                             <div class="company-edit-panel-header">
                                 <h3 id="companyEditTitle">Editar Empresa</h3>
                                 <button type="button" class="btn-secondary btn-small" onclick="closeCompanyEdit()">Fechar</button>
@@ -1261,6 +1301,7 @@
                                 </div>
                             </form>
                             <p id="companyEditMessage" class="users-message"></p>
+                            </div>
                         </div>
 
                         <p id="companiesMessage" class="users-message"></p>

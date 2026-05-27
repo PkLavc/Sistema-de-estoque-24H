@@ -279,18 +279,26 @@ async function handleApiRequest(request, env) {
         if (isGestorAdminSession(session)) {
             users = await queryAll(
                 env,
-                `SELECT id, username, COALESCE(role, 'user') AS role, company_id
+                `SELECT users.id, users.username,
+                        CASE
+                            WHEN COALESCE(users.role, 'user') = 'admin' AND users.company_id IS NULL THEN 'gestor_admin'
+                            ELSE COALESCE(users.role, 'user')
+                        END AS role,
+                        users.company_id, companies.name AS company_name
                  FROM users
-                 ORDER BY lower(username) ASC`
+                 LEFT JOIN companies ON companies.id = users.company_id
+                 ORDER BY lower(users.username) ASC`
             );
         } else {
             // company admin: only users of their own company
             users = await queryAll(
                 env,
-                `SELECT id, username, COALESCE(role, 'user') AS role, company_id
+                `SELECT users.id, users.username, COALESCE(users.role, 'user') AS role,
+                        users.company_id, companies.name AS company_name
                  FROM users
-                 WHERE company_id = ?
-                 ORDER BY lower(username) ASC`,
+                 LEFT JOIN companies ON companies.id = users.company_id
+                 WHERE users.company_id = ?
+                 ORDER BY lower(users.username) ASC`,
                 [session.company_id]
             );
         }
@@ -349,6 +357,79 @@ async function handleApiRequest(request, env) {
             [username, passwordHash, role, companyId]
         );
         return json({ id: result.meta.last_row_id, username, role, company_id: companyId, success: true });
+    }
+
+    const userEditMatch = pathname.match(/^\/api\/users\/(\d+)$/);
+    if (userEditMatch && request.method === 'PATCH') {
+        if (!isAdminSession(session)) {
+            return json({ error: 'Acesso restrito a administradores' }, 403);
+        }
+
+        const userId = Number(userEditMatch[1]);
+        const body = await readJson(request);
+        const username = String(body.username || '').trim();
+        const requestedRole = String(body.role || 'user').trim();
+        const requestedCompanyId = body.company_id ? Number(body.company_id) : null;
+
+        if (!userId) return json({ error: 'Usuario invalido' }, 400);
+        if (!username) return json({ error: 'Nome do usuario e obrigatorio' }, 400);
+
+        const user = await queryFirst(env, 'SELECT id, username, COALESCE(role, "user") AS role, company_id FROM users WHERE id = ?', [userId]);
+        if (!user) return json({ error: 'Usuario nao encontrado' }, 404);
+
+        let role;
+        let companyId;
+        if (isGestorAdminSession(session)) {
+            const validRoles = ['user', 'admin', 'gestor_admin'];
+            role = validRoles.includes(requestedRole) ? requestedRole : 'user';
+            companyId = role === 'gestor_admin' ? null : requestedCompanyId;
+        } else {
+            if (Number(user.company_id) !== Number(session.company_id)) {
+                return json({ error: 'Sem permissao para alterar este usuario' }, 403);
+            }
+            role = requestedRole === 'admin' ? 'admin' : 'user';
+            companyId = session.company_id || null;
+        }
+
+        if (role !== 'gestor_admin' && !companyId) {
+            return json({ error: 'Selecione uma empresa para usuarios de empresa' }, 400);
+        }
+
+        const isSelf = Number(user.id) === Number(session.user_id);
+        const roleChanged = getEffectiveRole(user) !== role;
+        const companyChanged = Number(user.company_id || 0) !== Number(companyId || 0);
+        if (isSelf && (roleChanged || companyChanged)) {
+            return json({ error: 'Voce nao pode alterar sua propria classe ou empresa' }, 400);
+        }
+
+        const existingUser = await queryFirst(env, 'SELECT id FROM users WHERE lower(username) = lower(?) AND id <> ?', [username, userId]);
+        if (existingUser) {
+            return json({ error: 'Ja existe um usuario com esse nome' }, 409);
+        }
+
+        const wasGestor = getEffectiveRole(user) === 'gestor_admin';
+        const willGestor = role === 'gestor_admin' || (role === 'admin' && !companyId);
+        if (wasGestor && !willGestor) {
+            const gestorCount = await queryFirst(
+                env,
+                'SELECT COUNT(*) AS total FROM users WHERE (role = "gestor_admin" OR (role = "admin" AND company_id IS NULL))'
+            );
+            if (Number(gestorCount?.total) <= 1) {
+                return json({ error: 'Nao e possivel alterar o ultimo administrador gestor' }, 400);
+            }
+        }
+
+        await execute(
+            env,
+            'UPDATE users SET username = ?, role = ?, company_id = ? WHERE id = ?',
+            [username, role, companyId, userId]
+        );
+
+        if (!isSelf && (roleChanged || companyChanged)) {
+            await execute(env, 'DELETE FROM sessions WHERE user_id = ?', [userId]);
+        }
+
+        return json({ id: userId, username, role, company_id: companyId, success: true });
     }
 
     const userPasswordMatch = pathname.match(/^\/api\/users\/(\d+)\/password$/);

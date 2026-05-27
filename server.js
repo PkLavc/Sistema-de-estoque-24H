@@ -205,6 +205,7 @@ function initializeDatabase() {
             db.run("ALTER TABLE cables ADD COLUMN available_quantity INTEGER DEFAULT 0", () => {});
             db.run("ALTER TABLE cables ADD COLUMN updated_at TEXT DEFAULT CURRENT_TIMESTAMP", () => {});
             db.run("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'", () => {});
+            db.run("ALTER TABLE users ADD COLUMN company_id INTEGER", () => {});
             db.run("UPDATE users SET role = 'user' WHERE role IS NULL OR role = ''", () => {});
             db.run("UPDATE cables SET available_quantity = quantity WHERE available_quantity IS NULL OR available_quantity = 0", () => {});
             db.run("CREATE INDEX IF NOT EXISTS idx_other_items_name ON other_items(name)", () => {});
@@ -734,7 +735,12 @@ app.get('/api/auth/status', async (req, res) => {
 app.get('/api/users', requireAdmin, async (req, res) => {
     try {
         const users = await dbAll(
-            `SELECT id, username, COALESCE(role, 'user') AS role
+            `SELECT id, username,
+                    CASE
+                        WHEN COALESCE(role, 'user') = 'admin' AND company_id IS NULL THEN 'gestor_admin'
+                        ELSE COALESCE(role, 'user')
+                    END AS role,
+                    company_id
              FROM users
              ORDER BY lower(username) ASC`
         );
@@ -751,7 +757,9 @@ app.post('/api/users', requireAdmin, async (req, res) => {
     try {
         const username = String(req.body?.username || '').trim();
         const password = String(req.body?.password || '');
-        const role = String(req.body?.role || 'user').trim() === 'admin' ? 'admin' : 'user';
+        const requestedRole = String(req.body?.role || 'user').trim();
+        const role = ['user', 'admin', 'gestor_admin'].includes(requestedRole) ? requestedRole : 'user';
+        const companyId = req.body?.company_id ? Number(req.body.company_id) : null;
 
         if (!username) return res.status(400).json({ error: 'Usuario e obrigatorio' });
         if (password.trim().length < 4) {
@@ -765,10 +773,54 @@ app.post('/api/users', requireAdmin, async (req, res) => {
 
         const passwordHash = bcrypt.hashSync(password, 10);
         const result = await dbRun(
-            'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-            [username, passwordHash, role]
+            'INSERT INTO users (username, password, role, company_id) VALUES (?, ?, ?, ?)',
+            [username, passwordHash, role, companyId]
         );
-        res.json({ id: result.lastID, username, role, success: true });
+        res.json({ id: result.lastID, username, role, company_id: companyId, success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/api/users/:id', requireAdmin, async (req, res) => {
+    try {
+        const userId = Number(req.params.id);
+        const username = String(req.body?.username || '').trim();
+        const requestedRole = String(req.body?.role || 'user').trim();
+        const role = ['user', 'admin', 'gestor_admin'].includes(requestedRole) ? requestedRole : 'user';
+        const companyId = req.body?.company_id ? Number(req.body.company_id) : null;
+
+        if (!userId) return res.status(400).json({ error: 'Usuario invalido' });
+        if (!username) return res.status(400).json({ error: 'Nome do usuario e obrigatorio' });
+
+        const user = await dbGet('SELECT id, username, COALESCE(role, "user") AS role, company_id FROM users WHERE id = ?', [userId]);
+        if (!user) return res.status(404).json({ error: 'Usuario nao encontrado' });
+
+        const existingUser = await dbGet('SELECT id FROM users WHERE lower(username) = lower(?) AND id <> ?', [username, userId]);
+        if (existingUser) {
+            return res.status(409).json({ error: 'Ja existe um usuario com esse nome' });
+        }
+
+        const wasAdmin = user.role === 'admin' || user.role === 'gestor_admin';
+        const willAdmin = role === 'admin' || role === 'gestor_admin';
+        if (wasAdmin && !willAdmin) {
+            const adminCount = await dbGet('SELECT COUNT(*) AS total FROM users WHERE role IN ("admin", "gestor_admin")');
+            if (Number(adminCount?.total) <= 1) {
+                return res.status(400).json({ error: 'Nao e possivel alterar o ultimo administrador' });
+            }
+        }
+
+        await dbRun(
+            'UPDATE users SET username = ?, role = ?, company_id = ? WHERE id = ?',
+            [username, role, companyId, userId]
+        );
+
+        const effectiveOldRole = user.role === 'admin' && !user.company_id ? 'gestor_admin' : user.role;
+        if (Number(userId) !== Number(req.currentUser.id) && (effectiveOldRole !== role || Number(user.company_id || 0) !== Number(companyId || 0))) {
+            await dbRun('DELETE FROM sessions WHERE user_id = ?', [userId]).catch(() => {});
+        }
+
+        res.json({ id: userId, username, role, company_id: companyId, success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
