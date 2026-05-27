@@ -9,7 +9,7 @@
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-function hexToRgba(hex, alpha) {
+function hexToRgba(hex, alpha = 0.18) {
     hex = hex.replace('#', '');
     if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
     const r = parseInt(hex.substr(0, 2), 16);
@@ -18,26 +18,26 @@ function hexToRgba(hex, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function applyIndicatorColors({ warningColor, badgeAvailableColor, badgeMaintenanceColor, badgeRelationColor, btnReadyColor }) {
-    const el = document.documentElement;
-    el.style.setProperty('--warning-color', warningColor || '#ff0000');
-
+function applyIndicatorColors(colors) {
+    const root = document.documentElement;
+    const { warningColor, badgeAvailableColor, badgeMaintenanceColor, badgeRelationColor, btnReadyColor } = colors;
+    if (warningColor) root.style.setProperty('--warning-color', warningColor);
     if (badgeAvailableColor) {
-        el.style.setProperty('--badge-available-color', badgeAvailableColor);
-        el.style.setProperty('--badge-available-bg', hexToRgba(badgeAvailableColor, 0.18));
+        root.style.setProperty('--badge-available-color', badgeAvailableColor);
+        root.style.setProperty('--badge-available-bg', hexToRgba(badgeAvailableColor, 0.18));
     }
     if (badgeMaintenanceColor) {
-        el.style.setProperty('--badge-maintenance-color', badgeMaintenanceColor);
-        el.style.setProperty('--badge-maintenance-bg', hexToRgba(badgeMaintenanceColor, 0.18));
+        root.style.setProperty('--badge-maintenance-color', badgeMaintenanceColor);
+        root.style.setProperty('--badge-maintenance-bg', hexToRgba(badgeMaintenanceColor, 0.18));
     }
     if (badgeRelationColor) {
-        el.style.setProperty('--badge-relation-color', badgeRelationColor);
-        el.style.setProperty('--badge-relation-bg', hexToRgba(badgeRelationColor, 0.18));
+        root.style.setProperty('--badge-relation-color', badgeRelationColor);
+        root.style.setProperty('--badge-relation-bg', hexToRgba(badgeRelationColor, 0.18));
     }
     if (btnReadyColor) {
-        el.style.setProperty('--btn-ready-color', btnReadyColor);
-        el.style.setProperty('--btn-ready-color-2', darkenHex(btnReadyColor, 25));
-        el.style.setProperty('--btn-ready-color-3', darkenHex(btnReadyColor, 40));
+        root.style.setProperty('--btn-ready-color', btnReadyColor);
+        root.style.setProperty('--btn-ready-color-2', darkenHex(btnReadyColor, 25));
+        root.style.setProperty('--btn-ready-color-3', darkenHex(btnReadyColor, 38));
     }
 }
 
