@@ -60,9 +60,9 @@
     </script>
 
     <link rel="icon" type="image/webp" href="assets/images/favicon.webp">
-    <link rel="stylesheet" href="css/app.css?v=29b2b7e">
+    <link rel="stylesheet" href="css/app.css?v=29b2b7f">
     <link rel="stylesheet" href="css/theme.css?v=29b2b7d">
-    <link rel="stylesheet" href="css/chat-widget.css?v=29b2b7e">
+    <link rel="stylesheet" href="css/chat-widget.css?v=29b2b7f">
 </head>
 <body style="visibility:hidden">
     <div class="app-container">
@@ -115,8 +115,21 @@
             <section id="home" class="section active">
                 <div class="section-header">
                     <h1>Eventos Cadastrados</h1>
-                    <div class="search-container">
+                    <div class="search-container search-with-filter">
                         <input type="text" id="searchEventInput" placeholder="Buscar evento..." onkeyup="searchEvents()">
+                        <div class="filter-control">
+                            <button type="button" class="filter-button" onclick="toggleFilterMenu('eventSortMenu', this)" aria-expanded="false" aria-controls="eventSortMenu" aria-label="Ordenar eventos">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+                                <span>Filtro</span>
+                            </button>
+                            <div id="eventSortMenu" class="filter-menu" role="menu">
+                                <button type="button" data-sort-option="events:created_desc" onclick="setSortMode('events', 'created_desc')">Inclusão: recentes</button>
+                                <button type="button" data-sort-option="events:created_asc" onclick="setSortMode('events', 'created_asc')">Inclusão: antigas</button>
+                                <button type="button" data-sort-option="events:name_asc" onclick="setSortMode('events', 'name_asc')">Ordem alfabética A-Z</button>
+                                <button type="button" data-sort-option="events:name_desc" onclick="setSortMode('events', 'name_desc')">Ordem alfabética Z-A</button>
+                                <button type="button" data-sort-option="events:date_asc" onclick="setSortMode('events', 'date_asc')">Data do evento: próxima</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -215,9 +228,21 @@
                             <button type="button" id="outrosTabButton" class="btn-secondary" onclick="setBancoTab('outros')">Outros</button>
                         </div>
                     </div>
-                    <div class="search-container">
+                    <div class="search-container search-with-filter">
                         <input type="text" id="searchInput" placeholder="Buscar equipamento..." onkeyup="searchDatabase()">
                         <button type="button" class="search-button" onclick="searchDatabase()">Buscar</button>
+                        <div class="filter-control">
+                            <button type="button" class="filter-button" onclick="toggleFilterMenu('databaseSortMenu', this)" aria-expanded="false" aria-controls="databaseSortMenu" aria-label="Ordenar banco de dados">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+                                <span>Filtro</span>
+                            </button>
+                            <div id="databaseSortMenu" class="filter-menu" role="menu">
+                                <button type="button" data-sort-option="database:name_asc" onclick="setSortMode('database', 'name_asc')">Ordem alfabética A-Z</button>
+                                <button type="button" data-sort-option="database:name_desc" onclick="setSortMode('database', 'name_desc')">Ordem alfabética Z-A</button>
+                                <button type="button" data-sort-option="database:created_desc" onclick="setSortMode('database', 'created_desc')">Inclusão: recentes</button>
+                                <button type="button" data-sort-option="database:created_asc" onclick="setSortMode('database', 'created_asc')">Inclusão: antigas</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -297,8 +322,21 @@
             <section id="historico" class="section">
                 <div class="section-header">
                     <h1>Historico</h1>
-                    <div class="search-container">
+                    <div class="search-container search-with-filter">
                         <input type="text" id="searchHistoryInput" placeholder="Buscar historico..." onkeyup="searchHistoryEvents()">
+                        <div class="filter-control">
+                            <button type="button" class="filter-button" onclick="toggleFilterMenu('historySortMenu', this)" aria-expanded="false" aria-controls="historySortMenu" aria-label="Ordenar histórico">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+                                <span>Filtro</span>
+                            </button>
+                            <div id="historySortMenu" class="filter-menu" role="menu">
+                                <button type="button" data-sort-option="history:completed_desc" onclick="setSortMode('history', 'completed_desc')">Finalização: recente</button>
+                                <button type="button" data-sort-option="history:completed_asc" onclick="setSortMode('history', 'completed_asc')">Finalização: antiga</button>
+                                <button type="button" data-sort-option="history:name_asc" onclick="setSortMode('history', 'name_asc')">Ordem alfabética A-Z</button>
+                                <button type="button" data-sort-option="history:name_desc" onclick="setSortMode('history', 'name_desc')">Ordem alfabética Z-A</button>
+                                <button type="button" data-sort-option="history:created_desc" onclick="setSortMode('history', 'created_desc')">Inclusão: recentes</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1101,8 +1139,22 @@
             <section id="locacao" class="section">
                 <div class="section-header">
                     <h1>Locação</h1>
-                    <div class="search-container">
+                    <div class="search-container search-with-filter">
                         <input type="text" id="searchRentalInput" placeholder="Buscar locação..." onkeyup="searchRentalEvents()">
+                        <div class="filter-control">
+                            <button type="button" class="filter-button" onclick="toggleFilterMenu('rentalSortMenu', this)" aria-expanded="false" aria-controls="rentalSortMenu" aria-label="Ordenar locações">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+                                <span>Filtro</span>
+                            </button>
+                            <div id="rentalSortMenu" class="filter-menu" role="menu">
+                                <button type="button" data-sort-option="rentals:return_asc" onclick="setSortMode('rentals', 'return_asc')">Devolução: mais próxima</button>
+                                <button type="button" data-sort-option="rentals:return_desc" onclick="setSortMode('rentals', 'return_desc')">Devolução: mais distante</button>
+                                <button type="button" data-sort-option="rentals:name_asc" onclick="setSortMode('rentals', 'name_asc')">Ordem alfabética A-Z</button>
+                                <button type="button" data-sort-option="rentals:name_desc" onclick="setSortMode('rentals', 'name_desc')">Ordem alfabética Z-A</button>
+                                <button type="button" data-sort-option="rentals:created_desc" onclick="setSortMode('rentals', 'created_desc')">Inclusão: recentes</button>
+                                <button type="button" data-sort-option="rentals:created_asc" onclick="setSortMode('rentals', 'created_asc')">Inclusão: antigas</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1164,7 +1216,7 @@
     </div>
 
     <script src="js/storage.js?v=29b2b7d"></script>
-    <script src="js/app.js?v=29b2b7d"></script>
+    <script src="js/app.js?v=29b2b7f"></script>
     <script src="js/chat-widget.js?v=29b2b7d"></script>
 </body>
 </html>
