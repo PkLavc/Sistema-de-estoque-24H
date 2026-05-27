@@ -335,7 +335,7 @@
                         <div class="form-group">
                             <label for="maintenanceBarcode">Codigo de Barras</label>
                             <div class="maintenance-search-row">
-                                <input type="text" id="maintenanceBarcode" name="barcode" placeholder="Digite o codigo e pressione Enter" onkeypress="handleMaintenanceKeyPress(event)">
+                                <input type="text" id="maintenanceBarcode" name="barcode" placeholder="Buscar o codigo..." onkeypress="handleMaintenanceKeyPress(event)">
                                 <button type="button" class="search-button maintenance-search" onclick="searchMaintenanceEquipment()">Buscar Equipamento</button>
                             </div>
                         </div>
@@ -384,6 +384,7 @@
                     <button type="button" id="settingsTabTheme" class="settings-tab" onclick="showSettingsTab('theme')">Tema</button>
                     <button type="button" id="settingsTabLogo" class="settings-tab" onclick="showSettingsTab('logo')">Logo</button>
                     <button type="button" id="settingsTabEmpresas" class="settings-tab" onclick="showSettingsTab('empresas')">Empresas</button>
+                    <button type="button" id="settingsTabSobre" class="settings-tab" onclick="showSettingsTab('sobre')">Sobre</button>
                 </div>
 
                 <!-- Users Tab -->
@@ -1083,6 +1084,17 @@
                         </div>
 
                         <p id="companiesMessage" class="users-message"></p>
+                    </div>
+                </div>
+
+                <div id="settings-sobre" class="settings-tab-content">
+                    <div class="config-panel about-panel">
+                        <h2>Sobre o sistema</h2>
+                        <p>O EquipTrack ajuda empresas de eventos a controlar inventário, locações, manutenção, histórico e notificações de devolução em uma rotina simples de operação.</p>
+                        <div class="about-contact">
+                            <h3>Contato</h3>
+                            <a href="https://github.com/arthurperico" target="_blank" rel="noopener">github.com/arthurperico</a>
+                        </div>
                     </div>
                 </div>
             </section>

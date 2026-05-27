@@ -60,8 +60,8 @@
     </script>
 
     <link rel="icon" type="image/webp" href="assets/images/favicon.webp">
-    <link rel="stylesheet" href="css/app.css?v=29b2b7f">
-    <link rel="stylesheet" href="css/theme.css?v=29b2b7d">
+    <link rel="stylesheet" href="css/app.css?v=29b2b7m">
+    <link rel="stylesheet" href="css/theme.css?v=29b2b7k">
     <link rel="stylesheet" href="css/chat-widget.css?v=29b2b7f">
 </head>
 <body style="visibility:hidden">
@@ -76,17 +76,14 @@
                     <li><a href="#home" class="menu-item active" onclick="showSection('home')">
                         <span class="lottie-icon" id="lottie-home"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> Eventos
                     </a></li>
-                    <li><a href="#locacao" class="menu-item" onclick="showSection('locacao')">
+                    <li><a href="#locacao" id="rentalMenuItem" class="menu-item" onclick="showSection('locacao')">
                         <span class="lottie-icon" id="lottie-rental"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span> Locação
                     </a></li>
                     <li><a href="#manutencao" class="menu-item" onclick="showSection('manutencao')">
                         <span class="lottie-icon" id="lottie-maintenance"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span> Manutenção
                     </a></li>
-                    <li><a href="#banco" class="menu-item" onclick="showSection('banco')">
-                        <span class="lottie-icon" id="lottie-database"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span> Banco de Dados
-                    </a></li>
-                    <li><a href="#cadastro" class="menu-item" onclick="showSection('cadastro')">
-                        <span class="lottie-icon" id="lottie-plus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span> Cadastrar Equipamento
+                    <li><a href="#inventario" class="menu-item" onclick="showSection('inventario')">
+                        <span class="lottie-icon" id="lottie-database"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span> Inventário
                     </a></li>
                     <li><a href="#historico" class="menu-item" onclick="showSection('historico')">
                         <span class="lottie-icon" id="lottie-historical"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.53-4.8"/><polyline points="12 7 12 12 14 14"/></svg></span> Histórico
@@ -99,7 +96,11 @@
                     <span class="lottie-icon" id="lottie-exit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> 
                     <span id="logout-user-text">Sair</span>
                 </button>
-                <button type="button" class="menu-item btn-settings-icon" onclick="showSection('config')">
+                <button type="button" class="menu-item bottom-icon-button btn-notification-icon" onclick="showSection('notificacoes')" aria-label="Notificações">
+                    <span class="lottie-icon" id="lottie-notifications"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
+                    <span id="notificationBadge" class="notification-badge" style="display:none;">0</span>
+                </button>
+                <button type="button" class="menu-item bottom-icon-button btn-settings-icon" onclick="showSection('config')" aria-label="Configurações">
                     <span class="lottie-icon" id="lottie-settings"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
                 </button>
             </div>
@@ -140,7 +141,7 @@
             <section id="cadastro" class="section">
                 <div class="section-header">
                     <div class="section-header-content">
-                        <h1 id="cadastroTitle">Cadastro de Equipamento</h1>
+                        <h1 id="cadastroTitle">Cadastro do Inventário</h1>
                         <div class="database-toggle">
                             <button type="button" id="cadastroEquipamentosTabButton" class="btn-secondary active" onclick="setCadastroTab('equipamentos')">Equipamentos</button>
                             <button type="button" id="cadastroCabosTabButton" class="btn-secondary" onclick="setCadastroTab('cabos')">Cabos</button>
@@ -218,30 +219,31 @@
                 </div>
             </section>
 
-            <section id="banco" class="section">
+            <section id="inventario" class="section">
                 <div class="section-header">
-                    <div class="section-header-content">
-                        <h1 id="databaseTitle">Banco de Dados de Equipamentos</h1>
+                    <div class="database-title-row">
+                        <h1 id="databaseTitle">Inventário</h1>
+                        <div class="search-container search-with-filter">
+                            <input type="text" id="searchInput" placeholder="Buscar equipamento..." onkeyup="searchDatabase()">
+                            <div class="filter-control">
+                                <button type="button" class="filter-button" onclick="toggleFilterMenu('databaseSortMenu', this)" aria-expanded="false" aria-controls="databaseSortMenu" aria-label="Ordenar inventário">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+                                    <span>Filtro</span>
+                                </button>
+                                <div id="databaseSortMenu" class="filter-menu" role="menu">
+                                    <button type="button" data-sort-option="database:name_asc" onclick="setSortMode('database', 'name_asc')">Ordem alfabética A-Z</button>
+                                    <button type="button" data-sort-option="database:name_desc" onclick="setSortMode('database', 'name_desc')">Ordem alfabética Z-A</button>
+                                    <button type="button" data-sort-option="database:created_desc" onclick="setSortMode('database', 'created_desc')">Inclusão: recentes</button>
+                                    <button type="button" data-sort-option="database:created_asc" onclick="setSortMode('database', 'created_asc')">Inclusão: antigas</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inventory-actions-row">
                         <div class="database-toggle">
                             <button type="button" id="equipamentosTabButton" class="btn-secondary active" onclick="setBancoTab('equipamentos')">Equipamentos</button>
                             <button type="button" id="cabosTabButton" class="btn-secondary" onclick="setBancoTab('cabos')">Cabos</button>
                             <button type="button" id="outrosTabButton" class="btn-secondary" onclick="setBancoTab('outros')">Outros</button>
-                        </div>
-                    </div>
-                    <div class="search-container search-with-filter">
-                        <input type="text" id="searchInput" placeholder="Buscar equipamento..." onkeyup="searchDatabase()">
-                        <button type="button" class="search-button" onclick="searchDatabase()">Buscar</button>
-                        <div class="filter-control">
-                            <button type="button" class="filter-button" onclick="toggleFilterMenu('databaseSortMenu', this)" aria-expanded="false" aria-controls="databaseSortMenu" aria-label="Ordenar banco de dados">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
-                                <span>Filtro</span>
-                            </button>
-                            <div id="databaseSortMenu" class="filter-menu" role="menu">
-                                <button type="button" data-sort-option="database:name_asc" onclick="setSortMode('database', 'name_asc')">Ordem alfabética A-Z</button>
-                                <button type="button" data-sort-option="database:name_desc" onclick="setSortMode('database', 'name_desc')">Ordem alfabética Z-A</button>
-                                <button type="button" data-sort-option="database:created_desc" onclick="setSortMode('database', 'created_desc')">Inclusão: recentes</button>
-                                <button type="button" data-sort-option="database:created_asc" onclick="setSortMode('database', 'created_asc')">Inclusão: antigas</button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -359,26 +361,24 @@
 
             <section id="manutencao" class="section">
                 <div class="section-header">
-                    <div class="section-header-content">
+                    <div class="maintenance-title-row">
                         <h1>Controle de Manutencao</h1>
-                        <div class="database-toggle">
-                            <button type="button" id="maintenanceEquipamentosTabButton" class="btn-secondary active" onclick="setMaintenanceTab('equipamentos')">Equipamentos</button>
-                            <button type="button" id="maintenanceCabosTabButton" class="btn-secondary" onclick="setMaintenanceTab('cabos')">Cabos</button>
+                        <div class="maintenance-header-search">
+                            <div id="maintenanceEquipamentosSearch" class="maintenance-search-row active">
+                                <input type="text" id="maintenanceBarcode" name="barcode" placeholder="Buscar o codigo..." onkeypress="handleMaintenanceKeyPress(event)">
+                            </div>
+                            <div id="maintenanceCabosSearch" class="maintenance-search-row">
+                                <input type="text" id="maintenanceCableName" name="cableName" placeholder="Digite o nome do cabo e pressione Enter" onkeypress="handleMaintenanceCableKeyPress(event)">
+                            </div>
                         </div>
+                    </div>
+                    <div class="database-toggle">
+                        <button type="button" id="maintenanceEquipamentosTabButton" class="btn-secondary active" onclick="setMaintenanceTab('equipamentos')">Equipamentos</button>
+                        <button type="button" id="maintenanceCabosTabButton" class="btn-secondary" onclick="setMaintenanceTab('cabos')">Cabos</button>
                     </div>
                 </div>
 
                 <div id="maintenanceEquipamentosView" class="database-view active">
-                    <div class="maintenance-form">
-                        <div class="form-group">
-                            <label for="maintenanceBarcode">Codigo de Barras</label>
-                            <div class="maintenance-search-row">
-                                <input type="text" id="maintenanceBarcode" name="barcode" placeholder="Digite o codigo e pressione Enter" onkeypress="handleMaintenanceKeyPress(event)">
-                                <button type="button" class="search-button maintenance-search" onclick="searchMaintenanceEquipment()">Buscar Equipamento</button>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="maintenance-list-card">
                         <div class="maintenance-list-header">
                             <h2>Equipamentos em manutenção</h2>
@@ -389,16 +389,6 @@
                 </div>
 
                 <div id="maintenanceCabosView" class="database-view">
-                    <div class="maintenance-form">
-                        <div class="form-group">
-                            <label for="maintenanceCableName">Nome do Cabo</label>
-                            <div class="maintenance-search-row">
-                                <input type="text" id="maintenanceCableName" name="cableName" placeholder="Digite o nome do cabo e pressione Enter" onkeypress="handleMaintenanceCableKeyPress(event)">
-                                <button type="button" class="search-button maintenance-search" onclick="searchMaintenanceCable()">Buscar Cabo</button>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="maintenance-list-card">
                         <div class="maintenance-list-header">
                             <h2>Cabos em manutençao</h2>
@@ -407,6 +397,39 @@
                         <div id="maintenanceCableList" class="maintenance-list"></div>
                     </div>
                 </div>
+            </section>
+
+            <section id="notificacoes" class="section">
+                <div class="section-header notifications-header">
+                    <h1>Notificações</h1>
+                    <button type="button" id="notificationSelectToggle" class="btn-secondary" onclick="toggleNotificationSelectionMode()">Selecionar</button>
+                </div>
+
+                <div id="notificationSelectionBar" class="notification-selection-bar" style="display:none;">
+                    <label class="notification-check-all">
+                        <input type="checkbox" id="notificationSelectAll" onchange="toggleAllNotifications(this.checked)">
+                        <span>Marcar todos</span>
+                    </label>
+                    <div class="form-group notification-filter-group">
+                        <label for="notificationDateFilter">Filtro por data</label>
+                        <select id="notificationDateFilter" onchange="handleNotificationFilterChange()">
+                            <option value="all">Todas</option>
+                            <option value="overdue">Atrasadas</option>
+                            <option value="today">Hoje</option>
+                            <option value="next3">Próximos 3 dias</option>
+                            <option value="next7">Próximos 7 dias</option>
+                            <option value="custom">Data específica</option>
+                        </select>
+                    </div>
+                    <div class="form-group notification-custom-date" id="notificationCustomDateGroup" style="display:none;">
+                        <label for="notificationCustomDate">Data</label>
+                        <input type="date" id="notificationCustomDate" onchange="renderNotifications()">
+                    </div>
+                    <button type="button" class="btn-primary" onclick="markSelectedNotificationsRead()">Marcar como lidas</button>
+                    <button type="button" class="btn-secondary" onclick="clearNotificationSelection()">Limpar</button>
+                </div>
+
+                <div id="notificationsList" class="notifications-list"></div>
             </section>
 
             <section id="config" class="section">
@@ -422,6 +445,8 @@
                     <button type="button" id="settingsTabTheme" class="settings-tab" onclick="showSettingsTab('theme')">Tema</button>
                     <button type="button" id="settingsTabLogo" class="settings-tab" onclick="showSettingsTab('logo')">Logo</button>
                     <button type="button" id="settingsTabEmpresas" class="settings-tab" onclick="showSettingsTab('empresas')">Empresas</button>
+                    <button type="button" id="settingsTabNotificacoes" class="settings-tab" onclick="showSettingsTab('notificacoes')">Notificações</button>
+                    <button type="button" id="settingsTabSobre" class="settings-tab" onclick="showSettingsTab('sobre')">Sobre</button>
                 </div>
 
                 <!-- Users Tab -->
@@ -1123,6 +1148,61 @@
                         <p id="companiesMessage" class="users-message"></p>
                     </div>
                 </div>
+
+                <div id="settings-notificacoes" class="settings-tab-content">
+                    <div class="config-panel">
+                        <form id="notificationSettingsForm" class="form-grid notification-settings-form" onsubmit="saveNotificationSettings(event)">
+                            <div class="theme-section-title">
+                                <h3>Notificações</h3>
+                                <div class="theme-header-actions">
+                                    <button type="submit" class="btn-primary">Salvar notificações</button>
+                                </div>
+                            </div>
+
+                            <label class="form-check">
+                                <input type="checkbox" id="notificationEnabled">
+                                <span>Ativar avisos de locação</span>
+                            </label>
+
+                            <label class="form-check">
+                                <input type="checkbox" id="notificationIncludeOverdue">
+                                <span>Manter aviso enquanto a locação estiver atrasada</span>
+                            </label>
+
+                            <div class="form-group">
+                                <label for="notificationDaysBefore">Quando avisar</label>
+                                <input type="text" id="notificationDaysBefore" placeholder="Ex: 7, 3, 0">
+                                <p class="form-help">Use dias antes da devolução, separados por vírgula. Zero significa no dia.</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="notificationMaxNotices">Quantidade máxima de avisos na página</label>
+                                <input type="number" id="notificationMaxNotices" min="1" max="50" value="20">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="notificationRepeatMode">Repetição</label>
+                                <select id="notificationRepeatMode">
+                                    <option value="daily">Mostrar novamente a cada dia</option>
+                                    <option value="once">Mostrar só uma vez depois de lida</option>
+                                </select>
+                            </div>
+
+                            <p id="notificationSettingsMessage" class="users-message"></p>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="settings-sobre" class="settings-tab-content">
+                    <div class="config-panel about-panel">
+                        <h2>Sobre o sistema</h2>
+                        <p>O EquipTrack ajuda empresas de eventos a controlar inventário, locações, manutenção, histórico e notificações de devolução em uma rotina simples de operação.</p>
+                        <div class="about-contact">
+                            <h3>Contato</h3>
+                            <a href="https://github.com/arthurperico" target="_blank" rel="noopener">github.com/arthurperico</a>
+                        </div>
+                    </div>
+                </div>
             </section>
             <section id="locacao" class="section">
                 <div class="section-header">
@@ -1152,6 +1232,7 @@
 
         <aside id="adBanner" class="ad-banner" aria-label="Publicidade"></aside>
         <button type="button" id="floatingBtnHome" class="floating-create-button" onclick="showSection('eventos')" style="display:none">+ Criar evento</button>
+        <button type="button" id="floatingBtnInventario" class="floating-create-button" onclick="openCadastroFromInventario()" style="display:none">+ Cadastrar</button>
         <button type="button" id="floatingBtnLocacao" class="floating-create-button" onclick="openRentalModal()" style="display:none">+ Criar Evento</button>
         <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
     </div>
@@ -1204,7 +1285,7 @@
     </div>
 
     <script src="js/storage.js?v=29b2b7d"></script>
-    <script src="js/app.js?v=29b2b7f"></script>
+    <script src="js/app.js?v=29b2b7m"></script>
     <script src="js/chat-widget.js?v=29b2b7d"></script>
 </body>
 </html>
