@@ -474,7 +474,13 @@ class DataStorage {
         const keys = ['events', 'equipments', 'cables', 'otherItems', 'users', 'companies', 'historyEvents', 'historyRentals'];
         keys.forEach(key => this._deleteFromLocalStorage(key));
         Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith('pending_items_') || key.startsWith('pending_other_items_')) {
+            if (
+                key.startsWith('pending_items_') ||
+                key.startsWith('pending_other_items_') ||
+                key.startsWith('dismissed_notifications') ||
+                key.startsWith('dismissed_rental_return_alerts') ||
+                key === 'notification-settings'
+            ) {
                 localStorage.removeItem(key);
             }
         });

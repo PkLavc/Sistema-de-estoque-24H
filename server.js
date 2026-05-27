@@ -18,6 +18,14 @@ const SEEDED_USERS = [];
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const DELETE_PASSWORD_HASH = process.env.DELETE_PASSWORD_HASH || '';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const DEFAULT_NOTIFICATION_SETTINGS = {
+    enabled: true,
+    daysBefore: [7, 5, 3, 1, 0],
+    includeOverdue: true,
+    maxNotices: 20,
+    repeatMode: 'daily',
+    allowUserDismiss: true
+};
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
@@ -168,6 +176,21 @@ function initializeDatabase() {
                 username TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 role TEXT NOT NULL DEFAULT 'user'
+            )`);
+
+            db.run(`CREATE TABLE IF NOT EXISTS notification_settings (
+                company_id INTEGER PRIMARY KEY,
+                settings_json TEXT NOT NULL,
+                updated_by_username TEXT,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )`);
+
+            db.run(`CREATE TABLE IF NOT EXISTS notification_dismissals (
+                company_id INTEGER NOT NULL,
+                notification_id TEXT NOT NULL,
+                dismissed_by_username TEXT,
+                dismissed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (company_id, notification_id)
             )`);
 
             db.run("ALTER TABLE equipments ADD COLUMN current_status TEXT DEFAULT 'Disponivel'", () => {});
@@ -587,6 +610,41 @@ function isAvailableStatus(status) {
         || normalized === 'relação';
 }
 
+function getNotificationCompanyId(req) {
+    return req.session?.companyId || req.session?.company_id || 0;
+}
+
+function sanitizeNotificationDays(value) {
+    const raw = Array.isArray(value) ? value : String(value || '').split(',');
+    const days = raw
+        .map((item) => Number(String(item).trim()))
+        .filter((day) => Number.isInteger(day) && day >= 0 && day <= 365);
+    return [...new Set(days)].sort((a, b) => b - a);
+}
+
+function sanitizeNotificationSettings(value = {}) {
+    const daysBefore = sanitizeNotificationDays(value.daysBefore);
+    return {
+        ...DEFAULT_NOTIFICATION_SETTINGS,
+        enabled: value.enabled !== false,
+        includeOverdue: value.includeOverdue !== false,
+        allowUserDismiss: value.allowUserDismiss !== false,
+        daysBefore: daysBefore.length ? daysBefore : DEFAULT_NOTIFICATION_SETTINGS.daysBefore,
+        maxNotices: Math.max(1, Math.min(50, Number(value.maxNotices) || DEFAULT_NOTIFICATION_SETTINGS.maxNotices)),
+        repeatMode: value.repeatMode === 'once' ? 'once' : 'daily'
+    };
+}
+
+async function getNotificationSettingsForCompany(companyId) {
+    const row = await dbGet('SELECT settings_json FROM notification_settings WHERE company_id = ?', [companyId]);
+    if (!row?.settings_json) return { ...DEFAULT_NOTIFICATION_SETTINGS };
+    try {
+        return sanitizeNotificationSettings(JSON.parse(row.settings_json));
+    } catch (_) {
+        return { ...DEFAULT_NOTIFICATION_SETTINGS };
+    }
+}
+
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
 
@@ -785,6 +843,72 @@ app.post('/api/logout', async (req, res) => {
     }
 });
 
+app.get('/api/notification-settings', requireAuth, async (req, res) => {
+    try {
+        const settings = await getNotificationSettingsForCompany(getNotificationCompanyId(req));
+        res.json({ settings });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/notification-settings', requireAdmin, async (req, res) => {
+    try {
+        const settings = sanitizeNotificationSettings(req.body || {});
+        await dbRun(
+            `INSERT INTO notification_settings (company_id, settings_json, updated_by_username, updated_at)
+             VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+             ON CONFLICT(company_id) DO UPDATE SET
+                settings_json = excluded.settings_json,
+                updated_by_username = excluded.updated_by_username,
+                updated_at = CURRENT_TIMESTAMP`,
+            [getNotificationCompanyId(req), JSON.stringify(settings), req.session?.username || null]
+        );
+        res.json({ settings, success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/notification-dismissals', requireAuth, async (req, res) => {
+    try {
+        const rows = await dbAll(
+            'SELECT notification_id FROM notification_dismissals WHERE company_id = ? ORDER BY dismissed_at DESC',
+            [getNotificationCompanyId(req)]
+        );
+        res.json({ ids: rows.map((row) => row.notification_id) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/notification-dismissals', requireAuth, async (req, res) => {
+    try {
+        const settings = await getNotificationSettingsForCompany(getNotificationCompanyId(req));
+        const isAdmin = req.session?.role === 'admin' || req.session?.localAuth;
+        if (!isAdmin && settings.allowUserDismiss === false) {
+            return res.status(403).json({ error: 'O administrador bloqueou a remocao de notificacoes' });
+        }
+
+        const ids = Array.isArray(req.body?.ids)
+            ? req.body.ids.map((id) => String(id).trim()).filter(Boolean)
+            : [];
+
+        for (const id of [...new Set(ids)].slice(0, 100)) {
+            await dbRun(
+                `INSERT OR IGNORE INTO notification_dismissals
+                 (company_id, notification_id, dismissed_by_username, dismissed_at)
+                 VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+                [getNotificationCompanyId(req), id, req.session?.username || null]
+            );
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/events', requireAuth, (req, res) => {
     getEventsByCompletion('event', false)
         .then((rows) => res.json(rows || []))
@@ -966,6 +1090,37 @@ app.get('/api/rental-events/:id', requireAuth, (req, res) => {
             res.json(row);
         }
     );
+});
+
+app.patch('/api/rental-events/:id', requireAuth, async (req, res) => {
+    try {
+        const eventId = Number(req.params.id);
+        const withdrawalDate = String(req.body?.withdrawalDate || '').trim();
+        const returnDate = String(req.body?.returnDate || '').trim();
+
+        if (!withdrawalDate || !returnDate) {
+            return res.status(400).json({ error: 'Data de retirada e data de devolucao sao obrigatorias' });
+        }
+
+        if (returnDate < withdrawalDate) {
+            return res.status(400).json({ error: 'A data de devolucao nao pode ser anterior a data de retirada' });
+        }
+
+        const event = await dbGet(
+            "SELECT id FROM events WHERE id = ? AND COALESCE(event_type, 'event') = 'rental'",
+            [eventId]
+        );
+        if (!event) return res.status(404).json({ error: 'Locacao nao encontrada' });
+
+        await dbRun(
+            'UPDATE events SET date = ?, withdrawal_date = ?, return_date = ? WHERE id = ?',
+            [withdrawalDate, withdrawalDate, returnDate, eventId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.delete('/api/rental-events/:id', requireAuth, async (req, res) => {

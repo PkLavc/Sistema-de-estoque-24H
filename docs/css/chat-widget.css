@@ -47,13 +47,14 @@
 /* Widget panel */
 .eq-chat-widget {
   position: fixed;
-  bottom: calc(var(--floating-bottom, calc(32px + env(safe-area-inset-bottom, 0px))) + var(--floating-chat-size, 56px) + var(--floating-chat-gap, 12px));
+  --chat-panel-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  bottom: var(--chat-panel-bottom);
   right: var(--floating-edge-gap, 32px);
-  z-index: 8999;
+  z-index: 9001;
   width: 360px;
   max-width: calc(100vw - 32px);
-  height: 520px;
-  max-height: calc(100vh - 120px);
+  height: min(520px, calc(100dvh - var(--chat-panel-bottom) - 12px));
+  max-height: calc(100dvh - var(--chat-panel-bottom) - 12px);
   background: var(--panel-bg, #2a2a2a);
   border: 1px solid #3a3a3a;
   border-radius: 16px;
@@ -256,7 +257,7 @@
   border-radius: 10px;
   color: var(--input-text, #fff);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 16px;
   padding: 9px 12px;
   line-height: 1.45;
   min-height: 40px;
@@ -357,12 +358,13 @@
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .eq-chat-widget {
+    --chat-panel-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     right: 12px;
     left: 12px;
     width: auto;
     max-width: none;
-    height: min(520px, calc(100dvh - var(--floating-bottom, calc(20px + env(safe-area-inset-bottom, 0px))) - var(--floating-chat-size, 56px) - var(--floating-chat-gap, 12px) - 12px));
-    max-height: calc(100dvh - var(--floating-bottom, calc(20px + env(safe-area-inset-bottom, 0px))) - var(--floating-chat-size, 56px) - var(--floating-chat-gap, 12px) - 12px);
+    height: min(520px, calc(100dvh - var(--chat-panel-bottom) - 12px));
+    max-height: calc(100dvh - var(--chat-panel-bottom) - 12px);
     border-radius: 14px;
   }
 }
@@ -374,7 +376,8 @@
 }
 .app-container.has-ad:not(.sidebar-collapsed) ~ .eq-chat-widget {
   --floating-bottom: calc(90px + 32px + env(safe-area-inset-bottom, 0px));
-  bottom: calc(var(--floating-bottom) + var(--floating-chat-size, 56px) + var(--floating-chat-gap, 12px));
+  --chat-panel-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  bottom: var(--chat-panel-bottom);
 }
 
 /* ── Right-column ad (sidebar collapsed, desktop) ───────────────────────── */
@@ -387,7 +390,8 @@
 .app-container.has-ad.sidebar-collapsed ~ .eq-chat-widget {
   --floating-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
   right: calc(200px + 32px);
-  bottom: calc(var(--floating-bottom) + var(--floating-chat-size, 56px) + var(--floating-chat-gap, 12px));
+  --chat-panel-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  bottom: var(--chat-panel-bottom);
 }
 
 /* ── Above mobile bottom ad (max-width 768px) ──────────────────────────── */
@@ -402,6 +406,7 @@
   .app-container.has-ad:not(.sidebar-collapsed) ~ .eq-chat-widget,
   .app-container.has-ad.sidebar-collapsed ~ .eq-chat-widget {
     --floating-bottom: calc(72px + 20px + env(safe-area-inset-bottom, 0px));
-    bottom: calc(var(--floating-bottom) + var(--floating-chat-size, 56px) + var(--floating-chat-gap, 12px));
+    --chat-panel-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    bottom: var(--chat-panel-bottom);
   }
 }

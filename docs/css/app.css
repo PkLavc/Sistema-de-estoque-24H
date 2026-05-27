@@ -189,13 +189,26 @@ body {
     text-align: left;
     font: inherit;
     cursor: pointer;
+    min-width: 0;
+}
+
+.logout-label {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    margin-right: 4px;
+}
+
+.logout-name-viewport {
+    display: inline-flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 #logout-user-text {
     display: inline-block;
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
     white-space: nowrap;
     vertical-align: middle;
 }
@@ -203,7 +216,7 @@ body {
 /* Animation for long usernames */
 @keyframes scrollText {
     0%, 20% { transform: translateX(0); }
-    80%, 100% { transform: translateX(calc(-100% + 220px)); }
+    80%, 100% { transform: translateX(calc(-1 * var(--logout-scroll-distance, 0px))); }
 }
 
 /* Automatic animation for long text, pauses on hover */
@@ -704,7 +717,62 @@ textarea:focus {
 }
 
 .notifications-header {
-    align-items: flex-start;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.notifications-header h1 {
+    margin-bottom: 0;
+}
+
+.notifications-header-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.notification-select-button,
+.notification-filter-button {
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 0.76rem;
+    line-height: 1;
+    letter-spacing: 0.06em;
+}
+
+.notification-filter-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.notification-filter-menu {
+    min-width: 220px;
+}
+
+.filter-date-option {
+    display: grid;
+    gap: 8px;
+    padding: 10px 12px;
+    color: #ddd;
+    font-size: 0.9rem;
+}
+
+.filter-date-option span {
+    font-weight: 600;
+}
+
+.filter-date-option input {
+    width: 100%;
+    min-height: 36px;
+    padding: 8px 10px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #fff;
+    font: inherit;
 }
 
 .notification-selection-bar {
@@ -1837,6 +1905,39 @@ textarea {
         gap: 10px;
     }
 
+    .notifications-header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .notifications-header h1 {
+        font-size: 1.45rem;
+        min-width: 0;
+    }
+
+    .notifications-header-actions {
+        gap: 6px;
+    }
+
+    .notification-select-button {
+        min-height: 36px;
+        padding: 0 10px;
+        font-size: 0.68rem;
+        letter-spacing: 0.02em;
+    }
+
+    .notifications-header .notification-filter-button {
+        width: 38px;
+        min-height: 36px;
+        padding: 0;
+    }
+
+    .notifications-header .notification-filter-button span {
+        display: none;
+    }
+
     .notification-check-all {
         min-height: auto;
     }
@@ -2335,4 +2436,35 @@ textarea {
     font-weight: bold;
     line-height: 18px;
     text-align: center;
+}
+
+.local-data-reset-button {
+    position: fixed;
+    left: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 9500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: rgba(25, 25, 25, 0.92);
+    color: #ddd;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    visibility: visible;
+}
+
+.local-data-reset-button:hover {
+    border-color: var(--primary, #ff3333);
+    color: #fff;
+    background: #242424;
 }

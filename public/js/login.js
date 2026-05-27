@@ -82,8 +82,40 @@ async function login(username, password) {
 // Guest login
 async function guestLogin() {
     // Guest mode always uses localStorage (isolated from the real database)
+    clearLocalDataExceptAppearance();
     localStorage.setItem('isGuestMode', 'true');
     window.location.href = '../';
+}
+
+function shouldPreserveAppearanceKey(key) {
+    return key === 'appTheme'
+        || key === 'custom-logo'
+        || key === 'custom-favicon'
+        || key.startsWith('theme-');
+}
+
+function clearLocalDataExceptAppearance() {
+    try {
+        Object.keys(localStorage).forEach((key) => {
+            if (!shouldPreserveAppearanceKey(key)) {
+                localStorage.removeItem(key);
+            }
+        });
+        sessionStorage.clear();
+    } catch (error) {
+        console.error('Erro ao limpar dados locais:', error);
+    }
+}
+
+function resetLocalBrowserData() {
+    if (!confirm('Apagar os dados locais deste navegador para esta pagina?')) return;
+    try {
+        localStorage.clear();
+        sessionStorage.clear();
+    } catch (error) {
+        console.error('Erro ao resetar dados locais:', error);
+    }
+    window.location.reload();
 }
 
 function showError(message) {
@@ -103,6 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnSubmit = document.getElementById('btn-submit');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+    const resetButton = document.getElementById('localDataResetButton');
 
     function setCredentialsRequired(isRequired) {
         if (usernameInput) usernameInput.required = isRequired;
@@ -147,6 +180,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 login(u, p);
             }
         });
+    }
+
+    if (resetButton) {
+        resetButton.addEventListener('click', resetLocalBrowserData);
     }
 
     // Check if already authenticated

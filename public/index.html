@@ -94,7 +94,10 @@
             <div class="bottom-actions">
                 <button type="button" class="menu-item logout-button btn-logout" onclick="logout()">
                     <span class="lottie-icon" id="lottie-exit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> 
-                    <span id="logout-user-text">Sair</span>
+                    <span class="logout-label">Sair •</span>
+                    <span class="logout-name-viewport">
+                        <span id="logout-user-text"></span>
+                    </span>
                 </button>
                 <button type="button" class="menu-item bottom-icon-button btn-notification-icon" onclick="showSection('notificacoes')" aria-label="Notificações">
                     <span class="lottie-icon" id="lottie-notifications"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
@@ -402,7 +405,27 @@
             <section id="notificacoes" class="section">
                 <div class="section-header notifications-header">
                     <h1>Notificações</h1>
-                    <button type="button" id="notificationSelectToggle" class="btn-secondary" onclick="toggleNotificationSelectionMode()">Selecionar</button>
+                    <div class="notifications-header-actions">
+                        <button type="button" id="notificationSelectToggle" class="btn-secondary notification-select-button" onclick="toggleNotificationSelectionMode()">Selecionar</button>
+                        <div class="filter-control notification-filter-control">
+                            <button type="button" class="filter-button notification-filter-button" onclick="toggleFilterMenu('notificationFilterMenu', this)" aria-expanded="false" aria-controls="notificationFilterMenu" aria-label="Filtrar notificações">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+                                <span>Filtro</span>
+                            </button>
+                            <div id="notificationFilterMenu" class="filter-menu notification-filter-menu" role="menu">
+                                <button type="button" data-notification-filter-option="all" onclick="setNotificationDateFilter('all')">Todas</button>
+                                <button type="button" data-notification-filter-option="overdue" onclick="setNotificationDateFilter('overdue')">Atrasadas</button>
+                                <button type="button" data-notification-filter-option="today" onclick="setNotificationDateFilter('today')">Hoje</button>
+                                <button type="button" data-notification-filter-option="next3" onclick="setNotificationDateFilter('next3')">Próximos 3 dias</button>
+                                <button type="button" data-notification-filter-option="next7" onclick="setNotificationDateFilter('next7')">Próximos 7 dias</button>
+                                <label class="filter-date-option">
+                                    <span>Data específica</span>
+                                    <input type="date" id="notificationCustomDate" onchange="setNotificationDateFilter('custom')">
+                                </label>
+                            </div>
+                        </div>
+                        <input type="hidden" id="notificationDateFilter" value="all">
+                    </div>
                 </div>
 
                 <div id="notificationSelectionBar" class="notification-selection-bar" style="display:none;">
@@ -410,21 +433,6 @@
                         <input type="checkbox" id="notificationSelectAll" onchange="toggleAllNotifications(this.checked)">
                         <span>Marcar todos</span>
                     </label>
-                    <div class="form-group notification-filter-group">
-                        <label for="notificationDateFilter">Filtro por data</label>
-                        <select id="notificationDateFilter" onchange="handleNotificationFilterChange()">
-                            <option value="all">Todas</option>
-                            <option value="overdue">Atrasadas</option>
-                            <option value="today">Hoje</option>
-                            <option value="next3">Próximos 3 dias</option>
-                            <option value="next7">Próximos 7 dias</option>
-                            <option value="custom">Data específica</option>
-                        </select>
-                    </div>
-                    <div class="form-group notification-custom-date" id="notificationCustomDateGroup" style="display:none;">
-                        <label for="notificationCustomDate">Data</label>
-                        <input type="date" id="notificationCustomDate" onchange="renderNotifications()">
-                    </div>
                     <button type="button" class="btn-primary" onclick="markSelectedNotificationsRead()">Marcar como lidas</button>
                     <button type="button" class="btn-secondary" onclick="clearNotificationSelection()">Limpar</button>
                 </div>
@@ -1259,6 +1267,11 @@
                                 <span>Manter aviso enquanto a locação estiver atrasada</span>
                             </label>
 
+                            <label class="form-check">
+                                <input type="checkbox" id="notificationAllowUserDismiss">
+                                <span>Permitir que usuários apaguem notificações para todos</span>
+                            </label>
+
                             <div class="form-group">
                                 <label for="notificationDaysBefore">Quando avisar</label>
                                 <input type="text" id="notificationDaysBefore" placeholder="Ex: 7, 3, 0">
@@ -1346,8 +1359,8 @@
     <div id="rentalModal" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <button type="button" class="modal-close" onclick="closeRentalModal()" aria-label="Fechar">X</button>
-            <h2>Criar evento de locação</h2>
-            <p class="modal-subtitle">Informe as datas de retirada e devolucao.</p>
+            <h2 id="rentalModalTitle">Criar evento de locação</h2>
+            <p id="rentalModalSubtitle" class="modal-subtitle">Informe as datas de retirada e devolucao.</p>
             <form id="rentalForm" class="rental-form">
                 <div class="form-group">
                     <label for="rentalEventName">Nome do Evento</label>
@@ -1367,13 +1380,33 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary">Criar Evento</button>
+                    <button type="submit" class="btn-primary" id="rentalModalSubmit">Criar Evento</button>
                     <button type="button" onclick="closeRentalModal()" class="btn-secondary">Cancelar</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <button type="button" id="appEmergencyReset" class="local-data-reset-button app-emergency-reset" style="display:none;" onclick="resetLocalBrowserData()">Resetar dados</button>
+    <script>
+        (function () {
+            window.resetLocalBrowserData = window.resetLocalBrowserData || function () {
+                if (!confirm('Apagar os dados locais deste navegador para esta pagina?')) return;
+                try { localStorage.clear(); sessionStorage.clear(); } catch (_) {}
+                window.location.href = 'login/';
+            };
+            setTimeout(function () {
+                if (document.body && document.body.style.visibility === 'hidden') {
+                    var btn = document.getElementById('appEmergencyReset');
+                    if (btn) btn.style.display = 'inline-flex';
+                }
+            }, 3000);
+            window.addEventListener('error', function () {
+                var btn = document.getElementById('appEmergencyReset');
+                if (btn) btn.style.display = 'inline-flex';
+            });
+        })();
+    </script>
     <script src="js/storage.js?v=29b2b7d"></script>
     <script src="js/app.js?v=29b2b7m"></script>
     <script src="js/chat-widget.js?v=29b2b7d"></script>

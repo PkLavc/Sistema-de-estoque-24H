@@ -144,6 +144,15 @@
     els.input.style.height = next + 'px';
   }
 
+  function focusInput() {
+    if (!els.input) return;
+    try {
+      els.input.focus({ preventScroll: true });
+    } catch (_) {
+      els.input.focus();
+    }
+  }
+
   // ── Messages ─────────────────────────────────────────────────────────────────
 
   function appendMessage(role, text, isRaw) {
@@ -190,7 +199,7 @@
     els.widget.setAttribute('aria-hidden', 'false');
     els.launcher.setAttribute('aria-expanded', 'true');
     els.launcher.classList.add('is-open');
-    if (els.input) els.input.focus();
+    focusInput();
   }
 
   function closeWidget() {
@@ -256,7 +265,7 @@
       console.error('[Skyler Chat]', err);
     } finally {
       setSendDisabled(false);
-      if (els.input) els.input.focus();
+      focusInput();
       if (els.log) els.log.scrollTop = els.log.scrollHeight;
     }
   }

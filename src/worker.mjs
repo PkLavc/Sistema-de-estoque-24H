@@ -168,6 +168,14 @@ const SESSION_COOKIE_NAME = 'sessao24h';
 const SESSION_DURATION_SECONDS = 60 * 60 * 24;
 const TEST_USERNAME = 'teste';
 const LOGIN_PAGES = new Set(['/login/', '/login/index.html']);
+const DEFAULT_NOTIFICATION_SETTINGS = {
+    enabled: true,
+    daysBefore: [7, 5, 3, 1, 0],
+    includeOverdue: true,
+    maxNotices: 20,
+    repeatMode: 'daily',
+    allowUserDismiss: true
+};
 
 // Lockout durations in seconds for each tier (groups of 3 failures)
 const LOCKOUT_TIERS = [
@@ -556,6 +564,64 @@ async function handleApiRequest(request, env) {
 
     // ── End Companies ────────────────────────────────────────────────────────
 
+    if (pathname === '/api/notification-settings' && request.method === 'GET') {
+        await ensureNotificationTables(env);
+        const settings = await getNotificationSettingsForCompany(env, getNotificationCompanyId(session));
+        return json({ settings });
+    }
+
+    if (pathname === '/api/notification-settings' && request.method === 'PUT') {
+        if (!isAdminSession(session)) {
+            return json({ error: 'Acesso restrito a administradores' }, 403);
+        }
+
+        await ensureNotificationTables(env);
+        const body = await readJson(request);
+        const settings = sanitizeNotificationSettings(body);
+        await execute(
+            env,
+            `INSERT INTO notification_settings (company_id, settings_json, updated_by_username, updated_at)
+             VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+             ON CONFLICT(company_id) DO UPDATE SET
+                settings_json = excluded.settings_json,
+                updated_by_username = excluded.updated_by_username,
+                updated_at = CURRENT_TIMESTAMP`,
+            [getNotificationCompanyId(session), JSON.stringify(settings), session.username || null]
+        );
+        return json({ settings, success: true });
+    }
+
+    if (pathname === '/api/notification-dismissals' && request.method === 'GET') {
+        await ensureNotificationTables(env);
+        const rows = await queryAll(
+            env,
+            'SELECT notification_id FROM notification_dismissals WHERE company_id = ? ORDER BY dismissed_at DESC',
+            [getNotificationCompanyId(session)]
+        );
+        return json({ ids: rows.map((row) => row.notification_id) });
+    }
+
+    if (pathname === '/api/notification-dismissals' && request.method === 'POST') {
+        await ensureNotificationTables(env);
+        const settings = await getNotificationSettingsForCompany(env, getNotificationCompanyId(session));
+        if (!isAdminSession(session) && settings.allowUserDismiss === false) {
+            return json({ error: 'O administrador bloqueou a remocao de notificacoes' }, 403);
+        }
+
+        const body = await readJson(request);
+        const ids = Array.isArray(body.ids) ? body.ids.map((id) => String(id).trim()).filter(Boolean) : [];
+        for (const id of [...new Set(ids)].slice(0, 100)) {
+            await execute(
+                env,
+                `INSERT OR IGNORE INTO notification_dismissals
+                 (company_id, notification_id, dismissed_by_username, dismissed_at)
+                 VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+                [getNotificationCompanyId(session), id, session.username || null]
+            );
+        }
+        return json({ success: true });
+    }
+
     if (pathname === '/api/events' && request.method === 'GET') {
         const rows = await getEventsByCompletion(env, 'event', false, cid);
         return json(rows);
@@ -634,6 +700,36 @@ async function handleApiRequest(request, env) {
         );
         if (!event) return json({ error: 'Locação nao encontrada' }, 404);
         return json(event);
+    }
+
+    if (rentalEventMatch && request.method === 'PATCH') {
+        const body = await readJson(request);
+        const withdrawalDate = String(body.withdrawalDate || '').trim();
+        const returnDate = String(body.returnDate || '').trim();
+
+        if (!withdrawalDate || !returnDate) {
+            return json({ error: 'Data de retirada e data de devolucao sao obrigatorias' }, 400);
+        }
+
+        if (returnDate < withdrawalDate) {
+            return json({ error: 'A data de devolucao nao pode ser anterior a data de retirada' }, 400);
+        }
+
+        const eventId = Number(rentalEventMatch[1]);
+        const rentalCidWhere = cid !== null ? 'AND company_id = ?' : '';
+        const event = await queryFirst(
+            env,
+            `SELECT id FROM events WHERE id = ? AND COALESCE(event_type, 'event') = 'rental' ${rentalCidWhere}`,
+            cid !== null ? [eventId, cid] : [eventId]
+        );
+        if (!event) return json({ error: 'Locacao nao encontrada' }, 404);
+
+        await execute(
+            env,
+            'UPDATE events SET date = ?, withdrawal_date = ?, return_date = ? WHERE id = ?',
+            [withdrawalDate, withdrawalDate, returnDate, eventId]
+        );
+        return json({ success: true });
     }
 
     if (rentalEventMatch && request.method === 'DELETE') {
@@ -2075,6 +2171,64 @@ async function ensureSaidaHiddenItemsTable(env) {
             UNIQUE(event_id, item_type, item_id)
         )`
     );
+}
+
+async function ensureNotificationTables(env) {
+    await execute(
+        env,
+        `CREATE TABLE IF NOT EXISTS notification_settings (
+            company_id INTEGER PRIMARY KEY,
+            settings_json TEXT NOT NULL,
+            updated_by_username TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`
+    );
+    await execute(
+        env,
+        `CREATE TABLE IF NOT EXISTS notification_dismissals (
+            company_id INTEGER NOT NULL,
+            notification_id TEXT NOT NULL,
+            dismissed_by_username TEXT,
+            dismissed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (company_id, notification_id)
+        )`
+    );
+}
+
+function getNotificationCompanyId(session) {
+    return session?.company_id ? Number(session.company_id) : 0;
+}
+
+function sanitizeNotificationDays(value) {
+    const raw = Array.isArray(value) ? value : String(value || '').split(',');
+    const days = raw
+        .map((item) => Number(String(item).trim()))
+        .filter((day) => Number.isInteger(day) && day >= 0 && day <= 365);
+    return [...new Set(days)].sort((a, b) => b - a);
+}
+
+function sanitizeNotificationSettings(value = {}) {
+    const daysBefore = sanitizeNotificationDays(value.daysBefore);
+    return {
+        ...DEFAULT_NOTIFICATION_SETTINGS,
+        enabled: value.enabled !== false,
+        includeOverdue: value.includeOverdue !== false,
+        allowUserDismiss: value.allowUserDismiss !== false,
+        daysBefore: daysBefore.length ? daysBefore : DEFAULT_NOTIFICATION_SETTINGS.daysBefore,
+        maxNotices: Math.max(1, Math.min(50, Number(value.maxNotices) || DEFAULT_NOTIFICATION_SETTINGS.maxNotices)),
+        repeatMode: value.repeatMode === 'once' ? 'once' : 'daily'
+    };
+}
+
+async function getNotificationSettingsForCompany(env, companyId) {
+    const row = await queryFirst(env, 'SELECT settings_json FROM notification_settings WHERE company_id = ?', [companyId]);
+    if (!row?.settings_json) return { ...DEFAULT_NOTIFICATION_SETTINGS };
+
+    try {
+        return sanitizeNotificationSettings(JSON.parse(row.settings_json));
+    } catch (_) {
+        return { ...DEFAULT_NOTIFICATION_SETTINGS };
+    }
 }
 
 async function queryAll(env, sql, params = []) {

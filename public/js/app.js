@@ -227,9 +227,12 @@ let activeMaintenanceTab = 'equipamentos';
 let allNotifications = [];
 let notificationSelectionMode = false;
 let selectedNotificationIds = new Set();
+let sharedNotificationSettings = null;
+let sharedDismissedNotificationIds = new Set();
 let currentUser = null;
 let loginUsers = [];
 let canChangeUserPasswords = false;
+let editingRentalEventId = null;
 const sortState = {
     events: 'created_desc',
     rentals: 'return_asc',
@@ -328,6 +331,7 @@ function toggleFilterMenu(menuId, trigger) {
     menu.classList.toggle('open', willOpen);
     if (trigger) trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
     updateSortMenuState();
+    updateNotificationFilterMenuState();
 }
 
 function setSortMode(scope, mode) {
@@ -479,6 +483,37 @@ function clearPendingItems() {
             localStorage.removeItem(key);
         }
     });
+}
+
+function shouldPreserveAppearanceKey(key) {
+    return key === 'appTheme'
+        || key === 'custom-logo'
+        || key === 'custom-favicon'
+        || key.startsWith('theme-');
+}
+
+function clearLocalDataExceptAppearance() {
+    try {
+        Object.keys(localStorage).forEach((key) => {
+            if (!shouldPreserveAppearanceKey(key)) {
+                localStorage.removeItem(key);
+            }
+        });
+        sessionStorage.clear();
+    } catch (error) {
+        console.error('Erro ao limpar dados locais:', error);
+    }
+}
+
+function resetLocalBrowserData() {
+    if (!confirm('Apagar os dados locais deste navegador para esta pagina?')) return;
+    try {
+        localStorage.clear();
+        sessionStorage.clear();
+    } catch (error) {
+        console.error('Erro ao resetar dados locais:', error);
+    }
+    window.location.href = 'login/';
 }
 
 function getEventSearchValue() {
@@ -644,7 +679,8 @@ const DEFAULT_NOTIFICATION_SETTINGS = {
     daysBefore: [7, 5, 3, 1, 0],
     includeOverdue: true,
     maxNotices: 20,
-    repeatMode: 'daily'
+    repeatMode: 'daily',
+    allowUserDismiss: true
 };
 
 function parseLocalDate(value) {
@@ -671,7 +707,7 @@ function parseNotificationDays(value) {
 
 function getNotificationSettings() {
     try {
-        const saved = JSON.parse(localStorage.getItem('notification-settings') || '{}');
+        const saved = sharedNotificationSettings || JSON.parse(localStorage.getItem('notification-settings') || '{}');
         const daysBefore = parseNotificationDays(saved.daysBefore || DEFAULT_NOTIFICATION_SETTINGS.daysBefore);
         return {
             ...DEFAULT_NOTIFICATION_SETTINGS,
@@ -680,7 +716,8 @@ function getNotificationSettings() {
             maxNotices: Math.max(1, Math.min(50, Number(saved.maxNotices) || DEFAULT_NOTIFICATION_SETTINGS.maxNotices)),
             includeOverdue: saved.includeOverdue !== false,
             enabled: saved.enabled !== false,
-            repeatMode: saved.repeatMode === 'once' ? 'once' : 'daily'
+            repeatMode: saved.repeatMode === 'once' ? 'once' : 'daily',
+            allowUserDismiss: saved.allowUserDismiss !== false
         };
     } catch {
         return { ...DEFAULT_NOTIFICATION_SETTINGS };
@@ -694,6 +731,15 @@ function getDismissedNotificationKey(today = getLocalDateString()) {
 }
 
 function getDismissedNotificationIds(today = getLocalDateString()) {
+    if (currentUser && !currentUser.isGuest) {
+        const settings = getNotificationSettings();
+        if (settings.repeatMode === 'once') return [...sharedDismissedNotificationIds];
+        const prefix = `${today}:`;
+        return [...sharedDismissedNotificationIds]
+            .filter((id) => id.startsWith(prefix))
+            .map((id) => id.slice(prefix.length));
+    }
+
     try {
         const parsed = JSON.parse(localStorage.getItem(getDismissedNotificationKey(today)) || '[]');
         return Array.isArray(parsed) ? parsed.map(String) : [];
@@ -706,15 +752,88 @@ function setDismissedNotificationIds(ids, today = getLocalDateString()) {
     localStorage.setItem(getDismissedNotificationKey(today), JSON.stringify([...new Set(ids.map(String))]));
 }
 
+function getSharedDismissalId(id, today = getLocalDateString()) {
+    return getNotificationSettings().repeatMode === 'once' ? String(id) : `${today}:${id}`;
+}
+
+function canDismissNotifications() {
+    const settings = getNotificationSettings();
+    return !!(currentUser?.isAdmin || currentUser?.isGestorAdmin || currentUser?.isGuest || settings.allowUserDismiss !== false);
+}
+
+async function syncNotificationSettingsFromServer() {
+    if (!currentUser || currentUser.isGuest) {
+        sharedNotificationSettings = null;
+        return;
+    }
+
+    try {
+        const response = await fetch('api/notification-settings', { credentials: 'include' });
+        if (!response.ok) return;
+        const data = await response.json().catch(() => ({}));
+        sharedNotificationSettings = data.settings || null;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function loadNotificationDismissalsFromServer() {
+    if (!currentUser || currentUser.isGuest) {
+        sharedDismissedNotificationIds = new Set();
+        return;
+    }
+
+    try {
+        const response = await fetch('api/notification-dismissals', { credentials: 'include' });
+        if (!response.ok) return;
+        const data = await response.json().catch(() => ({}));
+        sharedDismissedNotificationIds = new Set(Array.isArray(data.ids) ? data.ids.map(String) : []);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function dismissNotifications(ids) {
+    const cleanIds = [...new Set((ids || []).map(String).filter(Boolean))];
+    if (cleanIds.length === 0) return true;
+
+    if (!currentUser || currentUser.isGuest) {
+        const dismissed = getDismissedNotificationIds();
+        setDismissedNotificationIds([...dismissed, ...cleanIds]);
+        return true;
+    }
+
+    try {
+        const sharedIds = cleanIds.map((id) => getSharedDismissalId(id));
+        const response = await fetch('api/notification-dismissals', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ ids: sharedIds })
+        });
+
+        if (response.status === 403) {
+            alert('O administrador bloqueou a remoção de notificações para usuários.');
+            return false;
+        }
+
+        if (!response.ok) {
+            alert('Nao foi possivel marcar as notificações como lidas.');
+            return false;
+        }
+
+        sharedIds.forEach((id) => sharedDismissedNotificationIds.add(id));
+        return true;
+    } catch (error) {
+        console.error(error);
+        alert('Erro de conexao.');
+        return false;
+    }
+}
+
 function getRentalNotificationTitle(event, daysUntilReturn) {
     const name = event.name || 'Locação sem nome';
-    if (daysUntilReturn < 0) {
-        const daysLate = Math.abs(daysUntilReturn);
-        return `${name} está atrasada há ${daysLate} ${daysLate === 1 ? 'dia' : 'dias'}`;
-    }
-    if (daysUntilReturn === 0) return `${name} acaba hoje`;
-    if (daysUntilReturn === 1) return `${name} acaba amanhã`;
-    return `${name} está a ${daysUntilReturn} dias de acabar`;
+    return `Locação em Aberto — ${name}`;
 }
 
 function getRentalNotificationStatus(daysUntilReturn) {
@@ -783,13 +902,13 @@ function buildGuestSystemNotifications() {
         },
         {
             id: 'guest-bill-pending',
-            type: 'billing',
-            title: 'Cobrança Pendente — Locação em Aberto',
-            message: 'Equipamentos do evento "Casamento Fernanda & Lucas" aguardam confirmação de devolução. Entre em contato com o cliente para regularizar.',
+            type: 'rental',
+            title: 'Locação em Aberto — Casamento Fernanda & Lucas',
+            message: 'Equipamentos do evento "Casamento Fernanda & Lucas" aguardam confirmação de devolução.',
             date: null,
             daysUntilReturn: null,
-            statusClass: 'billing',
-            statusLabel: 'Cobrança'
+            statusClass: 'upcoming',
+            statusLabel: 'Locação'
         }
     ].filter(n => !dismissed.has(n.id));
 }
@@ -823,16 +942,22 @@ function renderNotifications() {
     const list = document.getElementById('notificationsList');
     const selectToggle = document.getElementById('notificationSelectToggle');
     const selectionBar = document.getElementById('notificationSelectionBar');
-    const customDateGroup = document.getElementById('notificationCustomDateGroup');
     if (!list) return;
+
+    const canDismiss = canDismissNotifications();
+    if (!canDismiss && notificationSelectionMode) {
+        notificationSelectionMode = false;
+        selectedNotificationIds.clear();
+    }
 
     const filtered = filterNotifications(allNotifications);
     list.classList.toggle('notifications-selecting', notificationSelectionMode);
     if (selectionBar) selectionBar.style.display = notificationSelectionMode ? '' : 'none';
-    if (selectToggle) selectToggle.textContent = notificationSelectionMode ? 'Cancelar seleção' : 'Selecionar';
-    if (customDateGroup) {
-        customDateGroup.style.display = document.getElementById('notificationDateFilter')?.value === 'custom' ? '' : 'none';
+    if (selectToggle) {
+        selectToggle.textContent = notificationSelectionMode ? 'Cancelar' : 'Selecionar';
+        selectToggle.style.display = canDismiss ? '' : 'none';
     }
+    updateNotificationFilterMenuState();
 
     const selectAll = document.getElementById('notificationSelectAll');
     if (selectAll) {
@@ -852,7 +977,7 @@ function renderNotifications() {
             <div>
                 <h3>${escapeHtml(item.title)}</h3>
                 <p>${escapeHtml(item.message)}</p>
-                <div class="notification-meta">${item.type === 'system' ? 'Sistema' : item.type === 'billing' ? 'Financeiro' : 'Locação'}</div>
+                <div class="notification-meta">${item.type === 'system' ? 'Sistema' : 'Locação'}</div>
             </div>
             <span class="notification-status ${escapeHtml(item.statusClass)}">${escapeHtml(item.statusLabel)}</span>
         </article>
@@ -886,10 +1011,16 @@ function clearNotificationSelection() {
     renderNotifications();
 }
 
-function markSelectedNotificationsRead() {
+async function markSelectedNotificationsRead() {
     if (selectedNotificationIds.size === 0) return;
-    const dismissed = getDismissedNotificationIds();
-    setDismissedNotificationIds([...dismissed, ...selectedNotificationIds]);
+    if (!canDismissNotifications()) {
+        alert('O administrador bloqueou a remoção de notificações para usuários.');
+        return;
+    }
+
+    const dismissed = await dismissNotifications([...selectedNotificationIds]);
+    if (!dismissed) return;
+
     selectedNotificationIds.clear();
     allNotifications = allNotifications.filter((item) => !getDismissedNotificationIds().includes(item.id));
     renderNotifications();
@@ -898,6 +1029,24 @@ function markSelectedNotificationsRead() {
 function handleNotificationFilterChange() {
     selectedNotificationIds.clear();
     renderNotifications();
+}
+
+function setNotificationDateFilter(value) {
+    const filter = document.getElementById('notificationDateFilter');
+    if (filter) filter.value = value;
+    if (value !== 'custom') {
+        const customDate = document.getElementById('notificationCustomDate');
+        if (customDate) customDate.value = '';
+    }
+    handleNotificationFilterChange();
+    closeFilterMenus();
+}
+
+function updateNotificationFilterMenuState() {
+    const current = document.getElementById('notificationDateFilter')?.value || 'all';
+    document.querySelectorAll('[data-notification-filter-option]').forEach((button) => {
+        button.classList.toggle('active', button.getAttribute('data-notification-filter-option') === current);
+    });
 }
 
 async function getRentalEventsForNotifications() {
@@ -916,6 +1065,8 @@ async function getRentalEventsForNotifications() {
 
 async function loadNotifications() {
     try {
+        await syncNotificationSettingsFromServer();
+        await loadNotificationDismissalsFromServer();
         const rentals = await getRentalEventsForNotifications();
         const rentalNotifs = buildRentalNotifications(rentals);
         const staticNotifs = buildGuestSystemNotifications();
@@ -1051,12 +1202,52 @@ function cancelEventForm() {
 }
 
 function openRentalModal() {
+    editingRentalEventId = null;
+    const form = document.getElementById('rentalForm');
+    form?.reset();
+    const nameInput = document.getElementById('rentalEventName');
+    if (nameInput) {
+        nameInput.readOnly = false;
+        nameInput.value = '';
+    }
+    const title = document.getElementById('rentalModalTitle');
+    const subtitle = document.getElementById('rentalModalSubtitle');
+    const submit = document.getElementById('rentalModalSubmit');
+    if (title) title.textContent = 'Criar evento de locação';
+    if (subtitle) subtitle.textContent = 'Informe as datas de retirada e devolucao.';
+    if (submit) submit.textContent = 'Criar Evento';
+    const modal = document.getElementById('rentalModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function openRentalDateModal(id, name, withdrawalDate, returnDate) {
+    editingRentalEventId = Number(id);
+    const title = document.getElementById('rentalModalTitle');
+    const subtitle = document.getElementById('rentalModalSubtitle');
+    const submit = document.getElementById('rentalModalSubmit');
+    const nameInput = document.getElementById('rentalEventName');
+    const withdrawalInput = document.getElementById('rentalWithdrawalDate');
+    const returnInput = document.getElementById('rentalReturnDate');
+
+    if (title) title.textContent = 'Alterar datas da locação';
+    if (subtitle) subtitle.textContent = 'Atualize a data de retirada e a data de devolucao.';
+    if (submit) submit.textContent = 'Salvar datas';
+    if (nameInput) {
+        nameInput.value = name || '';
+        nameInput.readOnly = true;
+    }
+    if (withdrawalInput) withdrawalInput.value = withdrawalDate || '';
+    if (returnInput) returnInput.value = returnDate || '';
+
     const modal = document.getElementById('rentalModal');
     if (modal) modal.style.display = 'flex';
 }
 
 function closeRentalModal() {
     document.getElementById('rentalForm')?.reset();
+    editingRentalEventId = null;
+    const nameInput = document.getElementById('rentalEventName');
+    if (nameInput) nameInput.readOnly = false;
     const modal = document.getElementById('rentalModal');
     if (modal) modal.style.display = 'none';
 }
@@ -1171,6 +1362,7 @@ function renderRentalEvents(events, search = '') {
             </div>
             <div class="event-actions">
                 <button onclick="gerenciarLocacao(${event.id}, '${escapeJsString(event.name)}')" class="btn-primary">Gerenciar</button>
+                <button onclick="openRentalDateModal(${event.id}, '${escapeJsString(event.name)}', '${escapeJsString(event.withdrawal_date || '')}', '${escapeJsString(event.return_date || '')}')" class="btn-secondary">Alterar datas</button>
                 <button onclick="deleteRentalEvent(${event.id}, '${escapeJsString(event.name)}')" class="btn-danger">Excluir</button>
             </div>`;
         grid.appendChild(card);
@@ -1902,13 +2094,7 @@ async function logout() {
     const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
     
     if (isGuestMode) {
-        // Clear all guest data except theme/logo (preserve: theme-*, appTheme, custom-logo)
-        const keys = ['events', 'equipments', 'cables', 'otherItems', 'users', 'companies', 'historyEvents', 'historyRentals'];
-        keys.forEach(key => localStorage.removeItem('guest_' + key));
-        // Clear pending items and relação context (stored without guest_ prefix)
-        clearPendingItems();
-        clearRelacaoContext();
-        localStorage.removeItem('isGuestMode');
+        clearLocalDataExceptAppearance();
         window.location.href = 'login/';
         return;
     }
@@ -2020,6 +2206,17 @@ document.addEventListener('submit', async (e) => {
                 showSection('cadastro');
                 setCadastroTab('outros');
                 await loadOtherItems();
+            } else if (isRental && editingRentalEventId) {
+                await storage.updateEvent(editingRentalEventId, {
+                    withdrawal_date: data.withdrawalDate,
+                    return_date: data.returnDate,
+                    date: data.withdrawalDate
+                });
+                alert('Datas da locação atualizadas com sucesso.');
+                closeRentalModal();
+                showSection('locacao');
+                await loadRentalEvents();
+                await loadNotifications();
             } else if (isRental) {
                 await storage.createEvent({ name: data.name, event_type: 'rental', withdrawal_date: data.withdrawalDate, return_date: data.returnDate, created_by_username: currentUser?.username || 'convidado' });
                 e.target.reset();
@@ -2043,6 +2240,32 @@ document.addEventListener('submit', async (e) => {
     }
 
     try {
+        if (isRental && editingRentalEventId) {
+            const res = await fetch(`api/rental-events/${Number(editingRentalEventId)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    withdrawalDate: data.withdrawalDate,
+                    returnDate: data.returnDate
+                }),
+                credentials: 'include'
+            });
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                alert(error.error || 'Nao foi possivel atualizar as datas.');
+                return;
+            }
+
+            alert('Datas da locação atualizadas com sucesso.');
+            closeRentalModal();
+            showSection('locacao');
+            await loadRentalEvents();
+            await loadRentalReturnAlerts();
+            await loadNotifications();
+            return;
+        }
+
         const res = await fetch(
             isEquip ? 'api/equipments' : (isCable ? 'api/cables' : (isOtherItem ? 'api/other-items' : (isRental ? 'api/rental-events' : 'api/events'))),
             {
@@ -3174,17 +3397,22 @@ async function checkAuth() {
 
 function updateLogoutButton() {
     const logoutText = document.getElementById('logout-user-text');
+    const viewport = logoutText?.closest('.logout-name-viewport');
     if (logoutText && currentUser) {
         const username = currentUser.username || 'Usuário';
-        logoutText.textContent = `${username} - Sair`;
+        logoutText.textContent = username;
         
         // Remove long-text class first
         logoutText.classList.remove('long-text');
+        logoutText.style.removeProperty('--logout-scroll-distance');
         
         // Use requestAnimationFrame to ensure DOM layout is complete before checking dimensions
         requestAnimationFrame(() => {
             // Check if text is too long and add scrolling class
-            if (logoutText.scrollWidth > logoutText.clientWidth) {
+            const availableWidth = viewport?.clientWidth || logoutText.clientWidth;
+            const overflow = Math.max(0, logoutText.scrollWidth - availableWidth);
+            if (overflow > 4) {
+                logoutText.style.setProperty('--logout-scroll-distance', `${overflow}px`);
                 logoutText.classList.add('long-text');
             }
         });
@@ -3210,8 +3438,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const section = allowedSections.includes(requestedSection) ? normalizeSectionId(requestedSection) : 'home';
     showSection(section);
     updateSortMenuState();
-    loadNotificationSettings();
-    loadNotifications();
+    await loadNotificationSettings();
+    await loadNotifications();
 
     // Open sidebar after initial navigation so showSection doesn't close it
     if (window.innerWidth <= 768) {
@@ -3317,23 +3545,26 @@ function setNotificationSettingsMessage(message, type = '') {
     el.className = `users-message ${type}`.trim();
 }
 
-function loadNotificationSettings() {
+async function loadNotificationSettings() {
+    await syncNotificationSettingsFromServer();
     const settings = getNotificationSettings();
     const enabled = document.getElementById('notificationEnabled');
     const includeOverdue = document.getElementById('notificationIncludeOverdue');
+    const allowUserDismiss = document.getElementById('notificationAllowUserDismiss');
     const daysBefore = document.getElementById('notificationDaysBefore');
     const maxNotices = document.getElementById('notificationMaxNotices');
     const repeatMode = document.getElementById('notificationRepeatMode');
 
     if (enabled) enabled.checked = settings.enabled;
     if (includeOverdue) includeOverdue.checked = settings.includeOverdue;
+    if (allowUserDismiss) allowUserDismiss.checked = settings.allowUserDismiss;
     if (daysBefore) daysBefore.value = settings.daysBefore.join(', ');
     if (maxNotices) maxNotices.value = String(settings.maxNotices);
     if (repeatMode) repeatMode.value = settings.repeatMode;
     setNotificationSettingsMessage('');
 }
 
-function saveNotificationSettings(event) {
+async function saveNotificationSettings(event) {
     if (event) event.preventDefault();
 
     const daysInput = document.getElementById('notificationDaysBefore')?.value || '';
@@ -3346,14 +3577,39 @@ function saveNotificationSettings(event) {
     const settings = {
         enabled: !!document.getElementById('notificationEnabled')?.checked,
         includeOverdue: !!document.getElementById('notificationIncludeOverdue')?.checked,
+        allowUserDismiss: !!document.getElementById('notificationAllowUserDismiss')?.checked,
         daysBefore,
         maxNotices: Math.max(1, Math.min(50, Number(document.getElementById('notificationMaxNotices')?.value) || 20)),
         repeatMode: document.getElementById('notificationRepeatMode')?.value === 'once' ? 'once' : 'daily'
     };
 
-    localStorage.setItem('notification-settings', JSON.stringify(settings));
-    loadNotificationSettings();
-    loadNotifications();
+    if (currentUser && !currentUser.isGuest) {
+        try {
+            const response = await fetch('api/notification-settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(settings)
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                setNotificationSettingsMessage(error.error || 'Nao foi possivel salvar notificações.', 'error');
+                return;
+            }
+            sharedNotificationSettings = settings;
+        } catch (error) {
+            console.error(error);
+            setNotificationSettingsMessage('Erro de conexao.', 'error');
+            return;
+        }
+    } else {
+        localStorage.setItem('notification-settings', JSON.stringify(settings));
+        sharedNotificationSettings = null;
+    }
+
+    await loadNotificationSettings();
+    await loadNotifications();
     setNotificationSettingsMessage('Notificações salvas.', 'success');
 }
 
