@@ -701,6 +701,72 @@ async function handleApiRequest(request, env) {
         return json({ success: true });
     }
 
+    // ── Company appearance (theme / logo / favicon) ───────────────────────────
+    if (pathname === '/api/appearance' && request.method === 'GET') {
+        const url = new URL(request.url);
+        let companyId = cid;
+        if (companyId === null) {
+            // gestor_admin may query any company's appearance via ?company_id=X
+            const qcid = url.searchParams.get('company_id');
+            companyId = qcid ? Number(qcid) : null;
+        }
+        if (!companyId) return json({ appearance: null });
+        await ensureAppearanceTable(env);
+        const row = await queryFirst(
+            env,
+            'SELECT theme_json, logo_data, favicon_data FROM company_appearance WHERE company_id = ?',
+            [companyId]
+        );
+        return json({ appearance: row || null });
+    }
+
+    if (pathname === '/api/appearance' && request.method === 'PUT') {
+        if (!isAdminSession(session)) {
+            return json({ error: 'Acesso restrito a administradores' }, 403);
+        }
+        const body = await readJson(request);
+        // admins use their own company_id; gestor_admin must pass company_id in body
+        const companyId = cid !== null ? cid : (body.company_id ? Number(body.company_id) : null);
+        if (!companyId) return json({ error: 'Empresa nao identificada' }, 400);
+
+        // Determine which fields to update (key present = update, absent = leave unchanged)
+        const MAX_B64 = 1_400_000; // ~1.4 MB base64 ≈ ~1 MB raw — safe for D1 row limit
+        const allowedFields = { theme: 'theme_json', logo: 'logo_data', favicon: 'favicon_data' };
+        const setClauses = [];
+        const values = [];
+        for (const [key, col] of Object.entries(allowedFields)) {
+            if (!(key in body)) continue;
+            if (key === 'theme') {
+                const raw = body.theme ? JSON.stringify(body.theme) : null;
+                setClauses.push(`${col} = ?`);
+                values.push(raw);
+            } else {
+                const val = body[key];
+                if (val !== null && typeof val === 'string' && val.length > MAX_B64) {
+                    return json({ error: `${key} excede o tamanho maximo permitido` }, 413);
+                }
+                setClauses.push(`${col} = ?`);
+                values.push(typeof val === 'string' ? val : null);
+            }
+        }
+
+        await ensureAppearanceTable(env);
+        // Ensure row exists first, then update only the supplied fields
+        await execute(
+            env,
+            'INSERT OR IGNORE INTO company_appearance (company_id, updated_by, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+            [companyId, session.username || null]
+        );
+        if (setClauses.length > 0) {
+            await execute(
+                env,
+                `UPDATE company_appearance SET ${setClauses.join(', ')}, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE company_id = ?`,
+                [...values, session.username || null, companyId]
+            );
+        }
+        return json({ success: true });
+    }
+
     if (pathname === '/api/events' && request.method === 'GET') {
         const rows = await getEventsByCompletion(env, 'event', false, cid);
         return json(rows);
@@ -2073,6 +2139,20 @@ async function ensureNotificationTables(env) {
 
 function getNotificationCompanyId(session) {
     return session?.company_id ? Number(session.company_id) : 0;
+}
+
+async function ensureAppearanceTable(env) {
+    await execute(
+        env,
+        `CREATE TABLE IF NOT EXISTS company_appearance (
+            company_id   INTEGER PRIMARY KEY REFERENCES companies(id) ON DELETE CASCADE,
+            theme_json   TEXT,
+            logo_data    TEXT,
+            favicon_data TEXT,
+            updated_by   TEXT,
+            updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`
+    );
 }
 
 function sanitizeNotificationDays(value) {

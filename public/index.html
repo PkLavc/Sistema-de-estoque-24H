@@ -441,8 +441,9 @@
                         <input type="checkbox" id="notificationSelectAll" onchange="toggleAllNotifications(this.checked)">
                         <span>Marcar todos</span>
                     </label>
-                    <button type="button" class="btn-primary" onclick="markSelectedNotificationsRead()">Marcar como lidas</button>
-                    <button type="button" class="btn-secondary" onclick="clearNotificationSelection()">Limpar</button>
+                    <button type="button" class="btn-secondary" onclick="clearNotificationSelection()">Limpar seleção</button>
+                    <button type="button" class="btn-danger" onclick="markSelectedNotificationsRead()">Marcar como lidas</button>
+                    <button type="button" class="btn-primary" onclick="deleteSelectedNotifications()">Excluir</button>
                 </div>
 
                 <div id="notificationsList" class="notifications-list"></div>
