@@ -620,6 +620,7 @@ textarea:focus {
     flex-direction: column;
     align-items: flex-end;
     gap: 4px;
+    flex-shrink: 0;
 }
 
 .event-created-by {
@@ -632,6 +633,10 @@ textarea:focus {
 .empty-state,
 .empty-row {
     color: #888;
+}
+
+.card-date {
+    white-space: nowrap;
 }
 
 .event-card p {
@@ -772,6 +777,16 @@ textarea:focus {
     animation: rentalReturnPulse 1.1s ease-in-out infinite;
 }
 
+.notification-card.rental-system {
+    border-color: rgba(52, 152, 219, 0.45);
+    background: rgba(52, 152, 219, 0.07);
+}
+
+.notification-card.rental-billing {
+    border-color: rgba(230, 126, 34, 0.5);
+    background: rgba(230, 126, 34, 0.08);
+}
+
 .notification-card h3 {
     color: #fff;
     font-size: 1rem;
@@ -819,6 +834,16 @@ textarea:focus {
 .notification-status.upcoming {
     background: rgba(255, 214, 102, 0.14);
     color: #ffd666;
+}
+
+.notification-status.system {
+    background: rgba(52, 152, 219, 0.18);
+    color: #74b9e8;
+}
+
+.notification-status.billing {
+    background: rgba(230, 126, 34, 0.2);
+    color: #e8935c;
 }
 
 .history-block {
@@ -944,13 +969,8 @@ textarea:focus {
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Adjust main-content bottom padding to not hide behind bottom ad */
-.app-container.has-ad:not(.sidebar-collapsed) .main-content {
-    padding-bottom: 110px;
-}
-
-/* Floating buttons above the bottom ad */
-.app-container.has-ad:not(.sidebar-collapsed) .floating-create-button {
+/* Propagate the elevated --floating-bottom to all children (main-content + buttons) */
+.app-container.has-ad:not(.sidebar-collapsed) {
     --floating-bottom: calc(90px + 32px + env(safe-area-inset-bottom, 0px));
 }
 

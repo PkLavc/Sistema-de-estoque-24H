@@ -641,7 +641,7 @@ async function loadRentalReturnAlerts() {
 
 const DEFAULT_NOTIFICATION_SETTINGS = {
     enabled: true,
-    daysBefore: [7, 3, 0],
+    daysBefore: [7, 5, 3, 1, 0],
     includeOverdue: true,
     maxNotices: 20,
     repeatMode: 'daily'
@@ -767,11 +767,39 @@ function buildRentalNotifications(rentals = []) {
     return notifications.slice(0, settings.maxNotices);
 }
 
+function buildGuestSystemNotifications() {
+    if (!currentUser?.isGuest) return [];
+    const dismissed = new Set(getDismissedNotificationIds());
+    return [
+        {
+            id: 'guest-sys-welcome',
+            type: 'system',
+            title: 'Bem-vindo ao EquipTrack!',
+            message: 'Você está no modo demonstração. Crie uma conta para salvar seus dados e ter acesso completo ao sistema.',
+            date: null,
+            daysUntilReturn: null,
+            statusClass: 'system',
+            statusLabel: 'Sistema'
+        },
+        {
+            id: 'guest-bill-pending',
+            type: 'billing',
+            title: 'Cobrança Pendente — Locação em Aberto',
+            message: 'Equipamentos do evento "Casamento Fernanda & Lucas" aguardam confirmação de devolução. Entre em contato com o cliente para regularizar.',
+            date: null,
+            daysUntilReturn: null,
+            statusClass: 'billing',
+            statusLabel: 'Cobrança'
+        }
+    ].filter(n => !dismissed.has(n.id));
+}
+
 function filterNotifications(notifications = []) {
     const filter = document.getElementById('notificationDateFilter')?.value || 'all';
     const customDate = document.getElementById('notificationCustomDate')?.value || '';
 
     return notifications.filter((item) => {
+        if (item.daysUntilReturn === null || item.daysUntilReturn === undefined) return filter === 'all';
         if (filter === 'overdue') return item.daysUntilReturn < 0;
         if (filter === 'today') return item.daysUntilReturn === 0;
         if (filter === 'next3') return item.daysUntilReturn >= 0 && item.daysUntilReturn <= 3;
@@ -824,7 +852,7 @@ function renderNotifications() {
             <div>
                 <h3>${escapeHtml(item.title)}</h3>
                 <p>${escapeHtml(item.message)}</p>
-                <div class="notification-meta">Locação</div>
+                <div class="notification-meta">${item.type === 'system' ? 'Sistema' : item.type === 'billing' ? 'Financeiro' : 'Locação'}</div>
             </div>
             <span class="notification-status ${escapeHtml(item.statusClass)}">${escapeHtml(item.statusLabel)}</span>
         </article>
@@ -889,7 +917,9 @@ async function getRentalEventsForNotifications() {
 async function loadNotifications() {
     try {
         const rentals = await getRentalEventsForNotifications();
-        allNotifications = buildRentalNotifications(rentals);
+        const rentalNotifs = buildRentalNotifications(rentals);
+        const staticNotifs = buildGuestSystemNotifications();
+        allNotifications = [...staticNotifs, ...rentalNotifs];
         renderNotifications();
     } catch (error) {
         console.error(error);
