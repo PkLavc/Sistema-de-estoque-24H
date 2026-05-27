@@ -292,7 +292,7 @@ body {
 .section-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 30px;
     padding-bottom: 20px;
     border-bottom: 2px solid #333;
@@ -317,6 +317,57 @@ body {
     gap: 12px;
 }
 
+#inventario .section-header {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+#inventario .database-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+#inventario .database-title-row h1,
+#manutencao .maintenance-title-row h1 {
+    margin-bottom: 0;
+}
+
+#inventario .database-toggle,
+#manutencao .database-toggle {
+    flex-wrap: nowrap;
+}
+
+.inventory-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.inventory-create-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+#inventario .search-container {
+    justify-content: flex-end;
+    flex: 0 1 520px;
+}
+
+#manutencao .section-header {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+#manutencao .maintenance-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
 .search-container,
 .maintenance-search-row {
     display: flex;
@@ -324,7 +375,25 @@ body {
     gap: 15px;
 }
 
+.maintenance-header-search {
+    width: min(100%, 520px);
+}
+
+.maintenance-header-search .maintenance-search-row {
+    display: none;
+}
+
+.maintenance-header-search .maintenance-search-row.active {
+    display: flex;
+}
+
+.maintenance-header-search input {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
 .search-container input,
+.maintenance-header-search input,
 .form-group input,
 .form-group select,
 textarea {
@@ -431,6 +500,7 @@ textarea {
 }
 
 .search-container input:focus,
+.maintenance-header-search input:focus,
 .form-group input:focus,
 .form-group select:focus,
 textarea:focus {
@@ -527,6 +597,12 @@ textarea:focus {
     border-color: #555;
 }
 
+.event-card.rental-due-alert {
+    border-color: rgba(255, 51, 51, 0.6);
+    background: rgba(255, 51, 51, 0.12);
+    animation: rentalReturnPulse 1.1s ease-in-out infinite;
+}
+
 .card-top {
     display: flex;
     justify-content: space-between;
@@ -621,6 +697,129 @@ textarea:focus {
     color: #cfcfcf;
     margin: 0 0 12px 18px;
     line-height: 1.45;
+}
+
+.notifications-header {
+    align-items: flex-start;
+}
+
+.notification-selection-bar {
+    display: flex;
+    align-items: end;
+    gap: 12px;
+    padding: 14px;
+    margin-bottom: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #333;
+    border-radius: 12px;
+}
+
+.notification-check-all,
+.form-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.form-check {
+    justify-content: flex-start;
+    padding: 12px 0;
+}
+
+.form-check input {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.notification-settings-form .form-check {
+    grid-column: span 2;
+}
+
+.notification-check-all {
+    min-height: 50px;
+    flex: 0 0 auto;
+}
+
+.notification-filter-group,
+.notification-custom-date {
+    min-width: 190px;
+}
+
+.notifications-list {
+    display: grid;
+    gap: 12px;
+}
+
+.notification-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #333;
+    border-radius: 12px;
+}
+
+.notification-card.rental-overdue,
+.notification-card.rental-today {
+    border-color: rgba(255, 51, 51, 0.6);
+    background: rgba(255, 51, 51, 0.12);
+}
+
+.notification-card.rental-overdue {
+    animation: rentalReturnPulse 1.1s ease-in-out infinite;
+}
+
+.notification-card h3 {
+    color: #fff;
+    font-size: 1rem;
+    margin-bottom: 6px;
+}
+
+.notification-card p,
+.notification-meta {
+    color: #cfcfcf;
+    line-height: 1.45;
+}
+
+.notification-card-checkbox {
+    display: none;
+    width: 18px;
+    height: 18px;
+    margin-top: 3px;
+}
+
+.notifications-selecting .notification-card-checkbox {
+    display: block;
+}
+
+.notifications-selecting .notification-card {
+    grid-template-columns: auto 1fr auto;
+}
+
+.notification-status {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ddd;
+    font-size: 0.72rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.notification-status.overdue,
+.notification-status.today {
+    background: rgba(255, 51, 51, 0.18);
+    color: #ff8a8a;
+}
+
+.notification-status.upcoming {
+    background: rgba(255, 214, 102, 0.14);
+    color: #ffd666;
 }
 
 .history-block {
@@ -1445,6 +1644,54 @@ textarea {
         flex: 1 1 auto;
     }
 
+    #inventario .section-header {
+        gap: 12px;
+    }
+
+    #inventario .database-title-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    #inventario #databaseTitle {
+        font-size: 1.6rem;
+        line-height: 1.18;
+        margin-bottom: 0;
+    }
+
+    #inventario .search-container {
+        flex: 1 1 auto;
+        justify-content: stretch;
+    }
+
+    #inventario .database-toggle {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        width: 100%;
+    }
+
+    #inventario .database-toggle button {
+        min-width: 0;
+        width: 100%;
+        padding: 10px 6px;
+        font-size: 0.72rem;
+        letter-spacing: 0;
+        white-space: nowrap;
+    }
+
+    .inventory-actions-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .inventory-create-button {
+        width: 100%;
+        padding: 12px 16px;
+    }
+
     /* Tables: horizontal scroll */
     .table-container {
         overflow-x: auto;
@@ -1458,13 +1705,13 @@ textarea {
         font-size: 0.85rem;
     }
 
-    #banco .table-container {
+    #inventario .table-container {
         width: 100%;
         overflow-x: auto;
         overflow-y: hidden;
     }
 
-    #banco table {
+    #inventario table {
         min-width: 760px;
     }
 
@@ -1496,10 +1743,46 @@ textarea {
     }
 
     /* Maintenance */
+    #manutencao .section-header {
+        gap: 12px;
+    }
+
+    #manutencao .maintenance-title-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    #manutencao .database-toggle {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        width: 100%;
+    }
+
+    #manutencao .database-toggle button {
+        min-width: 0;
+        padding: 10px 8px;
+        font-size: 0.78rem;
+        letter-spacing: 0;
+    }
+
+    .maintenance-header-search {
+        width: 100%;
+    }
+
     .maintenance-search-row {
         flex-direction: column;
         align-items: stretch;
         gap: 10px;
+    }
+
+    .maintenance-header-search .maintenance-search-row.active {
+        display: flex;
+    }
+
+    .maintenance-header-search .maintenance-search {
+        width: 100%;
     }
 
     .maintenance-form,
@@ -1526,6 +1809,41 @@ textarea {
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
+    }
+
+    .notification-selection-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .notification-check-all {
+        min-height: auto;
+    }
+
+    .notification-filter-group,
+    .notification-custom-date {
+        min-width: 0;
+    }
+
+    .notification-card {
+        grid-template-columns: 1fr;
+    }
+
+    .notification-status {
+        justify-self: flex-start;
+    }
+
+    .notifications-selecting .notification-card {
+        grid-template-columns: auto 1fr;
+    }
+
+    .notifications-selecting .notification-status {
+        grid-column: 2;
+    }
+
+    .notification-settings-form .form-check {
+        grid-column: auto;
     }
 
     /* Event card actions */
@@ -1695,6 +2013,37 @@ textarea {
 
 .settings-tab-content.active {
     display: block;
+}
+
+.about-panel {
+    display: grid;
+    gap: 14px;
+    line-height: 1.55;
+}
+
+.about-panel h2,
+.about-panel h3 {
+    color: #fff;
+}
+
+.about-panel p {
+    color: #cfcfcf;
+    max-width: 760px;
+}
+
+.about-contact {
+    display: grid;
+    gap: 6px;
+}
+
+.about-contact a {
+    color: var(--primary, #ff3333);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.about-contact a:hover {
+    text-decoration: underline;
 }
 
 /* Theme Settings */
@@ -1926,6 +2275,7 @@ textarea {
     flex: 1;
 }
 
+.bottom-actions .bottom-icon-button,
 .bottom-actions .btn-settings-icon {
     flex: 0 0 auto;
     width: 40px;
@@ -1933,15 +2283,34 @@ textarea {
     padding: 0;
     justify-content: center;
     align-items: center;
+    position: relative;
 }
 
+.bottom-actions .bottom-icon-button .lottie-icon,
 .bottom-actions .btn-settings-icon .lottie-icon {
     width: 22px;
     height: 22px;
     margin-right: 0;
 }
 
+.bottom-actions .bottom-icon-button .lottie-icon svg,
 .bottom-actions .btn-settings-icon .lottie-icon svg {
     width: 22px;
     height: 22px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--primary, #ff3333);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: bold;
+    line-height: 18px;
+    text-align: center;
 }

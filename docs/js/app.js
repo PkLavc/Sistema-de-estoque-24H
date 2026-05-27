@@ -185,6 +185,9 @@ let maintenanceModalMode = null;
 let activeBancoTab = 'equipamentos';
 let activeCadastroTab = 'equipamentos';
 let activeMaintenanceTab = 'equipamentos';
+let allNotifications = [];
+let notificationSelectionMode = false;
+let selectedNotificationIds = new Set();
 let currentUser = null;
 let loginUsers = [];
 let canChangeUserPasswords = false;
@@ -348,7 +351,12 @@ function populateCableCategoryOptions(cables = allCables) {
     }
 }
 
+function normalizeSectionId(sectionId) {
+    return sectionId === 'banco' ? 'inventario' : sectionId;
+}
+
 function showSection(sectionId) {
+    sectionId = normalizeSectionId(sectionId);
     // no redirect needed for config — role-based tabs handle access
 
     // Close sidebar on mobile navigation (sidebar is overlay on mobile)
@@ -356,7 +364,7 @@ function showSection(sectionId) {
         closeMobileSidebar();
     }
 
-    if (sectionId !== 'banco') {
+    if (sectionId !== 'inventario') {
         clearRelacaoContext();
     }
 
@@ -380,7 +388,8 @@ function showSection(sectionId) {
         loadRentalReturnAlerts();
     }
     if (sectionId === 'cadastro') setCadastroTab(activeCadastroTab);
-    if (sectionId === 'banco') setBancoTab(activeBancoTab);
+    if (sectionId === 'inventario') setBancoTab(activeBancoTab);
+    if (sectionId === 'notificacoes') loadNotifications();
     if (sectionId === 'historico') loadHistoryEvents();
     if (sectionId === 'usuarios') loadLoginUsers();
     if (sectionId === 'config') {
@@ -396,8 +405,10 @@ function showSection(sectionId) {
     if (!['home', 'locacao'].includes(sectionId)) loadRentalReturnAlerts();
 
     const floatingBtnHome = document.getElementById('floatingBtnHome');
+    const floatingBtnInventario = document.getElementById('floatingBtnInventario');
     const floatingBtnLocacao = document.getElementById('floatingBtnLocacao');
     if (floatingBtnHome) floatingBtnHome.style.display = sectionId === 'home' ? '' : 'none';
+    if (floatingBtnInventario) floatingBtnInventario.style.display = sectionId === 'inventario' ? '' : 'none';
     if (floatingBtnLocacao) floatingBtnLocacao.style.display = sectionId === 'locacao' ? '' : 'none';
 
     // Always scroll to top of content area on section change
@@ -414,13 +425,13 @@ function clearRelacaoContext() {
 function gerenciarEvento(id, name) {
     localStorage.setItem('relacao_event_id', String(id));
     localStorage.setItem('relacao_event_name', name);
-    showSection('banco');
+    showSection('inventario');
 }
 
 function gerenciarLocacao(id, name) {
     localStorage.setItem('relacao_event_id', String(id));
     localStorage.setItem('relacao_event_name', name);
-    showSection('banco');
+    showSection('inventario');
 }
 
 function clearPendingItems() {
@@ -589,8 +600,274 @@ async function loadRentalReturnAlerts() {
     }
 }
 
+const DEFAULT_NOTIFICATION_SETTINGS = {
+    enabled: true,
+    daysBefore: [7, 3, 0],
+    includeOverdue: true,
+    maxNotices: 20,
+    repeatMode: 'daily'
+};
+
+function parseLocalDate(value) {
+    if (!value) return null;
+    const [year, month, day] = String(value).slice(0, 10).split('-').map(Number);
+    if (!year || !month || !day) return null;
+    return new Date(year, month - 1, day);
+}
+
+function getDaysBetween(dateString, todayString = getLocalDateString()) {
+    const target = parseLocalDate(dateString);
+    const today = parseLocalDate(todayString);
+    if (!target || !today) return null;
+    return Math.round((target.getTime() - today.getTime()) / 86400000);
+}
+
+function parseNotificationDays(value) {
+    const raw = Array.isArray(value) ? value : String(value || '').split(',');
+    const days = raw
+        .map((item) => Number(String(item).trim()))
+        .filter((day) => Number.isInteger(day) && day >= 0 && day <= 365);
+    return [...new Set(days)].sort((a, b) => b - a);
+}
+
+function getNotificationSettings() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('notification-settings') || '{}');
+        const daysBefore = parseNotificationDays(saved.daysBefore || DEFAULT_NOTIFICATION_SETTINGS.daysBefore);
+        return {
+            ...DEFAULT_NOTIFICATION_SETTINGS,
+            ...saved,
+            daysBefore: daysBefore.length ? daysBefore : DEFAULT_NOTIFICATION_SETTINGS.daysBefore,
+            maxNotices: Math.max(1, Math.min(50, Number(saved.maxNotices) || DEFAULT_NOTIFICATION_SETTINGS.maxNotices)),
+            includeOverdue: saved.includeOverdue !== false,
+            enabled: saved.enabled !== false,
+            repeatMode: saved.repeatMode === 'once' ? 'once' : 'daily'
+        };
+    } catch {
+        return { ...DEFAULT_NOTIFICATION_SETTINGS };
+    }
+}
+
+function getDismissedNotificationKey(today = getLocalDateString()) {
+    return getNotificationSettings().repeatMode === 'once'
+        ? 'dismissed_notifications_permanent'
+        : `dismissed_notifications_${today}`;
+}
+
+function getDismissedNotificationIds(today = getLocalDateString()) {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(getDismissedNotificationKey(today)) || '[]');
+        return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+        return [];
+    }
+}
+
+function setDismissedNotificationIds(ids, today = getLocalDateString()) {
+    localStorage.setItem(getDismissedNotificationKey(today), JSON.stringify([...new Set(ids.map(String))]));
+}
+
+function getRentalNotificationTitle(event, daysUntilReturn) {
+    const name = event.name || 'Locação sem nome';
+    if (daysUntilReturn < 0) {
+        const daysLate = Math.abs(daysUntilReturn);
+        return `${name} está atrasada há ${daysLate} ${daysLate === 1 ? 'dia' : 'dias'}`;
+    }
+    if (daysUntilReturn === 0) return `${name} acaba hoje`;
+    if (daysUntilReturn === 1) return `${name} acaba amanhã`;
+    return `${name} está a ${daysUntilReturn} dias de acabar`;
+}
+
+function getRentalNotificationStatus(daysUntilReturn) {
+    if (daysUntilReturn < 0) return { className: 'overdue', label: 'Atrasada' };
+    if (daysUntilReturn === 0) return { className: 'today', label: 'Hoje' };
+    return { className: 'upcoming', label: 'Próxima' };
+}
+
+function buildRentalNotifications(rentals = []) {
+    const settings = getNotificationSettings();
+    if (!settings.enabled) return [];
+
+    const dismissed = new Set(getDismissedNotificationIds());
+    const daysBefore = new Set(settings.daysBefore);
+    const notifications = [];
+
+    rentals.forEach((event) => {
+        const daysUntilReturn = getDaysBetween(event.return_date);
+        if (daysUntilReturn === null) return;
+
+        const shouldNotify = daysUntilReturn < 0
+            ? settings.includeOverdue
+            : daysBefore.has(daysUntilReturn);
+        if (!shouldNotify) return;
+
+        const id = `rental-${event.id}-${event.return_date}`;
+        if (dismissed.has(id)) return;
+
+        const status = getRentalNotificationStatus(daysUntilReturn);
+        notifications.push({
+            id,
+            type: 'rental',
+            eventId: event.id,
+            title: getRentalNotificationTitle(event, daysUntilReturn),
+            message: `Devolução prevista para ${formatDate(event.return_date)}. Retirada em ${formatDate(event.withdrawal_date)}.`,
+            date: event.return_date,
+            daysUntilReturn,
+            statusClass: status.className,
+            statusLabel: status.label
+        });
+    });
+
+    notifications.sort((a, b) => {
+        const aBucket = a.daysUntilReturn < 0 ? 0 : (a.daysUntilReturn === 0 ? 1 : 2);
+        const bBucket = b.daysUntilReturn < 0 ? 0 : (b.daysUntilReturn === 0 ? 1 : 2);
+        if (aBucket !== bBucket) return aBucket - bBucket;
+        return a.daysUntilReturn - b.daysUntilReturn;
+    });
+
+    return notifications.slice(0, settings.maxNotices);
+}
+
+function filterNotifications(notifications = []) {
+    const filter = document.getElementById('notificationDateFilter')?.value || 'all';
+    const customDate = document.getElementById('notificationCustomDate')?.value || '';
+
+    return notifications.filter((item) => {
+        if (filter === 'overdue') return item.daysUntilReturn < 0;
+        if (filter === 'today') return item.daysUntilReturn === 0;
+        if (filter === 'next3') return item.daysUntilReturn >= 0 && item.daysUntilReturn <= 3;
+        if (filter === 'next7') return item.daysUntilReturn >= 0 && item.daysUntilReturn <= 7;
+        if (filter === 'custom') return customDate && item.date === customDate;
+        return true;
+    });
+}
+
+function updateNotificationBadge(count = allNotifications.length) {
+    const badge = document.getElementById('notificationBadge');
+    const button = document.querySelector('.btn-notification-icon');
+    if (badge) {
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.style.display = count > 0 ? '' : 'none';
+    }
+    if (button) button.classList.toggle('rental-return-pulse', count > 0);
+}
+
+function renderNotifications() {
+    const list = document.getElementById('notificationsList');
+    const selectToggle = document.getElementById('notificationSelectToggle');
+    const selectionBar = document.getElementById('notificationSelectionBar');
+    const customDateGroup = document.getElementById('notificationCustomDateGroup');
+    if (!list) return;
+
+    const filtered = filterNotifications(allNotifications);
+    list.classList.toggle('notifications-selecting', notificationSelectionMode);
+    if (selectionBar) selectionBar.style.display = notificationSelectionMode ? '' : 'none';
+    if (selectToggle) selectToggle.textContent = notificationSelectionMode ? 'Cancelar seleção' : 'Selecionar';
+    if (customDateGroup) {
+        customDateGroup.style.display = document.getElementById('notificationDateFilter')?.value === 'custom' ? '' : 'none';
+    }
+
+    const selectAll = document.getElementById('notificationSelectAll');
+    if (selectAll) {
+        selectAll.checked = filtered.length > 0 && filtered.every((item) => selectedNotificationIds.has(item.id));
+        selectAll.indeterminate = filtered.some((item) => selectedNotificationIds.has(item.id)) && !selectAll.checked;
+    }
+
+    if (filtered.length === 0) {
+        list.innerHTML = '<p class="empty-state">Nenhuma notificação encontrada.</p>';
+        updateNotificationBadge();
+        return;
+    }
+
+    list.innerHTML = filtered.map((item) => `
+        <article class="notification-card rental-${escapeHtml(item.statusClass)}">
+            <input type="checkbox" class="notification-card-checkbox" ${selectedNotificationIds.has(item.id) ? 'checked' : ''} onchange="toggleNotificationSelection('${escapeJsString(item.id)}', this.checked)" aria-label="Selecionar notificação">
+            <div>
+                <h3>${escapeHtml(item.title)}</h3>
+                <p>${escapeHtml(item.message)}</p>
+                <div class="notification-meta">Locação</div>
+            </div>
+            <span class="notification-status ${escapeHtml(item.statusClass)}">${escapeHtml(item.statusLabel)}</span>
+        </article>
+    `).join('');
+
+    updateNotificationBadge();
+}
+
+function toggleNotificationSelectionMode(force) {
+    notificationSelectionMode = typeof force === 'boolean' ? force : !notificationSelectionMode;
+    if (!notificationSelectionMode) selectedNotificationIds.clear();
+    renderNotifications();
+}
+
+function toggleNotificationSelection(id, checked) {
+    if (checked) selectedNotificationIds.add(String(id));
+    else selectedNotificationIds.delete(String(id));
+    renderNotifications();
+}
+
+function toggleAllNotifications(checked) {
+    filterNotifications(allNotifications).forEach((item) => {
+        if (checked) selectedNotificationIds.add(item.id);
+        else selectedNotificationIds.delete(item.id);
+    });
+    renderNotifications();
+}
+
+function clearNotificationSelection() {
+    selectedNotificationIds.clear();
+    renderNotifications();
+}
+
+function markSelectedNotificationsRead() {
+    if (selectedNotificationIds.size === 0) return;
+    const dismissed = getDismissedNotificationIds();
+    setDismissedNotificationIds([...dismissed, ...selectedNotificationIds]);
+    selectedNotificationIds.clear();
+    allNotifications = allNotifications.filter((item) => !getDismissedNotificationIds().includes(item.id));
+    renderNotifications();
+}
+
+function handleNotificationFilterChange() {
+    selectedNotificationIds.clear();
+    renderNotifications();
+}
+
+async function getRentalEventsForNotifications() {
+    if (currentUser?.isGuest) {
+        return (await storage.getEvents()).filter((event) => event.event_type === 'rental');
+    }
+
+    const response = await fetch('api/rental-events', { credentials: 'include' });
+    if (response.status === 401) {
+        window.location.href = 'login/';
+        return [];
+    }
+    if (!response.ok) return [];
+    return response.json();
+}
+
+async function loadNotifications() {
+    try {
+        const rentals = await getRentalEventsForNotifications();
+        allNotifications = buildRentalNotifications(rentals);
+        renderNotifications();
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 function searchEquipments() {
     searchDatabase();
+}
+
+function openCadastroFromInventario() {
+    setCadastroTab(activeBancoTab);
+    if (window.location.hash !== '#cadastro') {
+        window.location.hash = 'cadastro';
+    } else {
+        showSection('cadastro');
+    }
 }
 
 function setCadastroTab(tab) {
@@ -607,7 +884,7 @@ function setCadastroTab(tab) {
     if (title) {
         title.textContent = activeCadastroTab === 'cabos'
             ? 'Cadastro de Cabos'
-            : (activeCadastroTab === 'outros' ? 'Cadastro de Outros Itens' : 'Cadastro de Equipamento');
+            : (activeCadastroTab === 'outros' ? 'Cadastro de Outros Itens' : 'Cadastro do Inventário');
     }
 
     if (equipmentButton) equipmentButton.classList.toggle('active', activeCadastroTab === 'equipamentos');
@@ -635,9 +912,7 @@ function setBancoTab(tab) {
         if (relacaoEventName) {
             title.textContent = `Gerenciar: ${relacaoEventName}`;
         } else {
-            title.textContent = activeBancoTab === 'cabos'
-                ? 'Banco de Dados de Cabos'
-                : (activeBancoTab === 'outros' ? 'Banco de Dados de Outros Itens' : 'Banco de Dados de Equipamentos');
+            title.textContent = 'Inventário';
         }
     }
 
@@ -675,11 +950,15 @@ function setMaintenanceTab(tab) {
     const cableButton = document.getElementById('maintenanceCabosTabButton');
     const equipmentView = document.getElementById('maintenanceEquipamentosView');
     const cableView = document.getElementById('maintenanceCabosView');
+    const equipmentSearch = document.getElementById('maintenanceEquipamentosSearch');
+    const cableSearch = document.getElementById('maintenanceCabosSearch');
 
     if (equipmentButton) equipmentButton.classList.toggle('active', activeMaintenanceTab === 'equipamentos');
     if (cableButton) cableButton.classList.toggle('active', activeMaintenanceTab === 'cabos');
     if (equipmentView) equipmentView.classList.toggle('active', activeMaintenanceTab === 'equipamentos');
     if (cableView) cableView.classList.toggle('active', activeMaintenanceTab === 'cabos');
+    if (equipmentSearch) equipmentSearch.classList.toggle('active', activeMaintenanceTab === 'equipamentos');
+    if (cableSearch) cableSearch.classList.toggle('active', activeMaintenanceTab === 'cabos');
 
     clearMaintenance();
 
@@ -750,7 +1029,8 @@ function renderEvents(events, search = '') {
 
     filtered.forEach((event) => {
         const card = document.createElement('div');
-        card.className = 'event-card';
+        const daysUntilReturn = getDaysBetween(event.return_date);
+        card.className = `event-card${daysUntilReturn !== null && daysUntilReturn <= 0 ? ' rental-due-alert' : ''}`;
         card.innerHTML = `
             <div class="card-top">
                 <h3>${escapeHtml(event.name)}</h3>
@@ -1247,6 +1527,7 @@ async function deleteRentalEvent(id, name) {
     if (currentUser?.isGuest) {
         await storage.deleteEvent(id);
         await loadRentalEvents();
+        await loadNotifications();
         alert(`${name} excluido com sucesso.`);
         return;
     }
@@ -1270,6 +1551,7 @@ async function deleteRentalEvent(id, name) {
 
         await loadRentalEvents();
         await loadRentalReturnAlerts();
+        await loadNotifications();
         alert(`${name} excluido com sucesso.`);
     } catch (error) {
         console.error(error);
@@ -1676,6 +1958,7 @@ document.addEventListener('submit', async (e) => {
                 closeRentalModal();
                 showSection('locacao');
                 await loadRentalEvents();
+                await loadNotifications();
             } else {
                 await storage.createEvent({ name: data.name, date: data.date, event_type: 'event', created_by_username: currentUser?.username || 'convidado' });
                 e.target.reset();
@@ -1720,6 +2003,7 @@ document.addEventListener('submit', async (e) => {
             showSection('locacao');
             await loadRentalEvents();
             await loadRentalReturnAlerts();
+            await loadNotifications();
         } else if (isEvent) {
             showSection('home');
             await loadEvents();
@@ -2100,6 +2384,8 @@ function applyLoginManagementVisibility() {
     const tabTheme    = document.getElementById('settingsTabTheme');
     const tabLogo     = document.getElementById('settingsTabLogo');
     const tabEmpresas = document.getElementById('settingsTabEmpresas');
+    const tabNotificacoes = document.getElementById('settingsTabNotificacoes');
+    const tabSobre = document.getElementById('settingsTabSobre');
     const noAccess    = document.getElementById('settingsNoAccess');
     const tabsBar     = document.getElementById('settingsTabsBar');
 
@@ -2110,12 +2396,16 @@ function applyLoginManagementVisibility() {
         if (tabTheme)    tabTheme.style.display    = 'none';
         if (tabLogo)     tabLogo.style.display     = 'none';
         if (tabEmpresas) tabEmpresas.style.display = 'none';
+        if (tabNotificacoes) tabNotificacoes.style.display = 'none';
+        if (tabSobre) tabSobre.style.display = 'none';
     } else {
         if (tabsBar)  tabsBar.style.display  = '';
         if (noAccess) noAccess.style.display = 'none';
         if (tabUsers)   tabUsers.style.display   = '';
         if (tabTheme)   tabTheme.style.display   = '';
         if (tabLogo)    tabLogo.style.display    = '';
+        if (tabNotificacoes) tabNotificacoes.style.display = '';
+        if (tabSobre) tabSobre.style.display = '';
         // empresas tab: visible to gestor_admin and regular admins (to manage their own company)
         if (tabEmpresas) tabEmpresas.style.display = (isGestor || currentUser?.isAdmin) ? '' : 'none';
     }
@@ -2847,10 +3137,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const urlParams = new URLSearchParams(window.location.search);
     const requestedSection = urlParams.get('section') || window.location.hash.replace('#', '');
-    const allowedSections = ['home', 'cadastro', 'banco', 'eventos', 'historico', 'manutencao', 'locacao', 'config'];
-    const section = allowedSections.includes(requestedSection) ? requestedSection : 'home';
+    const allowedSections = ['home', 'cadastro', 'inventario', 'banco', 'eventos', 'historico', 'manutencao', 'locacao', 'notificacoes', 'config'];
+    const section = allowedSections.includes(requestedSection) ? normalizeSectionId(requestedSection) : 'home';
     showSection(section);
     updateSortMenuState();
+    loadNotificationSettings();
+    loadNotifications();
 
     // Open sidebar after initial navigation so showSection doesn't close it
     if (window.innerWidth <= 768) {
@@ -2860,7 +3152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     window.addEventListener('hashchange', () => {
         const requestedHash = window.location.hash.replace('#', '');
-        const targetSection = allowedSections.includes(requestedHash) ? requestedHash : 'home';
+        const targetSection = allowedSections.includes(requestedHash) ? normalizeSectionId(requestedHash) : 'home';
         showSection(targetSection);
     });
 
@@ -2942,6 +3234,54 @@ function showSettingsTab(tabName) {
     // Trigger data loads
     if (tabName === 'empresas') loadCompanies();
     if (tabName === 'users')    loadLoginUsers();
+    if (tabName === 'notificacoes') loadNotificationSettings();
+}
+
+function setNotificationSettingsMessage(message, type = '') {
+    const el = document.getElementById('notificationSettingsMessage');
+    if (!el) return;
+    el.textContent = message || '';
+    el.className = `users-message ${type}`.trim();
+}
+
+function loadNotificationSettings() {
+    const settings = getNotificationSettings();
+    const enabled = document.getElementById('notificationEnabled');
+    const includeOverdue = document.getElementById('notificationIncludeOverdue');
+    const daysBefore = document.getElementById('notificationDaysBefore');
+    const maxNotices = document.getElementById('notificationMaxNotices');
+    const repeatMode = document.getElementById('notificationRepeatMode');
+
+    if (enabled) enabled.checked = settings.enabled;
+    if (includeOverdue) includeOverdue.checked = settings.includeOverdue;
+    if (daysBefore) daysBefore.value = settings.daysBefore.join(', ');
+    if (maxNotices) maxNotices.value = String(settings.maxNotices);
+    if (repeatMode) repeatMode.value = settings.repeatMode;
+    setNotificationSettingsMessage('');
+}
+
+function saveNotificationSettings(event) {
+    if (event) event.preventDefault();
+
+    const daysInput = document.getElementById('notificationDaysBefore')?.value || '';
+    const daysBefore = parseNotificationDays(daysInput);
+    if (daysBefore.length === 0) {
+        setNotificationSettingsMessage('Informe pelo menos um dia de aviso.', 'error');
+        return;
+    }
+
+    const settings = {
+        enabled: !!document.getElementById('notificationEnabled')?.checked,
+        includeOverdue: !!document.getElementById('notificationIncludeOverdue')?.checked,
+        daysBefore,
+        maxNotices: Math.max(1, Math.min(50, Number(document.getElementById('notificationMaxNotices')?.value) || 20)),
+        repeatMode: document.getElementById('notificationRepeatMode')?.value === 'once' ? 'once' : 'daily'
+    };
+
+    localStorage.setItem('notification-settings', JSON.stringify(settings));
+    loadNotificationSettings();
+    loadNotifications();
+    setNotificationSettingsMessage('Notificações salvas.', 'success');
 }
 
 // Enhanced theme settings

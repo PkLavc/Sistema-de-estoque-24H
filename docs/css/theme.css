@@ -178,6 +178,10 @@ label, .form-help, .modal-subtitle, .form-message { color: var(--text-color) !im
     background: var(--inner-component-bg) !important;
 }
 
+.database-view {
+    background: transparent !important;
+}
+
 /* Input fields and search boxes */
 input[type="text"],
 input[type="password"],
