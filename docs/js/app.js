@@ -295,11 +295,28 @@ function showSection(sectionId) {
     const floatingBtnLocacao = document.getElementById('floatingBtnLocacao');
     if (floatingBtnHome) floatingBtnHome.style.display = sectionId === 'home' ? '' : 'none';
     if (floatingBtnLocacao) floatingBtnLocacao.style.display = sectionId === 'locacao' ? '' : 'none';
+
+    // Always scroll to top of content area on section change
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) mainContent.scrollTop = 0;
+    window.scrollTo(0, 0);
 }
 
 function clearRelacaoContext() {
     localStorage.removeItem('relacao_event_id');
     localStorage.removeItem('relacao_event_name');
+}
+
+function gerenciarEvento(id, name) {
+    localStorage.setItem('relacao_event_id', String(id));
+    localStorage.setItem('relacao_event_name', name);
+    showSection('banco');
+}
+
+function gerenciarLocacao(id, name) {
+    localStorage.setItem('relacao_event_id', String(id));
+    localStorage.setItem('relacao_event_name', name);
+    showSection('banco');
 }
 
 function clearPendingItems() {
@@ -510,9 +527,14 @@ function setBancoTab(tab) {
     const otherView = document.getElementById('outrosDatabaseView');
 
     if (title) {
-        title.textContent = activeBancoTab === 'cabos'
-            ? 'Banco de Dados de Cabos'
-            : (activeBancoTab === 'outros' ? 'Banco de Dados de Outros Itens' : 'Banco de Dados de Equipamentos');
+        const relacaoEventName = localStorage.getItem('relacao_event_name');
+        if (relacaoEventName) {
+            title.textContent = `Gerenciar: ${relacaoEventName}`;
+        } else {
+            title.textContent = activeBancoTab === 'cabos'
+                ? 'Banco de Dados de Cabos'
+                : (activeBancoTab === 'outros' ? 'Banco de Dados de Outros Itens' : 'Banco de Dados de Equipamentos');
+        }
     }
 
     if (searchInput) {
@@ -634,7 +656,7 @@ function renderEvents(events, search = '') {
                 </div>
             </div>
             <div class="event-actions">
-                <button onclick="showSection('eventos')" class="btn-primary">Gerenciar</button>
+                <button onclick="gerenciarEvento(${event.id}, '${escapeJsString(event.name)}')" class="btn-primary">Gerenciar</button>
                 <button onclick="deleteEvent(${event.id})" class="btn-danger">Excluir</button>
             </div>`;
         grid.appendChild(card);
@@ -642,7 +664,11 @@ function renderEvents(events, search = '') {
 }
 
 async function loadEvents() {
-    if (currentUser?.isGuest) return;
+    if (currentUser?.isGuest) {
+        allEvents = (await storage.getEvents()).filter(e => e.event_type !== 'rental');
+        renderEvents(allEvents, getEventSearchValue());
+        return;
+    }
     try {
         const response = await fetch('api/events', { credentials: 'include' });
         if (response.status === 401) {
@@ -691,7 +717,7 @@ function renderRentalEvents(events, search = '') {
                 </div>
             </div>
             <div class="event-actions">
-                <button onclick="showSection('locacao')" class="btn-primary">Gerenciar</button>
+                <button onclick="gerenciarLocacao(${event.id}, '${escapeJsString(event.name)}')" class="btn-primary">Gerenciar</button>
                 <button onclick="deleteRentalEvent(${event.id}, '${escapeJsString(event.name)}')" class="btn-danger">Excluir</button>
             </div>`;
         grid.appendChild(card);
@@ -699,7 +725,11 @@ function renderRentalEvents(events, search = '') {
 }
 
 async function loadRentalEvents() {
-    if (currentUser?.isGuest) return;
+    if (currentUser?.isGuest) {
+        allRentalEvents = (await storage.getEvents()).filter(e => e.event_type === 'rental');
+        renderRentalEvents(allRentalEvents, getRentalSearchValue());
+        return;
+    }
     try {
         const response = await fetch('api/rental-events', { credentials: 'include' });
         if (response.status === 401) {
@@ -780,7 +810,13 @@ function renderHistoryEvents(events = allHistoryEvents, rentals = allHistoryRent
 }
 
 async function loadHistoryEvents() {
-    if (currentUser?.isGuest) return;
+    if (currentUser?.isGuest) {
+        const data = await storage.getHistoryData();
+        allHistoryEvents = data.events;
+        allHistoryRentals = data.rentals;
+        renderHistoryEvents(allHistoryEvents, allHistoryRentals, getHistorySearchValue());
+        return;
+    }
     try {
         const response = await fetch('api/history-events', { credentials: 'include' });
         if (response.status === 401) {
@@ -869,7 +905,14 @@ function renderEquipments(equipments) {
 }
 
 async function loadEquipments(search = '') {
-    if (currentUser?.isGuest) return;
+    if (currentUser?.isGuest) {
+        const all = await storage.getEquipments();
+        allEquipments = search
+            ? all.filter(e => e.name.toLowerCase().includes(search.toLowerCase()) || (e.barcode || '').toLowerCase().includes(search.toLowerCase()))
+            : all;
+        renderEquipments(allEquipments);
+        return;
+    }
     try {
         const response = await fetch(`api/equipments?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
@@ -916,7 +959,14 @@ function renderMaintenanceList(equipments) {
 }
 
 async function loadMaintenanceEquipments() {
-    if (currentUser?.isGuest) return;
+    if (currentUser?.isGuest) {
+        const equipments = await storage.getEquipments();
+        maintenanceEquipments = equipments.filter((equipment) =>
+            String(equipment.current_status || '').toLowerCase().includes('manut')
+        );
+        renderMaintenanceList(maintenanceEquipments);
+        return;
+    }
     try {
         const response = await fetch('api/equipments', { credentials: 'include' });
         if (response.status === 401) {
@@ -951,12 +1001,16 @@ async function adicionarARelacao(id, name, barcode) {
             });
             localStorage.setItem(pendingKey, JSON.stringify(pendingItems));
 
-            await fetch(`api/equipments/${Number(id)}/status`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'Pre separado' }),
-                credentials: 'include'
-            });
+            if (currentUser?.isGuest) {
+                await storage.updateEquipment(Number(id), { current_status: 'Pre separado' });
+            } else {
+                await fetch(`api/equipments/${Number(id)}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'Pre separado' }),
+                    credentials: 'include'
+                });
+            }
         }
 
         await loadEquipments(getEquipmentSearchValue());
@@ -969,6 +1023,22 @@ async function adicionarARelacao(id, name, barcode) {
 
 async function deleteEvent(id) {
     if (!confirm('Deseja excluir este evento?')) return;
+
+    if (currentUser?.isGuest) {
+        const pendingKey = `pending_items_${id}`;
+        const pendingOtherKey = `pending_other_items_${id}`;
+        const pendingItems = JSON.parse(localStorage.getItem(pendingKey) || '[]');
+        if (pendingItems.length > 0) {
+            await Promise.allSettled(pendingItems.map((item) => storage.updateEquipment(Number(item.id), { current_status: 'Disponivel' })));
+        }
+        await storage.deleteEvent(id);
+        localStorage.removeItem(pendingKey);
+        localStorage.removeItem(pendingOtherKey);
+        clearRelacaoContext();
+        await loadEvents();
+        await loadEquipments(getEquipmentSearchValue());
+        return;
+    }
 
     try {
         const pendingKey = `pending_items_${id}`;
@@ -1071,6 +1141,13 @@ function requestDeletePassword() {
 async function deleteRentalEvent(id, name) {
     if (!confirm('Deseja excluir esta locação?')) return;
 
+    if (currentUser?.isGuest) {
+        await storage.deleteEvent(id);
+        await loadRentalEvents();
+        alert(`${name} excluido com sucesso.`);
+        return;
+    }
+
     const password = requestDeletePassword();
     if (password === null) return;
 
@@ -1098,6 +1175,14 @@ async function deleteRentalEvent(id, name) {
 }
 
 async function deleteEquipment(id, name) {
+    if (currentUser?.isGuest) {
+        if (!confirm(`Deseja excluir "${name}"?`)) return;
+        await storage.deleteEquipment(id);
+        await Promise.all([loadEquipments(getEquipmentSearchValue()), loadMaintenanceEquipments()]);
+        alert(`${name} excluido com sucesso.`);
+        return;
+    }
+
     const password = requestDeletePassword();
     if (password === null) return;
 
@@ -1124,6 +1209,14 @@ async function deleteEquipment(id, name) {
 }
 
 async function deleteCable(id, name) {
+    if (currentUser?.isGuest) {
+        if (!confirm(`Deseja excluir "${name}"?`)) return;
+        await storage.deleteCable(id);
+        await Promise.all([loadCables(getEquipmentSearchValue()), loadMaintenanceCables()]);
+        alert(`${name} excluido com sucesso.`);
+        return;
+    }
+
     const password = requestDeletePassword();
     if (password === null) return;
 
@@ -1150,6 +1243,14 @@ async function deleteCable(id, name) {
 }
 
 async function deleteOtherItem(id, name) {
+    if (currentUser?.isGuest) {
+        if (!confirm(`Deseja excluir "${name}"?`)) return;
+        await storage.deleteOtherItem(id);
+        await loadOtherItems(getEquipmentSearchValue());
+        alert(`${name} excluido com sucesso.`);
+        return;
+    }
+
     const password = requestDeletePassword();
     if (password === null) return;
 
@@ -1207,7 +1308,13 @@ function renderCableMaintenanceList(cables) {
 }
 
 async function loadCables(search = '') {
-    if (currentUser?.isGuest) return;
+    if (currentUser?.isGuest) {
+        const all = await storage.getCables();
+        allCables = search ? all.filter(c => c.name.toLowerCase().includes(search.toLowerCase())) : all;
+        populateCableCategoryOptions(allCables);
+        renderCables(allCables);
+        return;
+    }
     try {
         const response = await fetch(`api/cables?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
@@ -1297,7 +1404,12 @@ function adicionarOutroARelacao(id, name, availableQuantity) {
 }
 
 async function loadOtherItems(search = '') {
-    if (currentUser?.isGuest) return;
+    if (currentUser?.isGuest) {
+        const all = await storage.getOtherItems();
+        allOtherItems = search ? all.filter(i => i.name.toLowerCase().includes(search.toLowerCase())) : all;
+        renderOtherItems(allOtherItems);
+        return;
+    }
     try {
         const response = await fetch(`api/other-items?search=${encodeURIComponent(search)}`, { credentials: 'include' });
         if (response.status === 401) {
@@ -1313,7 +1425,12 @@ async function loadOtherItems(search = '') {
 }
 
 async function loadMaintenanceCables() {
-    if (currentUser?.isGuest) return;
+    if (currentUser?.isGuest) {
+        const cables = await storage.getCables();
+        maintenanceCables = cables.filter((cable) => !!cable.maintenance_description);
+        renderCableMaintenanceList(maintenanceCables);
+        return;
+    }
     try {
         const response = await fetch('api/cables', { credentials: 'include' });
         if (response.status === 401) {
@@ -1333,6 +1450,12 @@ async function logout() {
     const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
     
     if (isGuestMode) {
+        // Clear all guest data except theme/logo (preserve: theme-*, appTheme, custom-logo)
+        const keys = ['events', 'equipments', 'cables', 'otherItems', 'users', 'companies', 'historyEvents', 'historyRentals'];
+        keys.forEach(key => localStorage.removeItem('guest_' + key));
+        // Clear pending items and relação context (stored without guest_ prefix)
+        clearPendingItems();
+        clearRelacaoContext();
         localStorage.removeItem('isGuestMode');
         window.location.href = 'login/';
         return;
@@ -1420,6 +1543,52 @@ document.addEventListener('submit', async (e) => {
         return;
     }
 
+    if (currentUser?.isGuest) {
+        try {
+            if (isEquip) {
+                await storage.createEquipment({ ...data, current_status: 'Disponivel' });
+                e.target.reset();
+                populateCategoryOptions();
+                alert('Equipamento cadastrado com sucesso.');
+                showSection('cadastro');
+                setCadastroTab('equipamentos');
+                await loadEquipments(getEquipmentSearchValue());
+            } else if (isCable) {
+                await storage.createCable({ ...data, available_quantity: data.quantity });
+                e.target.reset();
+                populateCableCategoryOptions();
+                alert('Cabo cadastrado com sucesso.');
+                showSection('cadastro');
+                setCadastroTab('cabos');
+                await loadCables();
+            } else if (isOtherItem) {
+                await storage.createOtherItem({ ...data, available_quantity: data.quantity });
+                e.target.reset();
+                alert('Item cadastrado com sucesso.');
+                showSection('cadastro');
+                setCadastroTab('outros');
+                await loadOtherItems();
+            } else if (isRental) {
+                await storage.createEvent({ name: data.name, event_type: 'rental', withdrawal_date: data.withdrawalDate, return_date: data.returnDate, created_by_username: currentUser?.username || 'convidado' });
+                e.target.reset();
+                alert('Locação criada com sucesso.');
+                closeRentalModal();
+                showSection('locacao');
+                await loadRentalEvents();
+            } else {
+                await storage.createEvent({ name: data.name, date: data.date, event_type: 'event', created_by_username: currentUser?.username || 'convidado' });
+                e.target.reset();
+                alert('Evento criado com sucesso.');
+                showSection('home');
+                await loadEvents();
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao salvar.');
+        }
+        return;
+    }
+
     try {
         const res = await fetch(
             isEquip ? 'api/equipments' : (isCable ? 'api/cables' : (isOtherItem ? 'api/other-items' : (isRental ? 'api/rental-events' : 'api/events'))),
@@ -1487,6 +1656,20 @@ async function searchMaintenanceEquipment() {
     const barcode = document.getElementById('maintenanceBarcode')?.value.trim();
     if (!barcode) return;
 
+    if (currentUser?.isGuest) {
+        const equipments = await storage.getEquipments();
+        const equipment = equipments.find((item) => item.barcode === barcode);
+        if (!equipment) {
+            alert('Equipamento nao encontrado.');
+            clearMaintenance();
+            return;
+        }
+        selectedMaintenanceItem = equipment;
+        selectedMaintenanceType = 'equipamento';
+        openMaintenanceModal('create', equipment, 'equipamento');
+        return;
+    }
+
     try {
         const response = await fetch(`api/equipments?search=${encodeURIComponent(barcode)}`, { credentials: 'include' });
         if (!response.ok) {
@@ -1515,6 +1698,21 @@ async function searchMaintenanceEquipment() {
 async function searchMaintenanceCable() {
     const cableName = document.getElementById('maintenanceCableName')?.value.trim();
     if (!cableName) return;
+
+    if (currentUser?.isGuest) {
+        const cables = await storage.getCables();
+        const normalizedName = cableName.toLowerCase();
+        const cable = cables.find((item) => String(item.name || '').toLowerCase() === normalizedName) || cables.find((item) => String(item.name || '').toLowerCase().includes(normalizedName));
+        if (!cable) {
+            alert('Cabo nao encontrado.');
+            clearMaintenance();
+            return;
+        }
+        selectedMaintenanceItem = cable;
+        selectedMaintenanceType = 'cabo';
+        openMaintenanceModal('create', cable, 'cabo');
+        return;
+    }
 
     try {
         const response = await fetch(`api/cables?search=${encodeURIComponent(cableName)}`, { credentials: 'include' });
@@ -1650,6 +1848,20 @@ async function saveMaintenance() {
         return;
     }
 
+    if (currentUser?.isGuest) {
+        if (selectedMaintenanceType === 'cabo') {
+            await storage.updateCable(selectedMaintenanceItem.id, { maintenance_description: description });
+            await Promise.all([loadCables(getEquipmentSearchValue()), loadMaintenanceCables()]);
+        } else {
+            await storage.updateEquipment(selectedMaintenanceItem.id, { current_status: 'Em manutencao', maintenance_description: description });
+            await Promise.all([loadEquipments(getEquipmentSearchValue()), loadMaintenanceEquipments()]);
+        }
+        alert('Manutencao registrada com sucesso.');
+        closeMaintenanceModal();
+        clearMaintenance();
+        return;
+    }
+
     try {
         const response = await fetch(selectedMaintenanceType === 'cabo' ? 'api/cable-maintenances' : 'api/maintenances', {
             method: 'POST',
@@ -1689,6 +1901,14 @@ async function markMaintenanceReady(equipmentId) {
         return;
     }
 
+    if (currentUser?.isGuest) {
+        await storage.updateEquipment(Number(equipmentId), { current_status: 'Disponivel', maintenance_description: null });
+        await loadMaintenanceEquipments();
+        await loadEquipments(getEquipmentSearchValue());
+        alert(`${equipment.name} marcado como disponivel.`);
+        return;
+    }
+
     try {
         const response = await fetch(`api/maintenances/${Number(equipmentId)}/ready`, {
             method: 'PATCH',
@@ -1714,6 +1934,13 @@ async function markCableMaintenanceReady(cableId) {
     const cable = maintenanceCables.find((item) => Number(item.id) === Number(cableId));
     if (!cable) {
         alert('Cabo nao encontrado.');
+        return;
+    }
+
+    if (currentUser?.isGuest) {
+        await storage.updateCable(Number(cableId), { maintenance_description: null });
+        await Promise.all([loadMaintenanceCables(), loadCables(getEquipmentSearchValue())]);
+        alert(`${cable.name} marcado como pronto.`);
         return;
     }
 

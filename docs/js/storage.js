@@ -334,7 +334,9 @@ class DataStorage {
 
     // Pre-populate guest mode with demo companies and users (only on first activation)
     seedGuestData() {
-        if (this._loadFromLocalStorage('companies')) return;
+        const hasCompanies = this._loadFromLocalStorage('companies');
+        const hasEvents = this._loadFromLocalStorage('events');
+        if (hasCompanies && hasEvents) return;
 
         const companies = [
             {
@@ -402,13 +404,88 @@ class DataStorage {
 
         this._saveToLocalStorage('companies', companies);
         this._saveToLocalStorage('users', users);
+
+        const events = [
+            { id: 1, name: 'Show da Banda Metallix', date: '2026-06-15', event_type: 'event', created_by_username: 'convidado' },
+            { id: 2, name: 'Casamento Fernanda & Lucas', event_type: 'rental', created_by_username: 'convidado', withdrawal_date: '2026-06-21', return_date: '2026-06-23' },
+            { id: 3, name: 'Festival de Verão 2026', date: '2026-07-04', event_type: 'event', created_by_username: 'convidado' }
+        ];
+
+        const equipments = [
+            { id: 1, name: 'Caixa de Som JBL 15"', barcode: 'DEMO-EQ-001', current_status: 'Disponivel', category: 'Som' },
+            { id: 2, name: 'Mesa de Som Yamaha 24ch', barcode: 'DEMO-EQ-002', current_status: 'Disponivel', category: 'Som' },
+            { id: 3, name: 'Microfone Shure SM58', barcode: 'DEMO-EQ-003', current_status: 'Pre separado', category: 'Som' },
+            { id: 4, name: 'Projetor Epson 5000lm', barcode: 'DEMO-EQ-004', current_status: 'Pre separado', category: 'Video' },
+            { id: 5, name: 'Moving Head LED 150W', barcode: 'DEMO-EQ-005', current_status: 'Disponivel', category: 'Iluminacao' },
+            { id: 6, name: 'Par LED RGBW 54 Cores', barcode: 'DEMO-EQ-006', current_status: 'Disponivel', category: 'Iluminacao' },
+            { id: 7, name: 'Tripe de Caixa', barcode: 'DEMO-EQ-007', current_status: 'Em manutencao', category: 'Som', maintenance_description: 'Pe quebrado' },
+            { id: 8, name: 'Mesa DJ Pioneer XDJ-RX', barcode: 'DEMO-EQ-008', current_status: 'Pre separado', category: 'Som' }
+        ];
+
+        const cables = [
+            { id: 1, name: 'Cabo XLR M/F 5m', quantity: 20, available_quantity: 12, category: 'Audio' },
+            { id: 2, name: 'Cabo P10-P10 3m', quantity: 15, available_quantity: 11, category: 'Audio' },
+            { id: 3, name: 'Cabo HDMI 5m', quantity: 8, available_quantity: 7, category: 'Video' },
+            { id: 4, name: 'Cabo de Forca 3m', quantity: 30, available_quantity: 20, category: 'Eletrico' },
+            { id: 5, name: 'Cabo de Rede Cat6 10m', quantity: 10, available_quantity: 10, category: 'Rede' },
+            { id: 6, name: 'Cabo Speakon 10m', quantity: 12, available_quantity: 10, category: 'Audio' }
+        ];
+
+        const otherItems = [
+            { id: 1, name: 'Pedestal de Microfone', quantity: 6, available_quantity: 6, category: 'Acessorios' },
+            { id: 2, name: 'Direct Box Passivo', quantity: 4, available_quantity: 3, category: 'Audio' },
+            { id: 3, name: 'Extensao Eletrica 10m', quantity: 8, available_quantity: 5, category: 'Eletrico' }
+        ];
+
+        this._saveToLocalStorage('events', events);
+        this._saveToLocalStorage('equipments', equipments);
+        this._saveToLocalStorage('cables', cables);
+        this._saveToLocalStorage('otherItems', otherItems);
+
+        const historyEvents = [
+            { id: 10, name: 'Rock in Rio 2025', date: '2025-11-15', event_type: 'event', created_by_username: 'carlos.oliveira' },
+            { id: 11, name: 'Formatura UFRJ 2025', date: '2025-12-10', event_type: 'event', created_by_username: 'ana.santos' }
+        ];
+        const historyRentals = [
+            { id: 20, name: 'Casamento Silva & Rocha', event_type: 'rental', created_by_username: 'lucas.ferreira', withdrawal_date: '2025-10-05', return_date: '2025-10-07' }
+        ];
+        this._saveToLocalStorage('historyEvents', historyEvents);
+        this._saveToLocalStorage('historyRentals', historyRentals);
+
+        // Pre-assign equipment to events (pending_items_* stored without guest_ prefix)
+        if (!localStorage.getItem('pending_items_1')) {
+            localStorage.setItem('pending_items_1', JSON.stringify([
+                { id: 3, name: 'Microfone Shure SM58', barcode: 'DEMO-EQ-003' },
+                { id: 4, name: 'Projetor Epson 5000lm', barcode: 'DEMO-EQ-004' }
+            ]));
+        }
+        if (!localStorage.getItem('pending_items_2')) {
+            localStorage.setItem('pending_items_2', JSON.stringify([
+                { id: 8, name: 'Mesa DJ Pioneer XDJ-RX', barcode: 'DEMO-EQ-008' }
+            ]));
+        }
     }
 
     // Clear all guest data (and re-seed demo data)
     clearGuestData() {
-        const keys = ['events', 'equipments', 'cables', 'otherItems', 'users', 'companies'];
+        const keys = ['events', 'equipments', 'cables', 'otherItems', 'users', 'companies', 'historyEvents', 'historyRentals'];
         keys.forEach(key => this._deleteFromLocalStorage(key));
+        Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith('pending_items_') || key.startsWith('pending_other_items_')) {
+                localStorage.removeItem(key);
+            }
+        });
         this.seedGuestData();
+    }
+
+    async getHistoryData() {
+        if (this.isGuest) {
+            return {
+                events: this._loadFromLocalStorage('historyEvents') || [],
+                rentals: this._loadFromLocalStorage('historyRentals') || []
+            };
+        }
+        return { events: [], rentals: [] };
     }
 
     // Companies API
