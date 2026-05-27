@@ -10,6 +10,11 @@ body {
     color: #ffffff;
     min-height: 100vh;
     overflow-x: hidden;
+    --floating-edge-gap: 32px;
+    --floating-chat-size: 56px;
+    --floating-chat-gap: 12px;
+    --floating-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+    --floating-create-right: var(--floating-edge-gap);
 }
 
 .app-container {
@@ -659,7 +664,7 @@ textarea:focus {
 
 /* Floating buttons above the bottom ad */
 .app-container.has-ad:not(.sidebar-collapsed) .floating-create-button {
-    bottom: calc(90px + 32px);
+    --floating-bottom: calc(90px + 32px + env(safe-area-inset-bottom, 0px));
 }
 
 /* ── Sidebar COLLAPSED → ad as right column ─────────────────────────────── */
@@ -687,8 +692,8 @@ textarea:focus {
 
 /* Floating buttons to the left of the right ad */
 .app-container.has-ad.sidebar-collapsed .floating-create-button {
-    right: calc(200px + 32px);
-    bottom: 32px;
+    --floating-create-right: calc(200px + 32px);
+    --floating-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
 }
 
 /* ── Ad inner content ─────────────────────────────────────────────────── */
@@ -772,12 +777,12 @@ textarea:focus {
     .app-container.has-ad .main-content,
     .app-container.has-ad.sidebar-collapsed .main-content {
         margin-right: 0 !important;
-        padding-bottom: 92px !important;
+        padding-bottom: calc(72px + 104px + env(safe-area-inset-bottom, 0px)) !important;
     }
-    .app-container.has-ad .floating-create-button,
+    .app-container.has-ad:not(.sidebar-collapsed) .floating-create-button,
     .app-container.has-ad.sidebar-collapsed .floating-create-button {
-        right: 32px !important;
-        bottom: calc(72px + 20px) !important;
+        --floating-create-right: var(--floating-edge-gap);
+        --floating-bottom: calc(72px + 20px + env(safe-area-inset-bottom, 0px));
     }
 }
 
@@ -833,8 +838,8 @@ textarea:focus {
 
 .floating-create-button {
     position: fixed;
-    right: 32px;
-    bottom: 32px;
+    right: var(--floating-create-right);
+    bottom: var(--floating-bottom);
     z-index: 20;
     padding: 16px 28px;
     background: linear-gradient(45deg, #ff3333, #cc0000);
@@ -853,6 +858,12 @@ textarea:focus {
     background: linear-gradient(45deg, #cc0000, #990000);
     transform: translateY(-2px);
     box-shadow: 0 12px 28px color-mix(in srgb, var(--primary, #ff3333) 28%, transparent);
+}
+
+body.skyler-visible .app-container .floating-create-button,
+body.skyler-visible .app-container.has-ad:not(.sidebar-collapsed) .floating-create-button,
+body.skyler-visible .app-container.has-ad.sidebar-collapsed .floating-create-button {
+    --floating-create-right: calc(var(--floating-edge-gap) + var(--floating-chat-size) + var(--floating-chat-gap));
 }
 
 .rental-form {
@@ -1172,6 +1183,8 @@ textarea {
 @media (max-width: 768px) {
     body {
         overflow-x: hidden;
+        --floating-edge-gap: 16px;
+        --floating-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     }
 
     .app-container {
@@ -1236,6 +1249,7 @@ textarea {
     .main-content {
         margin-left: 0 !important;
         padding: 16px;
+        padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
         width: 100%;
     }
 
@@ -1391,10 +1405,14 @@ textarea {
 
     /* Floating action buttons: larger hit area */
     .floating-create-button {
-        right: 16px;
-        bottom: 20px;
+        --floating-edge-gap: 16px;
+        --floating-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
         padding: 14px 22px;
         font-size: 0.9rem;
+    }
+
+    .app-container.mobile-sidebar-open .floating-create-button {
+        z-index: 8998;
     }
 }
 
@@ -1581,6 +1599,16 @@ textarea {
     margin-top: 20px;
     padding-bottom: 10px;
     border-bottom: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.theme-header-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 .theme-section-title:first-child {
