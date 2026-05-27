@@ -15,7 +15,6 @@ body {
     --floating-chat-gap: 12px;
     --floating-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
     --floating-create-right: var(--floating-edge-gap);
-    --warning-color: #ff0000;
 }
 
 .app-container {
@@ -1038,8 +1037,8 @@ tbody tr:hover {
 }
 
 .badge-available {
-    background: rgba(46, 204, 113, 0.18);
-    color: #2ecc71;
+    background: var(--badge-available-bg, rgba(46, 204, 113, 0.18));
+    color: var(--badge-available-color, #2ecc71);
 }
 
 .badge-unavailable {
@@ -1048,13 +1047,13 @@ tbody tr:hover {
 }
 
 .badge-maintenance {
-    background: rgba(241, 196, 15, 0.18);
-    color: #f1c40f;
+    background: var(--badge-maintenance-bg, rgba(241, 196, 15, 0.18));
+    color: var(--badge-maintenance-color, #f1c40f);
 }
 
 .badge-relation {
-    background: rgba(241, 196, 15, 0.18);
-    color: #f1c40f;
+    background: var(--badge-relation-bg, rgba(241, 196, 15, 0.18));
+    color: var(--badge-relation-color, #f1c40f);
 }
 
 .category-row td {
@@ -1165,7 +1164,7 @@ textarea {
 
 .btn-ready {
     padding: 10px 20px;
-    background: linear-gradient(45deg, #1ea85c, #0f7d41);
+    background: linear-gradient(45deg, var(--btn-ready-color, #1ea85c), var(--btn-ready-color-2, #0f7d41));
     border: none;
     border-radius: 8px;
     color: #fff;
@@ -1177,7 +1176,7 @@ textarea {
 }
 
 .btn-ready:hover {
-    background: linear-gradient(45deg, #16914f, #0b6534);
+    background: linear-gradient(45deg, var(--btn-ready-color-2, #0f7d41), var(--btn-ready-color-3, #0b6534));
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(30, 168, 92, 0.35);
 }
@@ -1924,6 +1923,8 @@ textarea {
 /* Bottom action buttons */
 .bottom-actions .btn-logout {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .bottom-actions .btn-settings-icon {

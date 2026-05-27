@@ -743,6 +743,79 @@
                                 </div>
                             </div>
 
+                            <!-- Cores de Indicadores -->
+                            <div class="theme-section-title">
+                                <h3>Cores de Indicadores</h3>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="badgeAvailableColor">Status: Disponível</label>
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="badgeAvailableColorSwatch" onclick="openColorPopover('badgeAvailableColor')" style="background:#2ecc71"></button>
+                                    <input type="text" class="color-hex-display" id="badgeAvailableColorHex" value="#2ecc71" placeholder="#2ecc71">
+                                    <input type="hidden" id="badgeAvailableColor" name="badgeAvailableColor" value="#2ecc71">
+                                    <div class="color-popover" id="badgeAvailableColorPopover">
+                                        <input type="color" id="badgeAvailableColorPopoverColor" value="#2ecc71" oninput="syncPickerToHex('badgeAvailableColor')">
+                                        <input type="text" class="color-popover-hex" id="badgeAvailableColorPopoverHex" value="#2ecc71" oninput="syncPopoverHexToColor('badgeAvailableColor')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('badgeAvailableColor')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('badgeAvailableColor')">OK</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="badgeMaintenanceColor">Status: Em Manutenção</label>
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="badgeMaintenanceColorSwatch" onclick="openColorPopover('badgeMaintenanceColor')" style="background:#f1c40f"></button>
+                                    <input type="text" class="color-hex-display" id="badgeMaintenanceColorHex" value="#f1c40f" placeholder="#f1c40f">
+                                    <input type="hidden" id="badgeMaintenanceColor" name="badgeMaintenanceColor" value="#f1c40f">
+                                    <div class="color-popover" id="badgeMaintenanceColorPopover">
+                                        <input type="color" id="badgeMaintenanceColorPopoverColor" value="#f1c40f" oninput="syncPickerToHex('badgeMaintenanceColor')">
+                                        <input type="text" class="color-popover-hex" id="badgeMaintenanceColorPopoverHex" value="#f1c40f" oninput="syncPopoverHexToColor('badgeMaintenanceColor')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('badgeMaintenanceColor')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('badgeMaintenanceColor')">OK</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="badgeRelationColor">Status: Pré Separado / Relação</label>
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="badgeRelationColorSwatch" onclick="openColorPopover('badgeRelationColor')" style="background:#f1c40f"></button>
+                                    <input type="text" class="color-hex-display" id="badgeRelationColorHex" value="#f1c40f" placeholder="#f1c40f">
+                                    <input type="hidden" id="badgeRelationColor" name="badgeRelationColor" value="#f1c40f">
+                                    <div class="color-popover" id="badgeRelationColorPopover">
+                                        <input type="color" id="badgeRelationColorPopoverColor" value="#f1c40f" oninput="syncPickerToHex('badgeRelationColor')">
+                                        <input type="text" class="color-popover-hex" id="badgeRelationColorPopoverHex" value="#f1c40f" oninput="syncPopoverHexToColor('badgeRelationColor')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('badgeRelationColor')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('badgeRelationColor')">OK</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="btnReadyColor">Botão "Pronto" (Manutenção)</label>
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="btnReadyColorSwatch" onclick="openColorPopover('btnReadyColor')" style="background:#1ea85c"></button>
+                                    <input type="text" class="color-hex-display" id="btnReadyColorHex" value="#1ea85c" placeholder="#1ea85c">
+                                    <input type="hidden" id="btnReadyColor" name="btnReadyColor" value="#1ea85c">
+                                    <div class="color-popover" id="btnReadyColorPopover">
+                                        <input type="color" id="btnReadyColorPopoverColor" value="#1ea85c" oninput="syncPickerToHex('btnReadyColor')">
+                                        <input type="text" class="color-popover-hex" id="btnReadyColorPopoverHex" value="#1ea85c" oninput="syncPopoverHexToColor('btnReadyColor')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('btnReadyColor')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('btnReadyColor')">OK</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </form>
                     </div>
                 </div>

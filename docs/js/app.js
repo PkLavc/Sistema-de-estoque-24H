@@ -9,6 +9,38 @@
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
+function hexToRgba(hex, alpha) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function applyIndicatorColors({ warningColor, badgeAvailableColor, badgeMaintenanceColor, badgeRelationColor, btnReadyColor }) {
+    const el = document.documentElement;
+    el.style.setProperty('--warning-color', warningColor || '#ff0000');
+
+    if (badgeAvailableColor) {
+        el.style.setProperty('--badge-available-color', badgeAvailableColor);
+        el.style.setProperty('--badge-available-bg', hexToRgba(badgeAvailableColor, 0.18));
+    }
+    if (badgeMaintenanceColor) {
+        el.style.setProperty('--badge-maintenance-color', badgeMaintenanceColor);
+        el.style.setProperty('--badge-maintenance-bg', hexToRgba(badgeMaintenanceColor, 0.18));
+    }
+    if (badgeRelationColor) {
+        el.style.setProperty('--badge-relation-color', badgeRelationColor);
+        el.style.setProperty('--badge-relation-bg', hexToRgba(badgeRelationColor, 0.18));
+    }
+    if (btnReadyColor) {
+        el.style.setProperty('--btn-ready-color', btnReadyColor);
+        el.style.setProperty('--btn-ready-color-2', darkenHex(btnReadyColor, 25));
+        el.style.setProperty('--btn-ready-color-3', darkenHex(btnReadyColor, 40));
+    }
+}
+
 // ── Custom Color Picker ──────────────────────────────────────────────────────
 let _colorPickerOriginal = {};
 
@@ -93,7 +125,14 @@ function applyCustomTheme() {
     document.documentElement.style.setProperty('--primary-2', secondaryColor);
     document.documentElement.style.setProperty('--primary-3', darkenHex(secondaryColor, 18));
     document.documentElement.style.setProperty('--component-bg', 'transparent');
-    document.documentElement.style.setProperty('--warning-color', warningColor);
+
+    applyIndicatorColors({
+        warningColor,
+        badgeAvailableColor:    localStorage.getItem('theme-badge-available-color')    || '#2ecc71',
+        badgeMaintenanceColor:  localStorage.getItem('theme-badge-maintenance-color')  || '#f1c40f',
+        badgeRelationColor:     localStorage.getItem('theme-badge-relation-color')     || '#f1c40f',
+        btnReadyColor:          localStorage.getItem('theme-btn-ready-color')          || '#1ea85c',
+    });
 
     // Apply custom logo if exists
     if (customLogo) {
@@ -2899,6 +2938,10 @@ function loadThemeSettings() {
         if (theme['primary'])            setColorValue('primaryColor',      theme['primary']);
         if (theme['primary-2'])          setColorValue('primary2Color',     theme['primary-2']);
         if (theme['warning-color'])      setColorValue('warningColor',      theme['warning-color']);
+        if (theme['badge-available-color'])   setColorValue('badgeAvailableColor',   theme['badge-available-color']);
+        if (theme['badge-maintenance-color']) setColorValue('badgeMaintenanceColor', theme['badge-maintenance-color']);
+        if (theme['badge-relation-color'])    setColorValue('badgeRelationColor',    theme['badge-relation-color']);
+        if (theme['btn-ready-color'])         setColorValue('btnReadyColor',         theme['btn-ready-color']);
         if (theme['bg-start'])           setColorValue('bgStart',           theme['bg-start']);
         if (theme['bg-end'])             setColorValue('bgEnd',             theme['bg-end']);
         if (theme['text-color'])         setColorValue('textColor',         theme['text-color']);
@@ -2949,6 +2992,10 @@ function saveThemeSettings() {
     const primary = document.getElementById('primaryColor')?.value || '#ff3333';
     const primary2 = document.getElementById('primary2Color')?.value || '#cc0000';
     const warningColor = document.getElementById('warningColor')?.value || '#ff0000';
+    const badgeAvailableColor = document.getElementById('badgeAvailableColor')?.value || '#2ecc71';
+    const badgeMaintenanceColor = document.getElementById('badgeMaintenanceColor')?.value || '#f1c40f';
+    const badgeRelationColor = document.getElementById('badgeRelationColor')?.value || '#f1c40f';
+    const btnReadyColor = document.getElementById('btnReadyColor')?.value || '#1ea85c';
     const bgStart = document.getElementById('bgStart')?.value || '#1a1a1a';
     const bgEnd = document.getElementById('bgEnd')?.value || '#000000';
     const textColor = document.getElementById('textColor')?.value || '#cccccc';
@@ -2964,6 +3011,10 @@ function saveThemeSettings() {
         'primary': primary,
         'primary-2': primary2,
         'warning-color': warningColor,
+        'badge-available-color': badgeAvailableColor,
+        'badge-maintenance-color': badgeMaintenanceColor,
+        'badge-relation-color': badgeRelationColor,
+        'btn-ready-color': btnReadyColor,
         'bg-start': bgStart,
         'bg-end': bgEnd,
         'text-color': textColor,
@@ -2980,6 +3031,10 @@ function saveThemeSettings() {
     localStorage.setItem('theme-primary-color', primary);
     localStorage.setItem('theme-secondary-color', primary2);
     localStorage.setItem('theme-warning-color', warningColor);
+    localStorage.setItem('theme-badge-available-color', badgeAvailableColor);
+    localStorage.setItem('theme-badge-maintenance-color', badgeMaintenanceColor);
+    localStorage.setItem('theme-badge-relation-color', badgeRelationColor);
+    localStorage.setItem('theme-btn-ready-color', btnReadyColor);
     localStorage.setItem('theme-bg-start', bgStart);
     localStorage.setItem('theme-bg-end', bgEnd);
     localStorage.setItem('theme-text-color', textColor);
@@ -2992,6 +3047,8 @@ function saveThemeSettings() {
     localStorage.setItem('theme-input-text', inputText);
     localStorage.setItem('appTheme', JSON.stringify(theme));
     
+    // Apply indicator colors immediately
+    applyIndicatorColors({ warningColor, badgeAvailableColor, badgeMaintenanceColor, badgeRelationColor, btnReadyColor });
     // Apply theme immediately
     applyTheme(theme);
     applyCustomTheme();
@@ -3004,6 +3061,10 @@ function resetThemeSettings() {
     localStorage.removeItem('theme-primary-color');
     localStorage.removeItem('theme-secondary-color');
     localStorage.removeItem('theme-warning-color');
+    localStorage.removeItem('theme-badge-available-color');
+    localStorage.removeItem('theme-badge-maintenance-color');
+    localStorage.removeItem('theme-badge-relation-color');
+    localStorage.removeItem('theme-btn-ready-color');
     localStorage.removeItem('theme-bg-start');
     localStorage.removeItem('theme-bg-end');
     localStorage.removeItem('theme-text-color');
@@ -3034,6 +3095,10 @@ function resetThemeSettings() {
     setColorValue('primaryColor',      defaultTheme['primary']);
     setColorValue('primary2Color',     defaultTheme['primary-2']);
     setColorValue('warningColor',      '#ff0000');
+    setColorValue('badgeAvailableColor',   '#2ecc71');
+    setColorValue('badgeMaintenanceColor', '#f1c40f');
+    setColorValue('badgeRelationColor',    '#f1c40f');
+    setColorValue('btnReadyColor',         '#1ea85c');
     setColorValue('bgStart',           defaultTheme['bg-start']);
     setColorValue('bgEnd',             defaultTheme['bg-end']);
     setColorValue('textColor',         defaultTheme['text-color']);
@@ -3046,12 +3111,15 @@ function resetThemeSettings() {
     setColorValue('inputText',         defaultTheme['input-text']);
     
     applyTheme(defaultTheme);
+    applyIndicatorColors({ warningColor: '#ff0000', badgeAvailableColor: '#2ecc71', badgeMaintenanceColor: '#f1c40f', badgeRelationColor: '#f1c40f', btnReadyColor: '#1ea85c' });
     alert('Tema resetado para o padrão!');
 }
 
 function updateColorInputs() {
     // Sync swatch + hex display with the hidden color input value
-    ['primaryColor', 'primary2Color', 'warningColor', 'bgStart', 'bgEnd', 'textColor',
+    ['primaryColor', 'primary2Color', 'warningColor',
+     'badgeAvailableColor', 'badgeMaintenanceColor', 'badgeRelationColor', 'btnReadyColor',
+     'bgStart', 'bgEnd', 'textColor',
      'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText',
      'innerComponentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(id => {
         const colorInput = document.getElementById(id);
