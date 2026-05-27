@@ -332,11 +332,50 @@ class DataStorage {
         return response.json();
     }
 
-    // Pre-populate guest mode with demo companies and users (only on first activation)
+    _getGuestDemoDate(offsetDays) {
+        const date = new Date();
+        date.setDate(date.getDate() + offsetDays);
+        return date.toISOString().slice(0, 10);
+    }
+
+    _getGuestOverdueRental() {
+        return {
+            id: 5,
+            name: 'Locacao Demonstracao Atrasada',
+            event_type: 'rental',
+            created_by_username: 'convidado',
+            withdrawal_date: this._getGuestDemoDate(-5),
+            return_date: this._getGuestDemoDate(-2)
+        };
+    }
+
+    _ensureGuestOverdueRental() {
+        const events = this._loadFromLocalStorage('events');
+        if (!Array.isArray(events)) return;
+
+        const overdueRental = this._getGuestOverdueRental();
+        const existingIndex = events.findIndex((event) => (
+            Number(event.id) === Number(overdueRental.id) ||
+            String(event.name || '') === overdueRental.name
+        ));
+
+        if (existingIndex >= 0) {
+            events[existingIndex] = { ...events[existingIndex], ...overdueRental };
+        } else {
+            events.push(overdueRental);
+        }
+
+        this._saveToLocalStorage('events', events);
+    }
+
+    // Pre-populate guest mode with demo data and keep required demo rentals available.
     seedGuestData() {
         const hasCompanies = this._loadFromLocalStorage('companies');
         const hasEvents = this._loadFromLocalStorage('events');
-        if (hasCompanies && hasEvents) return;
+        if (hasCompanies && hasEvents) {
+            this._ensureGuestOverdueRental();
+            return;
+        }
 
         const companies = [
             {
@@ -405,14 +444,12 @@ class DataStorage {
         this._saveToLocalStorage('companies', companies);
         this._saveToLocalStorage('users', users);
 
-        const today = new Date();
-        const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r.toISOString().slice(0, 10); };
         const events = [
             { id: 1, name: 'Show da Banda Metallix', date: '2026-06-15', event_type: 'event', created_by_username: 'convidado' },
             { id: 2, name: 'Casamento Fernanda & Lucas', event_type: 'rental', created_by_username: 'convidado', withdrawal_date: '2026-06-21', return_date: '2026-06-23' },
             { id: 3, name: 'Festival de Verão 2026', date: '2026-07-04', event_type: 'event', created_by_username: 'convidado' },
-            { id: 4, name: 'Evento Corporativo TechConf', event_type: 'rental', created_by_username: 'convidado', withdrawal_date: addDays(today, 2), return_date: addDays(today, 5) },
-            { id: 5, name: 'Locacao Demonstracao Atrasada', event_type: 'rental', created_by_username: 'convidado', withdrawal_date: addDays(today, -5), return_date: addDays(today, -2) }
+            { id: 4, name: 'Evento Corporativo TechConf', event_type: 'rental', created_by_username: 'convidado', withdrawal_date: this._getGuestDemoDate(2), return_date: this._getGuestDemoDate(5) },
+            this._getGuestOverdueRental()
         ];
 
         const equipments = [

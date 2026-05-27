@@ -141,84 +141,88 @@
                 <div class="events-grid" id="eventsGrid"></div>
             </section>
 
-            <section id="cadastro" class="section">
-                <div class="section-header">
-                    <div class="section-header-content">
-                        <h1 id="cadastroTitle">Cadastro do Inventário</h1>
-                        <div class="database-toggle">
-                            <button type="button" id="cadastroEquipamentosTabButton" class="btn-secondary active" onclick="setCadastroTab('equipamentos')">Equipamentos</button>
-                            <button type="button" id="cadastroCabosTabButton" class="btn-secondary" onclick="setCadastroTab('cabos')">Cabos</button>
-                            <button type="button" id="cadastroOutrosTabButton" class="btn-secondary" onclick="setCadastroTab('outros')">Outros</button>
+            <section id="cadastro" class="section creation-modal-section" style="display: none;">
+                <div class="modal-card create-modal-card inventory-create-modal-card">
+                    <button type="button" class="modal-close" onclick="closeCadastroModal()" aria-label="Fechar">X</button>
+                    <div class="section-header">
+                        <div class="section-header-content">
+                            <h1 id="cadastroTitle">Cadastro do Inventário</h1>
+                            <div class="database-toggle">
+                                <button type="button" id="cadastroEquipamentosTabButton" class="btn-secondary active" onclick="setCadastroTab('equipamentos')">Equipamentos</button>
+                                <button type="button" id="cadastroCabosTabButton" class="btn-secondary" onclick="setCadastroTab('cabos')">Cabos</button>
+                                <button type="button" id="cadastroOutrosTabButton" class="btn-secondary" onclick="setCadastroTab('outros')">Outros</button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div id="cadastroEquipamentosView" class="database-view active">
-                    <form id="equipmentForm" class="form-grid">
-                        <div class="form-group">
-                            <label for="equipmentName">Nome do Equipamento</label>
-                            <input type="text" id="equipmentName" name="name" required>
-                        </div>
+                    <div id="cadastroEquipamentosView" class="database-view active">
+                        <form id="equipmentForm" class="form-grid">
+                            <div class="form-group">
+                                <label for="equipmentName">Nome do Equipamento</label>
+                                <input type="text" id="equipmentName" name="name" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="equipmentBarcode">Codigo de Barras</label>
-                            <input type="text" id="equipmentBarcode" name="barcode" required>
-                        </div>
+                            <div class="form-group">
+                                <label for="equipmentBarcode">Codigo de Barras</label>
+                                <input type="text" id="equipmentBarcode" name="barcode" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="equipmentCategory">Categorias</label>
-                            <input type="text" id="equipmentCategory" name="category" list="equipmentCategoryList" placeholder="Digite a categoria..." required>
-                            <datalist id="equipmentCategoryList"></datalist>
-                        </div>
+                            <div class="form-group">
+                                <label for="equipmentCategory">Categorias</label>
+                                <input type="text" id="equipmentCategory" name="category" list="equipmentCategoryList" placeholder="Digite a categoria..." required>
+                                <datalist id="equipmentCategoryList"></datalist>
+                            </div>
 
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">Cadastrar Equipamento</button>
-                        </div>
-                    </form>
-                </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">Cadastrar Equipamento</button>
+                                <button type="button" onclick="cancelEquipmentForm()" class="btn-secondary">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
 
-                <div id="cadastroCabosView" class="database-view">
-                    <form id="cableForm" class="form-grid">
-                        <div class="form-group">
-                            <label for="cableName">Nome do Cabo</label>
-                            <input type="text" id="cableName" name="name" placeholder="Ex: Cabo HDMI 10m" required>
-                        </div>
+                    <div id="cadastroCabosView" class="database-view">
+                        <form id="cableForm" class="form-grid">
+                            <div class="form-group">
+                                <label for="cableName">Nome do Cabo</label>
+                                <input type="text" id="cableName" name="name" placeholder="Ex: Cabo HDMI 10m" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="cableQuantity">Quantidade</label>
-                            <input type="number" id="cableQuantity" name="quantity" min="0" step="1" placeholder="0" required>
-                        </div>
+                            <div class="form-group">
+                                <label for="cableQuantity">Quantidade</label>
+                                <input type="number" id="cableQuantity" name="quantity" min="0" step="1" placeholder="0" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="cableCategory">Categoria</label>
-                            <input type="text" id="cableCategory" name="category" list="cableCategoryList" placeholder="Digite a categoria..." required>
-                            <datalist id="cableCategoryList"></datalist>
-                        </div>
+                            <div class="form-group">
+                                <label for="cableCategory">Categoria</label>
+                                <input type="text" id="cableCategory" name="category" list="cableCategoryList" placeholder="Digite a categoria..." required>
+                                <datalist id="cableCategoryList"></datalist>
+                            </div>
 
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">Cadastrar Cabo</button>
-                            <button type="button" onclick="cancelCableForm()" class="btn-secondary">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">Cadastrar Cabo</button>
+                                <button type="button" onclick="cancelCableForm()" class="btn-secondary">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
 
-                <div id="cadastroOutrosView" class="database-view">
-                    <form id="otherItemForm" class="form-grid">
-                        <div class="form-group">
-                            <label for="otherItemName">Nome do Item</label>
-                            <input type="text" id="otherItemName" name="name" placeholder="Ex: Capacete" required>
-                        </div>
+                    <div id="cadastroOutrosView" class="database-view">
+                        <form id="otherItemForm" class="form-grid">
+                            <div class="form-group">
+                                <label for="otherItemName">Nome do Item</label>
+                                <input type="text" id="otherItemName" name="name" placeholder="Ex: Capacete" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="otherItemQuantity">Quantidade Inicial</label>
-                            <input type="number" id="otherItemQuantity" name="quantity" min="0" step="1" placeholder="0" required>
-                        </div>
+                            <div class="form-group">
+                                <label for="otherItemQuantity">Quantidade Inicial</label>
+                                <input type="number" id="otherItemQuantity" name="quantity" min="0" step="1" placeholder="0" required>
+                            </div>
 
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">Cadastrar Item</button>
-                            <button type="button" onclick="cancelOtherItemForm()" class="btn-secondary">Cancelar</button>
-                        </div>
-                    </form>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">Cadastrar Item</button>
+                                <button type="button" onclick="cancelOtherItemForm()" class="btn-secondary">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </section>
 
@@ -302,27 +306,30 @@
                 </div>
             </section>
 
-            <section id="eventos" class="section">
-                <div class="section-header">
-                    <h1>Criar Evento</h1>
+            <section id="eventos" class="section creation-modal-section" style="display: none;">
+                <div class="modal-card create-modal-card event-create-modal-card">
+                    <button type="button" class="modal-close" onclick="closeEventModal()" aria-label="Fechar">X</button>
+                    <div class="section-header">
+                        <h1>Criar Evento</h1>
+                    </div>
+
+                    <form id="eventForm" class="form-grid">
+                        <div class="form-group">
+                            <label for="eventName">Nome do Evento</label>
+                            <input type="text" id="eventName" name="name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="eventDate">Data</label>
+                            <input type="date" id="eventDate" name="date" required>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Criar Evento</button>
+                            <button type="button" onclick="cancelEventForm()" class="btn-secondary">Cancelar</button>
+                        </div>
+                    </form>
                 </div>
-
-                <form id="eventForm" class="form-grid">
-                    <div class="form-group">
-                        <label for="eventName">Nome do Evento</label>
-                        <input type="text" id="eventName" name="name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="eventDate">Data</label>
-                        <input type="date" id="eventDate" name="date" required>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn-primary">Criar Evento</button>
-                        <button type="button" onclick="cancelEventForm()" class="btn-secondary">Cancelar</button>
-                    </div>
-                </form>
             </section>
 
             <section id="historico" class="section">
@@ -466,38 +473,44 @@
                     </div>
 
                     <div class="users-panel">
-                        <form id="createUserForm" class="form-grid user-create-form" style="display: none;">
-                            <div class="form-group">
-                                <label for="newUsername">Usuário</label>
-                                <input type="text" id="newUsername" name="username" autocomplete="off" required>
-                            </div>
+                        <div id="createUserModal" class="modal-overlay" style="display: none;">
+                            <div class="modal-card create-modal-card user-create-modal-card">
+                                <button type="button" class="modal-close" onclick="toggleCreateUserForm(false)" aria-label="Fechar">X</button>
+                                <h2>Cadastrar usuário</h2>
+                                <form id="createUserForm" class="form-grid user-create-form">
+                                    <div class="form-group">
+                                        <label for="newUsername">Usuário</label>
+                                        <input type="text" id="newUsername" name="username" autocomplete="off" required>
+                                    </div>
 
-                            <div class="form-group">
-                                <label for="newUserPassword">Senha</label>
-                                <input type="password" id="newUserPassword" name="password" autocomplete="new-password" required>
-                            </div>
+                                    <div class="form-group">
+                                        <label for="newUserPassword">Senha</label>
+                                        <input type="password" id="newUserPassword" name="password" autocomplete="new-password" required>
+                                    </div>
 
-                            <div class="form-group">
-                                <label for="newUserRole">Classe</label>
-                                <select id="newUserRole" name="role">
-                                    <option value="user">Usuário</option>
-                                    <option value="admin">Admin (Empresa)</option>
-                                    <option value="gestor_admin" id="newUserRoleGestor" style="display:none;">Admin (Gestor)</option>
-                                </select>
-                            </div>
+                                    <div class="form-group">
+                                        <label for="newUserRole">Classe</label>
+                                        <select id="newUserRole" name="role">
+                                            <option value="user">Usuário</option>
+                                            <option value="admin">Admin (Empresa)</option>
+                                            <option value="gestor_admin" id="newUserRoleGestor" style="display:none;">Admin (Gestor)</option>
+                                        </select>
+                                    </div>
 
-                            <div class="form-group" id="newUserCompanyGroup" style="display:none;">
-                                <label for="newUserCompany">Empresa</label>
-                                <select id="newUserCompany" name="company_id">
-                                    <option value="">-- Sem empresa (Gestor) --</option>
-                                </select>
-                            </div>
+                                    <div class="form-group" id="newUserCompanyGroup" style="display:none;">
+                                        <label for="newUserCompany">Empresa</label>
+                                        <select id="newUserCompany" name="company_id">
+                                            <option value="">-- Sem empresa (Gestor) --</option>
+                                        </select>
+                                    </div>
 
-                            <div class="form-actions">
-                                <button type="submit" class="btn-primary">Salvar usuário</button>
-                                <button type="button" class="btn-secondary" onclick="toggleCreateUserForm(false)">Cancelar</button>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn-primary">Salvar usuário</button>
+                                        <button type="button" class="btn-secondary" onclick="toggleCreateUserForm(false)">Cancelar</button>
+                                    </div>
+                                </form>
                             </div>
-                        </form>
+                        </div>
 
                         <div class="table-container">
                             <table id="usersTable">
@@ -908,8 +921,12 @@
 
                     <div class="users-panel">
                         <!-- Create form -->
-                        <form id="createCompanyForm" class="form-grid user-create-form" style="display: none;" onsubmit="createCompany(event)">
-                            <div class="theme-section-title"><h3>Identificação</h3></div>
+                        <div id="createCompanyModal" class="modal-overlay" style="display: none;">
+                            <div class="modal-card create-modal-card company-create-modal-card">
+                                <button type="button" class="modal-close" onclick="toggleCreateCompanyForm(false)" aria-label="Fechar">X</button>
+                                <h2>Cadastrar empresa</h2>
+                                <form id="createCompanyForm" class="form-grid user-create-form" onsubmit="createCompany(event)">
+                                    <div class="theme-section-title"><h3>Identificação</h3></div>
                             <div class="form-group">
                                 <label for="newCompanyCnpj">CNPJ <span style="color:var(--primary)">*</span></label>
                                 <input type="text" id="newCompanyCnpj" name="cnpj" placeholder="00.000.000/0000-00" required>
@@ -1061,7 +1078,9 @@
                                 <button type="submit" class="btn-primary">Salvar empresa</button>
                                 <button type="button" class="btn-secondary" onclick="toggleCreateCompanyForm(false)">Cancelar</button>
                             </div>
-                        </form>
+                                </form>
+                            </div>
+                        </div>
 
                         <!-- Companies list -->
                         <div class="table-container">
@@ -1335,7 +1354,7 @@
         </main>
 
         <aside id="adBanner" class="ad-banner" aria-label="Publicidade"></aside>
-        <button type="button" id="floatingBtnHome" class="floating-create-button" onclick="showSection('eventos')" style="display:none">+ Criar evento</button>
+        <button type="button" id="floatingBtnHome" class="floating-create-button" onclick="openEventModal()" style="display:none">+ Criar evento</button>
         <button type="button" id="floatingBtnInventario" class="floating-create-button" onclick="openCadastroFromInventario()" style="display:none">+ Cadastrar</button>
         <button type="button" id="floatingBtnLocacao" class="floating-create-button" onclick="openRentalModal()" style="display:none">+ Criar Evento</button>
         <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>

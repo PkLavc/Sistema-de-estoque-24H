@@ -400,6 +400,19 @@ function normalizeSectionId(sectionId) {
 
 function showSection(sectionId) {
     sectionId = normalizeSectionId(sectionId);
+
+    if (sectionId === 'eventos') {
+        showSection('home');
+        openEventModal();
+        return;
+    }
+
+    if (sectionId === 'cadastro') {
+        showSection('inventario');
+        openCadastroModal(activeCadastroTab);
+        return;
+    }
+
     // no redirect needed for config — role-based tabs handle access
 
     // Close sidebar on mobile navigation (sidebar is overlay on mobile)
@@ -410,6 +423,8 @@ function showSection(sectionId) {
     if (sectionId !== 'inventario') {
         clearRelacaoContext();
     }
+
+    closeCreationModals();
 
     document.querySelectorAll('.section').forEach((section) => {
         section.classList.remove('active');
@@ -430,7 +445,6 @@ function showSection(sectionId) {
         loadEvents();
         loadRentalReturnAlerts();
     }
-    if (sectionId === 'cadastro') setCadastroTab(activeCadastroTab);
     if (sectionId === 'inventario') setBancoTab(activeBancoTab);
     if (sectionId === 'notificacoes') loadNotifications();
     if (sectionId === 'historico') loadHistoryEvents();
@@ -895,12 +909,9 @@ function buildRentalNotifications(rentals = []) {
     return notifications.slice(0, settings.maxNotices);
 }
 
-function buildGuestSystemNotifications(rentalNotifications = []) {
+function buildGuestSystemNotifications() {
     if (!currentUser?.isGuest) return [];
     const dismissed = new Set(getDismissedNotificationIds());
-    const overdueReturnDate = getLocalDateString(new Date(Date.now() - 2 * 86400000));
-    const overdueWithdrawalDate = getLocalDateString(new Date(Date.now() - 5 * 86400000));
-    const hasOverdueRental = rentalNotifications.some((item) => item.type === 'rental' && item.statusClass === 'overdue');
     const notifications = [
         {
             id: 'guest-sys-welcome',
@@ -923,19 +934,6 @@ function buildGuestSystemNotifications(rentalNotifications = []) {
             statusLabel: 'Locação'
         }
     ];
-
-    if (!hasOverdueRental) {
-        notifications.splice(1, 0, {
-            id: `guest-rental-overdue-${overdueReturnDate}`,
-            type: 'rental',
-            title: 'Locação em Aberto — Locacao Demonstracao Atrasada',
-            message: `Devolução prevista para ${formatDate(overdueReturnDate)}. Retirada em ${formatDate(overdueWithdrawalDate)}.`,
-            date: overdueReturnDate,
-            daysUntilReturn: -2,
-            statusClass: 'overdue',
-            statusLabel: 'Atrasada'
-        });
-    }
 
     return notifications.filter(n => !dismissed.has(n.id));
 }
@@ -1096,7 +1094,7 @@ async function loadNotifications() {
         await loadNotificationDismissalsFromServer();
         const rentals = await getRentalEventsForNotifications();
         const rentalNotifs = buildRentalNotifications(rentals);
-        const staticNotifs = buildGuestSystemNotifications(rentalNotifs);
+        const staticNotifs = buildGuestSystemNotifications();
         allNotifications = [...staticNotifs, ...rentalNotifs];
         renderNotifications();
     } catch (error) {
@@ -1110,11 +1108,66 @@ function searchEquipments() {
 
 function openCadastroFromInventario() {
     setCadastroTab(activeBancoTab);
-    if (window.location.hash !== '#cadastro') {
-        window.location.hash = 'cadastro';
-    } else {
-        showSection('cadastro');
+    openCadastroModal(activeBancoTab);
+}
+
+function openCadastroModal(tab = activeCadastroTab) {
+    setCadastroTab(tab);
+    const modal = document.getElementById('cadastro');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('active');
     }
+}
+
+function closeCadastroModal() {
+    document.getElementById('equipmentForm')?.reset();
+    document.getElementById('cableForm')?.reset();
+    document.getElementById('otherItemForm')?.reset();
+    const cableQuantity = document.getElementById('cableQuantity');
+    if (cableQuantity) cableQuantity.value = '';
+    const otherQuantity = document.getElementById('otherItemQuantity');
+    if (otherQuantity) otherQuantity.value = '';
+    populateCategoryOptions();
+    populateCableCategoryOptions();
+    const modal = document.getElementById('cadastro');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
+}
+
+function openEventModal() {
+    document.getElementById('eventForm')?.reset();
+    const modal = document.getElementById('eventos');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('active');
+    }
+}
+
+function closeEventModal() {
+    document.getElementById('eventForm')?.reset();
+    const modal = document.getElementById('eventos');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
+}
+
+function closeCreationModals() {
+    const cadastroModal = document.getElementById('cadastro');
+    if (cadastroModal) {
+        cadastroModal.style.display = 'none';
+        cadastroModal.classList.remove('active');
+    }
+    const eventModal = document.getElementById('eventos');
+    if (eventModal) {
+        eventModal.style.display = 'none';
+        eventModal.classList.remove('active');
+    }
+    toggleCreateUserForm(false);
+    toggleCreateCompanyForm(false);
 }
 
 function setCadastroTab(tab) {
@@ -1225,12 +1278,11 @@ function setMaintenanceTab(tab) {
 function cancelEquipmentForm() {
     document.getElementById('equipmentForm')?.reset();
     populateCategoryOptions();
-    showSection('home');
+    closeCadastroModal();
 }
 
 function cancelEventForm() {
-    document.getElementById('eventForm')?.reset();
-    showSection('home');
+    closeEventModal();
 }
 
 function openRentalModal() {
@@ -1321,6 +1373,7 @@ function cancelCableForm() {
     const quantityInput = document.getElementById('cableQuantity');
     if (quantityInput) quantityInput.value = '';
     populateCableCategoryOptions();
+    closeCadastroModal();
     setCadastroTab('cabos');
 }
 
@@ -1328,6 +1381,7 @@ function cancelOtherItemForm() {
     document.getElementById('otherItemForm')?.reset();
     const quantityInput = document.getElementById('otherItemQuantity');
     if (quantityInput) quantityInput.value = '';
+    closeCadastroModal();
     setCadastroTab('outros');
 }
 
@@ -1413,8 +1467,9 @@ function renderRentalEvents(events, search = '') {
     }
 
     filtered.forEach((event) => {
+        const daysUntilReturn = getDaysBetween(event.return_date);
         const card = document.createElement('div');
-        card.className = 'event-card';
+        card.className = `event-card${daysUntilReturn !== null && daysUntilReturn <= 0 ? ' rental-due-alert' : ''}`;
         card.innerHTML = `
             <div class="card-top">
                 <h3>${escapeHtml(event.name)}</h3>
@@ -2251,7 +2306,7 @@ document.addEventListener('submit', async (e) => {
                 e.target.reset();
                 populateCategoryOptions();
                 alert('Equipamento cadastrado com sucesso.');
-                showSection('cadastro');
+                closeCadastroModal();
                 setCadastroTab('equipamentos');
                 await loadEquipments(getEquipmentSearchValue());
             } else if (isCable) {
@@ -2259,14 +2314,14 @@ document.addEventListener('submit', async (e) => {
                 e.target.reset();
                 populateCableCategoryOptions();
                 alert('Cabo cadastrado com sucesso.');
-                showSection('cadastro');
+                closeCadastroModal();
                 setCadastroTab('cabos');
                 await loadCables();
             } else if (isOtherItem) {
                 await storage.createOtherItem({ ...data, available_quantity: data.quantity });
                 e.target.reset();
                 alert('Item cadastrado com sucesso.');
-                showSection('cadastro');
+                closeCadastroModal();
                 setCadastroTab('outros');
                 await loadOtherItems();
             } else if (isRental && editingRentalEventId) {
@@ -2296,6 +2351,7 @@ document.addEventListener('submit', async (e) => {
                 await storage.createEvent({ name: data.name, date: data.date, event_type: 'event', created_by_username: currentUser?.username || 'convidado' });
                 e.target.reset();
                 alert('Evento criado com sucesso.');
+                closeEventModal();
                 showSection('home');
                 await loadEvents();
             }
@@ -2368,17 +2424,21 @@ document.addEventListener('submit', async (e) => {
             await loadRentalReturnAlerts();
             await loadNotifications();
         } else if (isEvent) {
+            closeEventModal();
             showSection('home');
             await loadEvents();
         } else if (isCable) {
-            showSection('cadastro');
+            closeCadastroModal();
             setCadastroTab('cabos');
+            await loadCables();
         } else if (isOtherItem) {
-            showSection('cadastro');
+            closeCadastroModal();
             setCadastroTab('outros');
+            await loadOtherItems();
         } else {
-            showSection('cadastro');
+            closeCadastroModal();
             setCadastroTab('equipamentos');
+            await loadEquipments(getEquipmentSearchValue());
         }
     } catch (error) {
         console.error(error);
@@ -2790,13 +2850,15 @@ function setUsersMessage(message, type = '') {
 }
 
 function toggleCreateUserForm(forceOpen) {
+    const modal = document.getElementById('createUserModal');
     const form = document.getElementById('createUserForm');
-    if (!form) return;
+    if (!modal || !form) return;
 
     const shouldOpen = typeof forceOpen === 'boolean'
         ? forceOpen
-        : form.style.display === 'none';
-    form.style.display = shouldOpen ? '' : 'none';
+        : modal.style.display === 'none';
+    modal.style.display = shouldOpen ? 'flex' : 'none';
+    form.style.display = '';
 
     if (!shouldOpen) {
         form.reset();
@@ -3058,12 +3120,14 @@ function setCompanyEditMessage(msg, type = '') {
 }
 
 function toggleCreateCompanyForm(forceOpen) {
+    const modal = document.getElementById('createCompanyModal');
     const form = document.getElementById('createCompanyForm');
-    if (!form) return;
+    if (!modal || !form) return;
     const shouldOpen = typeof forceOpen === 'boolean'
         ? forceOpen
-        : form.style.display === 'none';
-    form.style.display = shouldOpen ? '' : 'none';
+        : modal.style.display === 'none';
+    modal.style.display = shouldOpen ? 'flex' : 'none';
+    form.style.display = '';
     if (!shouldOpen) form.reset();
 }
 

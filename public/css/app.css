@@ -1559,6 +1559,69 @@ textarea {
     background: #3a3a3a;
 }
 
+.section.creation-modal-section {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.76);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1000;
+    overflow-y: auto;
+    animation: none;
+}
+
+.section.creation-modal-section.active {
+    display: flex;
+}
+
+.create-modal-card {
+    width: min(100%, 680px);
+    max-height: min(92dvh, 780px);
+    overflow-y: auto;
+}
+
+.inventory-create-modal-card {
+    width: min(100%, 760px);
+}
+
+.company-create-modal-card {
+    width: min(100%, 980px);
+}
+
+.create-modal-card .section-header {
+    margin-bottom: 22px;
+    padding-right: 46px;
+}
+
+.create-modal-card .section-header h1,
+.create-modal-card h2 {
+    font-size: 1.55rem;
+    line-height: 1.2;
+}
+
+.create-modal-card .database-view {
+    background: transparent;
+}
+
+.create-modal-card .form-grid {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+}
+
+.create-modal-card .user-create-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+}
+
+.create-modal-card .form-actions {
+    grid-column: 1 / -1;
+}
+
 .empty-state,
 .empty-row {
     text-align: center;
@@ -2479,4 +2542,32 @@ textarea {
     border-color: var(--primary, #ff3333);
     color: #fff;
     background: #242424;
+}
+
+@media (max-width: 768px) {
+    .section.creation-modal-section {
+        padding: 12px;
+        align-items: flex-start;
+    }
+
+    .create-modal-card {
+        width: 100%;
+        max-height: calc(100dvh - 24px);
+        padding: 22px 18px;
+        border-radius: 14px;
+    }
+
+    .create-modal-card .section-header {
+        margin-bottom: 18px;
+        padding-right: 40px;
+    }
+
+    .create-modal-card .section-header h1,
+    .create-modal-card h2 {
+        font-size: 1.28rem;
+    }
+
+    .create-modal-card .user-create-form {
+        grid-template-columns: 1fr;
+    }
 }
