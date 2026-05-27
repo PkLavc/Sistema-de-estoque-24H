@@ -227,6 +227,7 @@ let activeMaintenanceTab = 'equipamentos';
 let allNotifications = [];
 let notificationSelectionMode = false;
 let selectedNotificationIds = new Set();
+let readNotificationIds = new Set();
 let sharedNotificationSettings = null;
 let sharedDismissedNotificationIds = new Set();
 let currentUser = null;
@@ -1032,8 +1033,12 @@ function renderNotifications() {
         return;
     }
 
-    list.innerHTML = filtered.map((item) => `
-        <article class="notification-card rental-${escapeHtml(item.statusClass)}">
+    const unreadCount = filtered.filter((item) => !readNotificationIds.has(item.id)).length;
+
+    list.innerHTML = filtered.map((item) => {
+        const isRead = readNotificationIds.has(item.id);
+        return `
+        <article class="notification-card rental-${escapeHtml(item.statusClass)}${isRead ? ' notification-read' : ''}">
             <input type="checkbox" class="notification-card-checkbox" ${selectedNotificationIds.has(item.id) ? 'checked' : ''} onchange="toggleNotificationSelection('${escapeJsString(item.id)}', this.checked)" aria-label="Selecionar notificação">
             <div>
                 <h3>${escapeHtml(item.title)}</h3>
@@ -1042,9 +1047,10 @@ function renderNotifications() {
             </div>
             <span class="notification-status ${escapeHtml(item.statusClass)}">${escapeHtml(item.statusLabel)}</span>
         </article>
-    `).join('');
+    `;
+    }).join('');
 
-    updateNotificationBadge();
+    updateNotificationBadge(unreadCount);
 }
 
 function toggleNotificationSelectionMode(force) {
@@ -1074,14 +1080,25 @@ function clearNotificationSelection() {
 
 async function markSelectedNotificationsRead() {
     if (selectedNotificationIds.size === 0) return;
+    // Mark as read: notifications turn grey and stop counting in the badge
+    selectedNotificationIds.forEach((id) => readNotificationIds.add(id));
+    selectedNotificationIds.clear();
+    renderNotifications();
+}
+
+async function deleteSelectedNotifications() {
+    if (selectedNotificationIds.size === 0) return;
     if (!canDismissNotifications()) {
         alert('O administrador bloqueou a remoção de notificações para usuários.');
         return;
     }
 
-    const dismissed = await dismissNotifications([...selectedNotificationIds]);
+    const idsToDelete = [...selectedNotificationIds];
+    const dismissed = await dismissNotifications(idsToDelete);
     if (!dismissed) return;
 
+    // Remove from both the main list and the read set
+    idsToDelete.forEach((id) => readNotificationIds.delete(id));
     selectedNotificationIds.clear();
     allNotifications = allNotifications.filter((item) => !getDismissedNotificationIds().includes(item.id));
     renderNotifications();
@@ -2854,14 +2871,17 @@ function applyLoginManagementVisibility() {
     const tabsBar     = document.getElementById('settingsTabsBar');
 
     if (role === 'user' && !isAdmin) {
-        if (tabsBar)     tabsBar.style.display    = 'none';
-        if (noAccess)    noAccess.style.display    = '';
-        if (tabUsers)    tabUsers.style.display    = 'none';
-        if (tabTheme)    tabTheme.style.display    = 'none';
-        if (tabLogo)     tabLogo.style.display     = 'none';
-        if (tabEmpresas) tabEmpresas.style.display = 'none';
+        // Regular users: show only the Sobre tab (no admin settings)
+        if (tabsBar)     tabsBar.style.display        = '';
+        if (noAccess)    noAccess.style.display        = 'none';
+        if (tabUsers)    tabUsers.style.display        = 'none';
+        if (tabTheme)    tabTheme.style.display        = 'none';
+        if (tabLogo)     tabLogo.style.display         = 'none';
+        if (tabEmpresas) tabEmpresas.style.display     = 'none';
         if (tabNotificacoes) tabNotificacoes.style.display = 'none';
-        if (tabSobre) tabSobre.style.display = 'none';
+        if (tabSobre)    tabSobre.style.display        = '';
+        // Auto-navigate to the only available tab
+        showSettingsTab('sobre');
     } else {
         if (tabsBar)  tabsBar.style.display  = '';
         if (noAccess) noAccess.style.display = 'none';
@@ -3726,7 +3746,11 @@ async function checkAuth() {
             }
             : null;
         applyAdVisibility(data.companyPlan || 'pro');
-        
+
+        // Load company appearance from server so all users of a company see
+        // the same theme/logo/favicon (overwrites local localStorage cache).
+        await fetchAndApplyCompanyAppearance();
+
         updateLogoutButton();
         applyLoginManagementVisibility();
         document.body.style.visibility = 'visible';
@@ -3954,6 +3978,84 @@ async function saveNotificationSettings(event) {
     setNotificationSettingsMessage('Notificações salvas.', 'success');
 }
 
+// ── Appearance persistence helpers ───────────────────────────────────────────
+
+/**
+ * Sends a partial appearance update to the server.
+ * Pass an object with any subset of { theme, logo, favicon }.
+ * Passing null for a key resets that field.
+ * Guest mode: no-op (localStorage only).
+ */
+async function saveAppearanceToServer(updates) {
+    if (currentUser?.isGuest) return;
+    try {
+        const res = await fetch('api/appearance', {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+        });
+        if (!res.ok) {
+            console.warn('Falha ao salvar aparência no servidor:', res.status);
+        }
+    } catch (e) {
+        console.warn('Erro ao salvar aparência no servidor:', e);
+    }
+}
+
+/**
+ * Fetches the company's stored appearance from the server, updates localStorage,
+ * then applies it. Called once after a successful login (non-guest only).
+ */
+async function fetchAndApplyCompanyAppearance() {
+    if (currentUser?.isGuest || !currentUser?.companyId) return;
+    try {
+        const res = await fetch('api/appearance', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const a = data.appearance;
+        if (!a) return;
+
+        if (a.theme_json) {
+            try {
+                const theme = JSON.parse(a.theme_json);
+                localStorage.setItem('appTheme', a.theme_json);
+                if (theme['primary'])               localStorage.setItem('theme-primary-color',           theme['primary']);
+                if (theme['primary-2'])             localStorage.setItem('theme-secondary-color',         theme['primary-2']);
+                if (theme['warning-color'])         localStorage.setItem('theme-warning-color',           theme['warning-color']);
+                if (theme['badge-available-color']) localStorage.setItem('theme-badge-available-color',   theme['badge-available-color']);
+                if (theme['badge-maintenance-color']) localStorage.setItem('theme-badge-maintenance-color', theme['badge-maintenance-color']);
+                if (theme['badge-relation-color'])  localStorage.setItem('theme-badge-relation-color',    theme['badge-relation-color']);
+                if (theme['btn-ready-color'])       localStorage.setItem('theme-btn-ready-color',         theme['btn-ready-color']);
+                if (theme['bg-start'])              localStorage.setItem('theme-bg-start',                theme['bg-start']);
+                if (theme['bg-end'])                localStorage.setItem('theme-bg-end',                  theme['bg-end']);
+                if (theme['text-color'])            localStorage.setItem('theme-text-color',              theme['text-color']);
+                if (theme['secondary-btn-bg'])      localStorage.setItem('theme-secondary-btn-bg',        theme['secondary-btn-bg']);
+                if (theme['secondary-btn-border'])  localStorage.setItem('theme-secondary-btn-border',    theme['secondary-btn-border']);
+                if (theme['secondary-btn-text'])    localStorage.setItem('theme-secondary-btn-text',      theme['secondary-btn-text']);
+                if (theme['inner-component-bg'])    localStorage.setItem('theme-inner-component-bg',      theme['inner-component-bg']);
+                if (theme['input-bg'])              localStorage.setItem('theme-input-bg',                theme['input-bg']);
+                if (theme['input-border'])          localStorage.setItem('theme-input-border',            theme['input-border']);
+                if (theme['input-text'])            localStorage.setItem('theme-input-text',              theme['input-text']);
+            } catch (_) { /* ignore parse errors */ }
+        }
+
+        if (a.logo_data) {
+            localStorage.setItem('custom-logo', a.logo_data);
+        } else {
+            localStorage.removeItem('custom-logo');
+        }
+
+        if (a.favicon_data) {
+            localStorage.setItem('custom-favicon', a.favicon_data);
+        } else {
+            localStorage.removeItem('custom-favicon');
+        }
+    } catch (_) {
+        // Silently fall back to localStorage defaults
+    }
+}
+
 // Enhanced theme settings
 function saveThemeSettings() {
     const primary = document.getElementById('primaryColor')?.value || '#ff3333';
@@ -4020,6 +4122,8 @@ function saveThemeSettings() {
     applyTheme(theme);
     applyCustomTheme();
     updateColorInputs();
+    // Persist to server so all company users see the same theme
+    saveAppearanceToServer({ theme });
     alert('Tema salvo com sucesso!');
 }
 
@@ -4079,6 +4183,8 @@ function resetThemeSettings() {
     
     applyTheme(defaultTheme);
     applyIndicatorColors({ warningColor: '#ff0000', badgeAvailableColor: '#2ecc71', badgeMaintenanceColor: '#f1c40f', badgeRelationColor: '#f1c40f', btnReadyColor: '#1ea85c' });
+    // Reset server-side theme as well
+    saveAppearanceToServer({ theme: null });
     alert('Tema resetado para o padrão!');
 }
 
@@ -4132,25 +4238,23 @@ function saveCustomLogo() {
     
     // Check if user is guest or admin
     const isGuest = currentUser?.role === 'guest';
-    const isAdmin = currentUser?.role === 'admin';
-    
-    if (!isGuest && !isAdmin) {
+    const isAdminOrGestor = currentUser?.isAdmin || currentUser?.isGestorAdmin;
+
+    if (!isGuest && !isAdminOrGestor) {
         alert('Apenas administradores e convidados podem alterar a logo.');
         return;
     }
-    
-    // Save to localStorage (works for both guest and admin)
-    // TODO: Add server-side persistence for admin users when backend support is added
+
+    // Save to localStorage and persist to server (for all company users)
     localStorage.setItem('custom-logo', pendingLogoData);
-    
+    saveAppearanceToServer({ logo: pendingLogoData });
+
     // Apply to sidebar logo
     const sidebarLogo = document.getElementById('customLogo');
     if (sidebarLogo) {
         sidebarLogo.src = pendingLogoData;
     }
-    
-    // Note: Favicon is managed separately
-    
+
     pendingLogoData = null;
     alert('Logo salva com sucesso!');
 }
@@ -4170,16 +4274,15 @@ function updateFavicon(logoData) {
 
 function resetLogo() {
     localStorage.removeItem('custom-logo');
+    saveAppearanceToServer({ logo: null });
     const defaultLogoSrc = 'assets/images/logo.webp';
-    
+
     document.getElementById('logoPreview').src = defaultLogoSrc;
     const sidebarLogo = document.getElementById('customLogo');
     if (sidebarLogo) {
         sidebarLogo.src = defaultLogoSrc;
     }
-    
-    // Note: Favicon is managed separately
-    
+
     pendingLogoData = null;
     alert('Logo resetada para o padrão!');
 }
@@ -4222,32 +4325,34 @@ function saveCustomFavicon() {
     
     // Check if user is guest or admin
     const isGuest = currentUser?.role === 'guest';
-    const isAdmin = currentUser?.role === 'admin';
-    
-    if (!isGuest && !isAdmin) {
+    const isAdminOrGestor = currentUser?.isAdmin || currentUser?.isGestorAdmin;
+
+    if (!isGuest && !isAdminOrGestor) {
         alert('Apenas administradores e convidados podem alterar o favicon.');
         return;
     }
-    
-    // Save to localStorage (works for both guest and admin)
+
+    // Save to localStorage and persist to server (for all company users)
     localStorage.setItem('custom-favicon', pendingFaviconData);
-    
+    saveAppearanceToServer({ favicon: pendingFaviconData });
+
     // Update favicon
     updateFavicon(pendingFaviconData);
-    
+
     pendingFaviconData = null;
     alert('Favicon salvo com sucesso!');
 }
 
 function resetFavicon() {
     localStorage.removeItem('custom-favicon');
+    saveAppearanceToServer({ favicon: null });
     const defaultFaviconSrc = 'assets/images/favicon.webp';
-    
+
     document.getElementById('faviconPreview').src = defaultFaviconSrc;
-    
+
     // Reset favicon to default
     updateFavicon(defaultFaviconSrc);
-    
+
     pendingFaviconData = null;
     alert('Favicon resetado para o padrão!');
 }
