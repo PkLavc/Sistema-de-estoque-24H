@@ -1551,12 +1551,14 @@ textarea {
     .settings-tabs {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        gap: 4px;
+        margin-bottom: 14px;
     }
 
     .settings-tab {
         white-space: nowrap;
-        font-size: 0.9rem;
-        padding: 10px 16px;
+        font-size: 0.86rem;
+        padding: 9px 10px;
     }
 
     #themeForm {
