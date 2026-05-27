@@ -3282,7 +3282,7 @@ function applyAdVisibility(plan) {
     const banner = document.getElementById('adBanner');
     if (banner && showAds && !banner.dataset.initialized) {
         banner.dataset.initialized = '1';
-        banner.innerHTML = `<div class="ad-slot"><span class="ad-label">Publicidade</span><div class="ad-image-placeholder">Espa&ccedil;o Publicit&aacute;rio</div><a class="ad-upgrade-link" href="#" onclick="showSection('empresas');return false;">✨ Remover an&uacute;ncios &mdash; Upgrade para Pro</a></div>`;
+        banner.innerHTML = `<div class="ad-slot"><span class="ad-label">Publicidade</span><div class="ad-image-placeholder">Espa&ccedil;o Publicit&aacute;rio</div><a class="ad-upgrade-link" href="#" onclick="showSection('config');showSettingsTab('empresas');return false;">✨ Remover an&uacute;ncios &mdash; Upgrade para Pro</a></div>`;
     }
 }
 
