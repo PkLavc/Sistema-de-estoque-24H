@@ -1,5 +1,169 @@
 import bcrypt from 'bcryptjs';
 
+// ── Skyler RAG Knowledge Base ───────────────────────────────────────────────
+const EQUIPTRACK_KNOWLEDGE_BASE = `
+Você é a Skyler, assistente virtual do sistema de gestão de estoque para empresas de eventos.
+Responda sempre em português brasileiro, de forma clara, objetiva e prática.
+Nunca mencione nenhum nome de sistema ou produto. Quando precisar se identificar, diga apenas que é a Skyler.
+Foque em ajudar o usuário a entender e usar o sistema. Não invente funcionalidades que não existem.
+
+SISTEMA — VISÃO GERAL
+- URL de produção: https://estoque.24hlocacoes.com/
+- Finalidade: controle de estoque de equipamentos de som, luz, vídeo, cabos, mobiliário e outros itens para empresas de locação/eventos.
+- Plataforma: web, responsiva, hospedada na Cloudflare (Worker + D1 SQLite).
+- Idioma da interface: português brasileiro.
+
+SEÇÕES DA INTERFACE (menu lateral):
+1. Eventos — lista e gestão de eventos ativos (festas, shows, feiras etc.)
+2. Locação — lista e gestão de locações (evento com datas de retirada e devolução)
+3. Manutenção — registra e resolve manutenções de equipamentos e cabos
+4. Banco de Dados — tabelas de equipamentos, cabos e outros itens cadastrados
+5. Cadastrar Equipamento — formulário para adicionar novos itens ao estoque
+6. Histórico — eventos e locações já finalizados (concluídos)
+7. Configurações (ícone de engrenagem) — gerenciar usuários, empresas e tema visual
+
+TIPOS DE EVENTO:
+- Evento (event_type = 'event'): evento pontual com data; equipamentos saem e voltam no mesmo evento.
+- Locação (event_type = 'rental'): tem data de retirada (withdrawalDate) e data de devolução (returnDate); usada para aluguéis onde o cliente leva o item.
+
+FLUXO DE SAÍDA E ENTRADA (movimentação):
+- Saída (saida): equipamento ou cabo sai do estoque para um evento. Status muda para "Indisponivel".
+- Entrada (entrada): equipamento ou cabo retorna ao estoque. Status volta para "Disponivel".
+- Equipamentos usam código de barras para identificação; um equipamento por registro.
+- Cabos e Outros Itens usam quantidade (podem sair múltiplas unidades de uma vez).
+- Um equipamento só pode sair se estiver "Disponivel" (não em manutenção, não em evento).
+- Para registrar saída de equipamento via leitor de código de barras, basta escanear na tela do evento.
+
+EQUIPAMENTOS:
+- Campos: nome, código de barras (único), categoria, status (Disponivel / Indisponivel / Em manutencao).
+- Status gerenciado automaticamente pelo sistema ao registrar saídas/entradas/manutenções.
+- Categorias são livres (ex: Som, Luz, Vídeo, Mobiliário).
+- Para excluir um equipamento é necessária a senha de exclusão (configurada nas configurações).
+- O histórico de movimentações fica registrado por evento.
+
+CABOS:
+- Campos: nome, quantidade total, quantidade disponível, categoria.
+- Quantidade disponível é atualizada automaticamente a cada saída/entrada.
+- Pode entrar em manutenção (registra descrição; resolvida pelo botão "Resolver").
+- Para editar quantidade ou excluir, requer senha de exclusão.
+
+OUTROS ITENS (other_items):
+- Funcionam igual aos cabos: têm quantidade total e disponível.
+- Usados para itens de buffet, EPIs, mobiliário ou qualquer item contado em quantidade.
+- Não possuem manutenção; apenas saída/entrada por evento.
+
+MANUTENÇÃO:
+- Equipamentos: ao registrar manutenção, o status muda para "Em manutencao" e o item fica indisponível. Ao resolver, volta para "Disponivel".
+- Cabos: a manutenção é informativa (registra descrição); a quantidade disponível não muda automaticamente por manutenção de cabo.
+- Histórico de manutenção visível na seção Manutenção, com filtro por equipamentos e cabos.
+
+ALERTAS DE DEVOLUÇÃO:
+- O sistema exibe um alerta na tela de Eventos quando locações têm data de devolução igual ou anterior à data atual.
+- Objetivo: prevenir que o usuário esqueça de cobrar a devolução de equipamentos locados.
+
+HISTÓRICO (concluído):
+- Eventos e locações finalizados aparecem na seção Histórico.
+- Um evento é "concluído" quando todos os equipamentos com saída registrada têm entrada registrada de volta.
+- Locações concluídas também ficam no histórico.
+- O histórico mostra o resumo de cabos, equipamentos e outros itens movimentados.
+
+SISTEMA DE USUÁRIOS E PERMISSÕES:
+Roles (funções):
+  - user: acesso básico; pode registrar saídas/entradas, criar eventos, ver estoque. Não acessa configurações de usuários/empresas.
+  - admin: tudo do user + gerenciar usuários e configurações da própria empresa.
+  - gestor_admin: acesso total; gerencia todas as empresas e todos os usuários do sistema; não está vinculado a uma empresa específica.
+
+MULTI-EMPRESA (isolamento por company_id):
+- O sistema suporta múltiplas empresas isoladas.
+- Usuários common (user/admin) veem apenas dados da própria empresa.
+- gestor_admin vê todos os dados de todas as empresas.
+- Cada empresa tem seu próprio estoque, eventos, usuários.
+
+PLANOS DE EMPRESA:
+- start: plano básico.
+- pro: plano intermediário (padrão ao criar empresa).
+- ultra: plano completo.
+
+CONFIGURAÇÕES (acessível pelo ícone de engrenagem):
+- Gerenciar usuários: criar, editar senha, excluir.
+- Gerenciar empresas (gestor_admin): criar, editar, excluir empresas; definir plano.
+- Tema visual: personalizar cores primárias e elementos visuais da interface.
+- Senha de exclusão: senha necessária para deletar equipamentos, cabos, eventos e locações.
+- Logo personalizada: possível trocar o logo exibido no menu.
+
+SENHA DE EXCLUSÃO (delete password):
+- Configurada nas configurações pelo administrador.
+- Obrigatória ao excluir: equipamentos, cabos, outros itens, locações, e ao ocultar itens do histórico de saída.
+
+PREVENÇÃO DE OVERBOOKING:
+- O sistema impede que o mesmo equipamento seja marcado como "saída" em dois eventos simultâneos.
+- Para cabos e outros itens, o sistema verifica se há quantidade disponível antes de permitir a saída.
+
+COMO USAR — FLUXO TÍPICO:
+1. Cadastre equipamentos em "Cadastrar Equipamento" (nome, código de barras, categoria).
+2. Crie um evento em "Eventos" (nome + data) ou uma locação em "Locação" (nome + datas).
+3. Abra o evento → registre saída dos equipamentos que vão para o evento.
+4. Quando os equipamentos voltarem, registre a entrada.
+5. O evento vai para "Histórico" quando todos os itens retornarem.
+
+COMO USAR — LOCAÇÃO:
+1. Crie locação em "Locação" com nome, data de retirada e data de devolução.
+2. Registre saída dos itens na data de retirada.
+3. Na data de devolução, registre entrada dos itens. O alerta aparece na tela para lembrar.
+4. Locação vai para Histórico após todos os itens retornarem.
+
+COMO CADASTRAR CABO:
+- Vá em "Cadastrar Equipamento" → aba "Cabos".
+- Preencha nome, quantidade inicial e categoria.
+
+COMO CADASTRAR OUTRO ITEM:
+- Vá em "Cadastrar Equipamento" → aba "Outros".
+- Preencha nome e quantidade inicial.
+
+COMO EDITAR QUANTIDADE DE CABO OU OUTRO ITEM:
+- Vá em "Banco de Dados" → aba "Cabos" ou "Outros".
+- Clique em editar, insira nova quantidade, confirme.
+
+OCULTAR ITEM DO RESUMO DE SAÍDA:
+- No histórico de saída de um evento, é possível ocultar itens específicos (requer senha de exclusão).
+- Útil para corrigir registros de saída equivocados sem apagar o evento inteiro.
+
+INFORMAÇÕES TÉCNICAS:
+- Backend: Cloudflare Worker (Node.js compat)
+- Banco de dados: Cloudflare D1 (SQLite)
+- Autenticação: sessão via cookie (sessao24h), duração 24 horas
+- Proteção contra brute-force: lockout progressivo no login (3 tentativas → 3 min, crescendo até 1 ano)
+- Frontend: HTML/CSS/JS puro, sem frameworks
+`.trim();
+
+async function buildChatDbContext(env, session) {
+    const cid = session.company_id ? Number(session.company_id) : null;
+    const p = cid !== null ? [cid] : [];
+    const f = cid !== null ? ' AND company_id = ?' : '';
+    try {
+        const [equip, equipAvail, cables, otherItems, events, rentals, users, company] = await Promise.all([
+            queryFirst(env, `SELECT COUNT(*) AS n FROM equipments WHERE 1=1${f}`, p),
+            queryFirst(env, `SELECT COUNT(*) AS n FROM equipments WHERE current_status = 'Disponivel'${f}`, p),
+            queryFirst(env, `SELECT COUNT(*) AS n FROM cables WHERE 1=1${f}`, p),
+            queryFirst(env, `SELECT COUNT(*) AS n FROM other_items WHERE 1=1${f}`, p),
+            queryFirst(env, `SELECT COUNT(*) AS n FROM events WHERE COALESCE(event_type,'event') = 'event'${f}`, p),
+            queryFirst(env, `SELECT COUNT(*) AS n FROM events WHERE event_type = 'rental'${f}`, p),
+            queryFirst(env, `SELECT COUNT(*) AS n FROM users WHERE ${cid !== null ? 'company_id = ?' : '1=1'}`, p),
+            cid ? queryFirst(env, 'SELECT name, plan FROM companies WHERE id = ?', [cid]) : Promise.resolve(null),
+        ]);
+        let ctx = '\n\nDADOS ATUAIS DA SUA CONTA (use para responder perguntas sobre o estoque):'
+        if (company) ctx += `\n- Empresa: ${company.name} (Plano: ${company.plan})`;
+        ctx += `\n- Equipamentos: ${equip?.n ?? 0} cadastrados, ${equipAvail?.n ?? 0} disponíveis`;
+        ctx += `\n- Tipos de cabo: ${cables?.n ?? 0}`;
+        ctx += `\n- Outros itens: ${otherItems?.n ?? 0}`;
+        ctx += `\n- Eventos ativos: ${events?.n ?? 0} eventos, ${rentals?.n ?? 0} locações`;
+        ctx += `\n- Usuários cadastrados: ${users?.n ?? 0}`;
+        return ctx;
+    } catch (_) {
+        return '';
+    }
+}
+
 const SESSION_COOKIE_NAME = 'sessao24h';
 const SESSION_DURATION_SECONDS = 60 * 60 * 24;
 const TEST_USERNAME = 'teste';
@@ -1242,6 +1406,46 @@ async function handleApiRequest(request, env) {
         );
         return json({ success: true });
     }
+
+    // ── AI Chat ──────────────────────────────────────────────────────────────
+
+    if (pathname === '/api/chat' && request.method === 'POST') {
+        if (!env.AI) {
+            return json({ error: 'Assistente IA nao disponivel neste ambiente' }, 503);
+        }
+
+        const body = await readJson(request);
+        const message = String(body.message || '').trim().slice(0, 1200);
+        const rawHistory = Array.isArray(body.history) ? body.history : [];
+
+        if (!message) return json({ error: 'Mensagem obrigatoria' }, 400);
+
+        // Keep last 20 messages and sanitise roles/content
+        const history = rawHistory.slice(-20).map(h => ({
+            role: h.role === 'user' ? 'user' : 'assistant',
+            content: String(h.content || '').slice(0, 600),
+        }));
+
+        const messages = [
+            { role: 'system', content: EQUIPTRACK_KNOWLEDGE_BASE + (await buildChatDbContext(env, session)) },
+            ...history,
+            { role: 'user', content: message },
+        ];
+
+        try {
+            const result = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+                messages,
+                max_tokens: 800,
+            });
+            const reply = (result?.response || '').trim() || 'Nao consegui processar sua pergunta no momento.';
+            return json({ reply });
+        } catch (err) {
+            console.error('AI chat error:', err);
+            return json({ error: 'Erro ao processar resposta da IA' }, 502);
+        }
+    }
+
+    // ── End AI Chat ───────────────────────────────────────────────────────────
 
     return json({ error: 'Rota nao encontrada' }, 404);
 }

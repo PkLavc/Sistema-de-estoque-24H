@@ -16,3 +16,4 @@ backups/
 .dev.vars
 wrangler-preview*.log
 PkLavc.github.io/
+_temp_original/

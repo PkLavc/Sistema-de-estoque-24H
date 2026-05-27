@@ -1641,4 +1641,74 @@ app.get('/dashboard.html', (req, res) => {
     res.redirect('/');
 });
 
+// ── AI Chat (Skyler) ─────────────────────────────────────────────────────────
+app.post('/api/chat', requireAuth, async (req, res) => {
+    const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const CF_AI_TOKEN   = process.env.CLOUDFLARE_AI_TOKEN;
+
+    if (!CF_ACCOUNT_ID || !CF_AI_TOKEN) {
+        return res.status(503).json({
+            error: 'IA disponível apenas em produção. Configure CLOUDFLARE_ACCOUNT_ID e CLOUDFLARE_AI_TOKEN para ativar localmente.'
+        });
+    }
+
+    const message = String(req.body.message || '').trim().slice(0, 1200);
+    const rawHistory = Array.isArray(req.body.history) ? req.body.history : [];
+    if (!message) return res.status(400).json({ error: 'Mensagem obrigatória' });
+
+    const history = rawHistory.slice(-20).map(h => ({
+        role: h.role === 'user' ? 'user' : 'assistant',
+        content: String(h.content || '').slice(0, 600),
+    }));
+
+    let dbContext = '';
+    try {
+        const [equip, equipAvail, cables, events, rentals, users] = await Promise.all([
+            dbGet('SELECT COUNT(*) AS n FROM equipments'),
+            dbGet("SELECT COUNT(*) AS n FROM equipments WHERE current_status = 'Disponivel'"),
+            dbGet('SELECT COUNT(*) AS n FROM cables'),
+            dbGet("SELECT COUNT(*) AS n FROM events WHERE COALESCE(event_type,'event') = 'event'"),
+            dbGet("SELECT COUNT(*) AS n FROM events WHERE event_type = 'rental'"),
+            dbGet('SELECT COUNT(*) AS n FROM users'),
+        ]);
+        dbContext = '\n\nDADOS ATUAIS DA SUA CONTA:' +
+            `\n- Equipamentos: ${equip?.n ?? 0} cadastrados, ${equipAvail?.n ?? 0} disponíveis` +
+            `\n- Tipos de cabo: ${cables?.n ?? 0}` +
+            `\n- Eventos ativos: ${events?.n ?? 0} eventos, ${rentals?.n ?? 0} locações` +
+            `\n- Usuários cadastrados: ${users?.n ?? 0}`;
+    } catch (_) {}
+
+    const systemPrompt = 'Você é a Skyler, assistente virtual de um sistema de gestão de estoque para empresas de eventos. Responda sempre em português brasileiro, de forma clara e prática. Nunca mencione o nome de nenhum sistema ou produto. Quando se identificar, diga apenas que é a Skyler. Quando for útil direcionar o usuário a uma seção, inclua no final da resposta exatamente um marcador [NAVEGAR:sectionId|Texto do botão]. Seções válidas: home, eventos, locacao, manutencao, banco-de-dados, cadastro, historico, config.' + dbContext;
+
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        ...history,
+        { role: 'user', content: message },
+    ];
+
+    try {
+        const cfRes = await fetch(
+            `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-8b-instruct`,
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${CF_AI_TOKEN}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ messages, max_tokens: 800 }),
+            }
+        );
+        if (!cfRes.ok) {
+            console.error('Cloudflare AI error:', await cfRes.text());
+            return res.status(502).json({ error: 'Erro ao processar resposta da IA' });
+        }
+        const cfData = await cfRes.json();
+        const reply = (cfData?.result?.response || '').trim() || 'Não consegui processar sua pergunta no momento.';
+        return res.json({ reply });
+    } catch (err) {
+        console.error('AI chat error:', err);
+        return res.status(502).json({ error: 'Erro ao processar resposta da IA' });
+    }
+});
+
 app.listen(PORT, '0.0.0.0', () => console.log(`Servidor: http://localhost:${PORT}`));
