@@ -3386,8 +3386,6 @@ function openCompanyEdit(companyId) {
     if (!company) return;
 
     const panel = document.getElementById('companyEditPanel');
-    const title = document.getElementById('companyEditTitle');
-    if (title) title.textContent = `Editar: ${company.name || company.nome || ''}`;
 
     const canEditPlan = currentUser?.isGestorAdmin || currentUser?.isGuest;
     const planSection = document.getElementById('editCompanyPlanSection');
