@@ -186,6 +186,12 @@ let activeMaintenanceTab = 'equipamentos';
 let currentUser = null;
 let loginUsers = [];
 let canChangeUserPasswords = false;
+const sortState = {
+    events: 'created_desc',
+    rentals: 'return_asc',
+    history: 'completed_desc',
+    database: 'name_asc'
+};
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -198,6 +204,102 @@ function escapeHtml(value) {
 
 function escapeJsString(value) {
     return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function getTimeValue(value) {
+    if (!value) return null;
+    const time = Date.parse(value);
+    return Number.isFinite(time) ? time : null;
+}
+
+function getCreatedValue(item) {
+    const explicitDate = getTimeValue(item.created_at || item.createdAt || item.created_on);
+    if (explicitDate !== null) return explicitDate;
+    const id = Number(item.id);
+    return Number.isFinite(id) ? id : 0;
+}
+
+function getComparableDate(item, context) {
+    if (context === 'rentals') return getTimeValue(item.return_date || item.date);
+    if (context === 'history') return getTimeValue(item.return_date || item.date || item.finished_at || item.completed_at);
+    return getTimeValue(item.date || item.return_date);
+}
+
+function compareText(a, b, direction = 'asc') {
+    const result = String(a || '').localeCompare(String(b || ''), 'pt-BR', { sensitivity: 'base' });
+    return direction === 'desc' ? -result : result;
+}
+
+function compareNumbers(a, b, direction = 'asc') {
+    const aMissing = a === null || a === undefined || Number.isNaN(a);
+    const bMissing = b === null || b === undefined || Number.isNaN(b);
+    if (aMissing && bMissing) return 0;
+    if (aMissing) return 1;
+    if (bMissing) return -1;
+    return direction === 'desc' ? b - a : a - b;
+}
+
+function sortItems(items, mode, context) {
+    const [field, direction = 'asc'] = String(mode || '').split('_');
+    return [...items].sort((a, b) => {
+        let result = 0;
+        if (field === 'name') {
+            result = compareText(a.name, b.name, direction);
+        } else if (field === 'created') {
+            result = compareNumbers(getCreatedValue(a), getCreatedValue(b), direction);
+        } else if (field === 'return') {
+            result = compareNumbers(getTimeValue(a.return_date || a.date), getTimeValue(b.return_date || b.date), direction);
+        } else if (field === 'date' || field === 'completed') {
+            result = compareNumbers(getComparableDate(a, context), getComparableDate(b, context), direction);
+        }
+
+        if (result === 0) {
+            result = compareNumbers(Number(a.id) || 0, Number(b.id) || 0, direction === 'asc' ? 'asc' : 'desc');
+        }
+        return result;
+    });
+}
+
+function closeFilterMenus(exceptId = '') {
+    document.querySelectorAll('.filter-menu.open').forEach((menu) => {
+        if (menu.id === exceptId) return;
+        menu.classList.remove('open');
+        const button = document.querySelector(`[aria-controls="${menu.id}"]`);
+        if (button) button.setAttribute('aria-expanded', 'false');
+    });
+}
+
+function updateSortMenuState() {
+    document.querySelectorAll('[data-sort-option]').forEach((button) => {
+        const [scope, mode] = String(button.dataset.sortOption || '').split(':');
+        button.classList.toggle('active', sortState[scope] === mode);
+    });
+}
+
+function toggleFilterMenu(menuId, trigger) {
+    const menu = document.getElementById(menuId);
+    if (!menu) return;
+    const willOpen = !menu.classList.contains('open');
+    closeFilterMenus(menuId);
+    menu.classList.toggle('open', willOpen);
+    if (trigger) trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    updateSortMenuState();
+}
+
+function setSortMode(scope, mode) {
+    if (!Object.prototype.hasOwnProperty.call(sortState, scope)) return;
+    sortState[scope] = mode;
+    updateSortMenuState();
+    closeFilterMenus();
+
+    if (scope === 'events') return renderEvents(allEvents, getEventSearchValue());
+    if (scope === 'rentals') return renderRentalEvents(allRentalEvents, getRentalSearchValue());
+    if (scope === 'history') return renderHistoryEvents(allHistoryEvents, allHistoryRentals, getHistorySearchValue());
+    if (scope === 'database') {
+        if (activeBancoTab === 'cabos') return renderCables(allCables);
+        if (activeBancoTab === 'outros') return renderOtherItems(allOtherItems);
+        return renderEquipments(allEquipments);
+    }
 }
 
 function populateCategoryOptions() {
@@ -629,13 +731,13 @@ function renderEvents(events, search = '') {
     if (!grid) return;
 
     const normalizedSearch = search.toLowerCase();
-    const filtered = events.filter((event) => {
+    const filtered = sortItems(events.filter((event) => {
         if (!normalizedSearch) return true;
         return (
             String(event.name || '').toLowerCase().includes(normalizedSearch) ||
             String(formatDate(event.date)).toLowerCase().includes(normalizedSearch)
         );
-    });
+    }), sortState.events, 'events');
 
     grid.innerHTML = '';
 
@@ -688,14 +790,14 @@ function renderRentalEvents(events, search = '') {
     if (!grid) return;
 
     const normalizedSearch = search.toLowerCase();
-    const filtered = events.filter((event) => {
+    const filtered = sortItems(events.filter((event) => {
         if (!normalizedSearch) return true;
         return (
             String(event.name || '').toLowerCase().includes(normalizedSearch) ||
             String(formatDate(event.withdrawal_date)).toLowerCase().includes(normalizedSearch) ||
             String(formatDate(event.return_date)).toLowerCase().includes(normalizedSearch)
         );
-    });
+    }), sortState.rentals, 'rentals');
 
     grid.innerHTML = '';
 
@@ -802,8 +904,8 @@ function renderHistoryGrid(gridId, countId, events, emptyMessage, isRental) {
 }
 
 function renderHistoryEvents(events = allHistoryEvents, rentals = allHistoryRentals, search = '') {
-    const filteredEvents = events.filter((event) => historyMatchesSearch(event, search, false));
-    const filteredRentals = rentals.filter((event) => historyMatchesSearch(event, search, true));
+    const filteredEvents = sortItems(events.filter((event) => historyMatchesSearch(event, search, false)), sortState.history, 'history');
+    const filteredRentals = sortItems(rentals.filter((event) => historyMatchesSearch(event, search, true)), sortState.history, 'history');
 
     renderHistoryGrid('historyEventsGrid', 'historyEventsCount', filteredEvents, 'Nenhum evento finalizado encontrado.', false);
     renderHistoryGrid('historyRentalsGrid', 'historyRentalsCount', filteredRentals, 'Nenhuma locação finalizada encontrada.', true);
@@ -852,9 +954,10 @@ function renderEquipments(equipments) {
         return;
     }
 
+    const orderedEquipments = sortItems(equipments, sortState.database, 'database');
     const groupedEquipments = new Map();
 
-    equipments.forEach((eq) => {
+    orderedEquipments.forEach((eq) => {
         const category = eq.category || 'Outros';
         if (!groupedEquipments.has(category)) {
             groupedEquipments.set(category, []);
@@ -871,7 +974,6 @@ function renderEquipments(equipments) {
             tbody.appendChild(categoryRow);
 
             items
-                .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'))
                 .forEach((eq) => {
                     const row = document.createElement('tr');
                     const statusRaw = String(eq.current_status || '').toLowerCase();
@@ -1098,7 +1200,8 @@ function renderCables(cables) {
     }
 
     const groupedCables = new Map();
-    cables.forEach((cable) => {
+    const orderedCables = sortItems(cables, sortState.database, 'database');
+    orderedCables.forEach((cable) => {
         const category = cable.category || 'Outros';
         if (!groupedCables.has(category)) {
             groupedCables.set(category, []);
@@ -1117,8 +1220,6 @@ function renderCables(cables) {
             }
 
             items
-                .slice()
-                .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'))
                 .forEach((cable) => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -1348,9 +1449,7 @@ function renderOtherItems(items) {
         return;
     }
 
-    items
-        .slice()
-        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'))
+    sortItems(items, sortState.database, 'database')
         .forEach((item) => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -2749,6 +2848,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const allowedSections = ['home', 'cadastro', 'banco', 'eventos', 'historico', 'manutencao', 'locacao', 'config'];
     const section = allowedSections.includes(requestedSection) ? requestedSection : 'home';
     showSection(section);
+    updateSortMenuState();
 
     // Open sidebar after initial navigation so showSection doesn't close it
     if (window.innerWidth <= 768) {
@@ -2766,6 +2866,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.color-picker-wrapper')) {
             document.querySelectorAll('.color-popover.open').forEach(p => p.classList.remove('open'));
+        }
+        if (!e.target.closest('.filter-control')) {
+            closeFilterMenus();
         }
     });
 });
@@ -3126,4 +3229,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
