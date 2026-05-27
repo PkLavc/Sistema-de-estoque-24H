@@ -160,13 +160,16 @@ label, .form-help, .modal-subtitle, .form-message { color: var(--text-color) !im
 }
 
 /* Component backgrounds */
-.modal-card,
 .equipment-card,
 .maintenance-card,
 .database-view-card,
 .config-panel,
 .logo-upload-panel {
     background: transparent !important;
+}
+
+.modal-card {
+    background: var(--inner-component-bg, #202020) !important;
 }
 
 /* Inner component backgrounds */

@@ -463,17 +463,26 @@ function showSection(sectionId) {
 function clearRelacaoContext() {
     localStorage.removeItem('relacao_event_id');
     localStorage.removeItem('relacao_event_name');
+    localStorage.removeItem('relacao_event_type');
+    localStorage.removeItem('relacao_withdrawal_date');
+    localStorage.removeItem('relacao_return_date');
 }
 
 function gerenciarEvento(id, name) {
     localStorage.setItem('relacao_event_id', String(id));
     localStorage.setItem('relacao_event_name', name);
+    localStorage.setItem('relacao_event_type', 'event');
+    localStorage.removeItem('relacao_withdrawal_date');
+    localStorage.removeItem('relacao_return_date');
     showSection('inventario');
 }
 
-function gerenciarLocacao(id, name) {
+function gerenciarLocacao(id, name, withdrawalDate = '', returnDate = '') {
     localStorage.setItem('relacao_event_id', String(id));
     localStorage.setItem('relacao_event_name', name);
+    localStorage.setItem('relacao_event_type', 'rental');
+    localStorage.setItem('relacao_withdrawal_date', withdrawalDate || '');
+    localStorage.setItem('relacao_return_date', returnDate || '');
     showSection('inventario');
 }
 
@@ -886,10 +895,13 @@ function buildRentalNotifications(rentals = []) {
     return notifications.slice(0, settings.maxNotices);
 }
 
-function buildGuestSystemNotifications() {
+function buildGuestSystemNotifications(rentalNotifications = []) {
     if (!currentUser?.isGuest) return [];
     const dismissed = new Set(getDismissedNotificationIds());
-    return [
+    const overdueReturnDate = getLocalDateString(new Date(Date.now() - 2 * 86400000));
+    const overdueWithdrawalDate = getLocalDateString(new Date(Date.now() - 5 * 86400000));
+    const hasOverdueRental = rentalNotifications.some((item) => item.type === 'rental' && item.statusClass === 'overdue');
+    const notifications = [
         {
             id: 'guest-sys-welcome',
             type: 'system',
@@ -910,7 +922,22 @@ function buildGuestSystemNotifications() {
             statusClass: 'upcoming',
             statusLabel: 'Locação'
         }
-    ].filter(n => !dismissed.has(n.id));
+    ];
+
+    if (!hasOverdueRental) {
+        notifications.splice(1, 0, {
+            id: `guest-rental-overdue-${overdueReturnDate}`,
+            type: 'rental',
+            title: 'Locação em Aberto — Locacao Demonstracao Atrasada',
+            message: `Devolução prevista para ${formatDate(overdueReturnDate)}. Retirada em ${formatDate(overdueWithdrawalDate)}.`,
+            date: overdueReturnDate,
+            daysUntilReturn: -2,
+            statusClass: 'overdue',
+            statusLabel: 'Atrasada'
+        });
+    }
+
+    return notifications.filter(n => !dismissed.has(n.id));
 }
 
 function filterNotifications(notifications = []) {
@@ -1069,7 +1096,7 @@ async function loadNotifications() {
         await loadNotificationDismissalsFromServer();
         const rentals = await getRentalEventsForNotifications();
         const rentalNotifs = buildRentalNotifications(rentals);
-        const staticNotifs = buildGuestSystemNotifications();
+        const staticNotifs = buildGuestSystemNotifications(rentalNotifs);
         allNotifications = [...staticNotifs, ...rentalNotifs];
         renderNotifications();
     } catch (error) {
@@ -1123,6 +1150,7 @@ function setBancoTab(tab) {
     const equipmentButton = document.getElementById('equipamentosTabButton');
     const cableButton = document.getElementById('cabosTabButton');
     const otherButton = document.getElementById('outrosTabButton');
+    const rentalDatesButton = document.getElementById('relacaoRentalDatesButton');
     const equipmentView = document.getElementById('equipamentosDatabaseView');
     const cableView = document.getElementById('cabosDatabaseView');
     const otherView = document.getElementById('outrosDatabaseView');
@@ -1134,6 +1162,10 @@ function setBancoTab(tab) {
         } else {
             title.textContent = 'Inventário';
         }
+    }
+
+    if (rentalDatesButton) {
+        rentalDatesButton.style.display = localStorage.getItem('relacao_event_type') === 'rental' ? '' : 'none';
     }
 
     if (searchInput) {
@@ -1229,7 +1261,7 @@ function openRentalDateModal(id, name, withdrawalDate, returnDate) {
     const withdrawalInput = document.getElementById('rentalWithdrawalDate');
     const returnInput = document.getElementById('rentalReturnDate');
 
-    if (title) title.textContent = 'Alterar datas da locação';
+    if (title) title.textContent = 'Alterar dados da locação';
     if (subtitle) subtitle.textContent = 'Atualize a data de retirada e a data de devolucao.';
     if (submit) submit.textContent = 'Salvar datas';
     if (nameInput) {
@@ -1241,6 +1273,38 @@ function openRentalDateModal(id, name, withdrawalDate, returnDate) {
 
     const modal = document.getElementById('rentalModal');
     if (modal) modal.style.display = 'flex';
+}
+
+async function openManagedRentalDateModal() {
+    const eventId = Number(localStorage.getItem('relacao_event_id'));
+    if (!eventId || localStorage.getItem('relacao_event_type') !== 'rental') return;
+
+    let rental = {
+        id: eventId,
+        name: localStorage.getItem('relacao_event_name') || '',
+        withdrawal_date: localStorage.getItem('relacao_withdrawal_date') || '',
+        return_date: localStorage.getItem('relacao_return_date') || ''
+    };
+
+    const cachedRental = allRentalEvents.find((event) => Number(event.id) === eventId);
+    if (cachedRental) {
+        rental = { ...rental, ...cachedRental };
+    } else if (currentUser?.isGuest) {
+        const events = await storage.getEvents();
+        const guestRental = events.find((event) => Number(event.id) === eventId && event.event_type === 'rental');
+        if (guestRental) rental = { ...rental, ...guestRental };
+    } else {
+        try {
+            const response = await fetch(`api/rental-events/${eventId}`, { credentials: 'include' });
+            if (response.ok) {
+                rental = { ...rental, ...(await response.json()) };
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    openRentalDateModal(rental.id, rental.name, rental.withdrawal_date, rental.return_date);
 }
 
 function closeRentalModal() {
@@ -1361,8 +1425,7 @@ function renderRentalEvents(events, search = '') {
                 </div>
             </div>
             <div class="event-actions">
-                <button onclick="gerenciarLocacao(${event.id}, '${escapeJsString(event.name)}')" class="btn-primary">Gerenciar</button>
-                <button onclick="openRentalDateModal(${event.id}, '${escapeJsString(event.name)}', '${escapeJsString(event.withdrawal_date || '')}', '${escapeJsString(event.return_date || '')}')" class="btn-secondary">Alterar datas</button>
+                <button onclick="gerenciarLocacao(${event.id}, '${escapeJsString(event.name)}', '${escapeJsString(event.withdrawal_date || '')}', '${escapeJsString(event.return_date || '')}')" class="btn-primary">Gerenciar</button>
                 <button onclick="deleteRentalEvent(${event.id}, '${escapeJsString(event.name)}')" class="btn-danger">Excluir</button>
             </div>`;
         grid.appendChild(card);
@@ -2212,6 +2275,10 @@ document.addEventListener('submit', async (e) => {
                     return_date: data.returnDate,
                     date: data.withdrawalDate
                 });
+                if (Number(localStorage.getItem('relacao_event_id')) === Number(editingRentalEventId)) {
+                    localStorage.setItem('relacao_withdrawal_date', data.withdrawalDate);
+                    localStorage.setItem('relacao_return_date', data.returnDate);
+                }
                 alert('Datas da locação atualizadas com sucesso.');
                 closeRentalModal();
                 showSection('locacao');
@@ -2258,6 +2325,10 @@ document.addEventListener('submit', async (e) => {
             }
 
             alert('Datas da locação atualizadas com sucesso.');
+            if (Number(localStorage.getItem('relacao_event_id')) === Number(editingRentalEventId)) {
+                localStorage.setItem('relacao_withdrawal_date', data.withdrawalDate);
+                localStorage.setItem('relacao_return_date', data.returnDate);
+            }
             closeRentalModal();
             showSection('locacao');
             await loadRentalEvents();

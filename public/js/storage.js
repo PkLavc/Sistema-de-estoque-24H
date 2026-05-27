@@ -411,7 +411,8 @@ class DataStorage {
             { id: 1, name: 'Show da Banda Metallix', date: '2026-06-15', event_type: 'event', created_by_username: 'convidado' },
             { id: 2, name: 'Casamento Fernanda & Lucas', event_type: 'rental', created_by_username: 'convidado', withdrawal_date: '2026-06-21', return_date: '2026-06-23' },
             { id: 3, name: 'Festival de Verão 2026', date: '2026-07-04', event_type: 'event', created_by_username: 'convidado' },
-            { id: 4, name: 'Evento Corporativo TechConf', event_type: 'rental', created_by_username: 'convidado', withdrawal_date: addDays(today, 2), return_date: addDays(today, 5) }
+            { id: 4, name: 'Evento Corporativo TechConf', event_type: 'rental', created_by_username: 'convidado', withdrawal_date: addDays(today, 2), return_date: addDays(today, 5) },
+            { id: 5, name: 'Locacao Demonstracao Atrasada', event_type: 'rental', created_by_username: 'convidado', withdrawal_date: addDays(today, -5), return_date: addDays(today, -2) }
         ];
 
         const equipments = [
