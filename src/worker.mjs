@@ -166,7 +166,6 @@ async function buildChatDbContext(env, session) {
 
 const SESSION_COOKIE_NAME = 'sessao24h';
 const SESSION_DURATION_SECONDS = 60 * 60 * 24;
-const TEST_USERNAME = 'teste';
 const LOGIN_PAGES = new Set(['/login/', '/login/index.html']);
 const DEFAULT_NOTIFICATION_SETTINGS = {
     enabled: true,
@@ -251,7 +250,6 @@ async function handleApiRequest(request, env) {
         }
         return json({
             authenticated: !!session,
-            isTestUser: session?.username === TEST_USERNAME,
             userId: session?.user_id || null,
             username: session?.username || null,
             role: effectiveRole,
@@ -1694,16 +1692,8 @@ async function login(request, env) {
     await cleanupExpiredSessions(env);
     await cleanupCurrentSessionBeforeLogin(request, env);
 
-    if (user.username === TEST_USERNAME) {
-        await clearAllTestUserSessions(env);
-    }
-
     const sessionId = crypto.randomUUID();
     const expiresAt = toSqliteDate(new Date(Date.now() + SESSION_DURATION_SECONDS * 1000));
-
-    if (user.username === TEST_USERNAME) {
-        await createTestSnapshot(env, sessionId);
-    }
 
     await execute(
         env,
@@ -1712,7 +1702,7 @@ async function login(request, env) {
     );
 
     return json(
-        { success: true, isTestUser: user.username === TEST_USERNAME },
+        { success: true },
         200,
         { 'Set-Cookie': await buildSessionCookie(sessionId, request, env) }
     );
@@ -1724,22 +1714,12 @@ async function cleanupCurrentSessionBeforeLogin(request, env) {
         return;
     }
 
-    if (currentSession.username === TEST_USERNAME) {
-        await restoreTestSnapshot(env, currentSession.id);
-        await clearTestSnapshot(env, currentSession.id);
-    }
-
     await execute(env, 'DELETE FROM sessions WHERE id = ?', [currentSession.id]);
 }
 
 async function logout(request, env) {
     const session = await getSessionFromRequest(request, env);
     if (session) {
-        if (session.username === TEST_USERNAME) {
-            await restoreTestSnapshot(env, session.id);
-            await clearTestSnapshot(env, session.id);
-        }
-
         await execute(env, 'DELETE FROM sessions WHERE id = ?', [session.id]);
     }
 
@@ -1803,192 +1783,7 @@ function getEffectiveRole(session) {
 }
 
 async function cleanupExpiredSessions(env) {
-    const expiredTestSessions = await queryAll(
-        env,
-        `SELECT sessions.id
-         FROM sessions
-         INNER JOIN users ON users.id = sessions.user_id
-         WHERE sessions.expires_at <= ?
-           AND users.username = ?
-         ORDER BY sessions.expires_at ASC`,
-        [toSqliteDate(new Date()), TEST_USERNAME]
-    );
-
-    for (const session of expiredTestSessions) {
-        await clearTestSnapshot(env, session.id);
-    }
-
     await execute(env, 'DELETE FROM sessions WHERE expires_at <= ?', [toSqliteDate(new Date())]);
-}
-
-async function clearAllTestUserSessions(env) {
-    const testSessions = await queryAll(
-        env,
-        `SELECT sessions.id
-         FROM sessions
-         INNER JOIN users ON users.id = sessions.user_id
-         WHERE users.username = ?
-         ORDER BY sessions.expires_at ASC`,
-        [TEST_USERNAME]
-    );
-
-    if (testSessions.length === 0) {
-        return;
-    }
-
-    for (const session of testSessions) {
-        await clearTestSnapshot(env, session.id);
-    }
-
-    await execute(
-        env,
-        `DELETE FROM sessions
-         WHERE id IN (${testSessions.map(() => '?').join(', ')})`,
-        testSessions.map((session) => session.id)
-    );
-}
-
-async function createTestSnapshot(env, snapshotId) {
-    await clearTestSnapshot(env, snapshotId);
-
-    await execute(
-        env,
-        `INSERT INTO test_snapshot_equipments (snapshot_id, id, name, barcode, current_status, category)
-         SELECT ?, id, name, barcode, current_status, category
-         FROM equipments`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO test_snapshot_events (snapshot_id, id, name, date, created_by_username, event_type, withdrawal_date, return_date)
-         SELECT ?, id, name, date, created_by_username, COALESCE(event_type, 'event'), withdrawal_date, return_date
-         FROM events`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO test_snapshot_equipment_events (snapshot_id, id, equipment_id, event_id, action_type, performed_by_username, created_at)
-         SELECT ?, id, equipment_id, event_id, action_type, performed_by_username, created_at
-         FROM equipment_events`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO test_snapshot_cable_event_movements (snapshot_id, id, cable_id, event_id, action_type, quantity, created_at)
-         SELECT ?, id, cable_id, event_id, action_type, quantity, created_at
-         FROM cable_event_movements`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO test_snapshot_maintenances (snapshot_id, id, equipment_id, description, resolved_at, created_at)
-         SELECT ?, id, equipment_id, description, resolved_at, created_at
-         FROM maintenances`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO test_snapshot_cables (snapshot_id, id, name, quantity, available_quantity, category, created_at, updated_at)
-         SELECT ?, id, name, quantity, available_quantity, category, created_at, updated_at
-         FROM cables`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO test_snapshot_cable_maintenances (snapshot_id, id, cable_id, description, resolved_at, created_at)
-         SELECT ?, id, cable_id, description, resolved_at, created_at
-         FROM cable_maintenances`,
-        [snapshotId]
-    );
-}
-
-async function restoreTestSnapshot(env, snapshotId) {
-    await execute(env, 'DELETE FROM equipment_events');
-    await execute(env, 'DELETE FROM cable_event_movements');
-    await execute(env, 'DELETE FROM maintenances');
-    await execute(env, 'DELETE FROM events');
-    await execute(env, 'DELETE FROM equipments');
-    await execute(env, 'DELETE FROM cable_maintenances');
-    await execute(env, 'DELETE FROM cables');
-
-    await execute(
-        env,
-        `INSERT INTO equipments (id, name, barcode, current_status, category)
-         SELECT id, name, barcode, current_status, category
-         FROM test_snapshot_equipments
-         WHERE snapshot_id = ?`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO events (id, name, date, created_by_username, event_type, withdrawal_date, return_date)
-         SELECT id, name, date, created_by_username, COALESCE(event_type, 'event'), withdrawal_date, return_date
-         FROM test_snapshot_events
-         WHERE snapshot_id = ?`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO equipment_events (id, equipment_id, event_id, action_type, performed_by_username, created_at)
-         SELECT id, equipment_id, event_id, action_type, performed_by_username, created_at
-         FROM test_snapshot_equipment_events
-         WHERE snapshot_id = ?`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO cable_event_movements (id, cable_id, event_id, action_type, quantity, created_at)
-         SELECT id, cable_id, event_id, action_type, quantity, created_at
-         FROM test_snapshot_cable_event_movements
-         WHERE snapshot_id = ?`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO maintenances (id, equipment_id, description, resolved_at, created_at)
-         SELECT id, equipment_id, description, resolved_at, created_at
-         FROM test_snapshot_maintenances
-         WHERE snapshot_id = ?`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO cables (id, name, quantity, available_quantity, category, created_at, updated_at)
-         SELECT id, name, quantity, available_quantity, category, created_at, updated_at
-         FROM test_snapshot_cables
-         WHERE snapshot_id = ?`,
-        [snapshotId]
-    );
-
-    await execute(
-        env,
-        `INSERT INTO cable_maintenances (id, cable_id, description, resolved_at, created_at)
-         SELECT id, cable_id, description, resolved_at, created_at
-         FROM test_snapshot_cable_maintenances
-         WHERE snapshot_id = ?`,
-        [snapshotId]
-    );
-}
-
-async function clearTestSnapshot(env, snapshotId) {
-    await execute(env, 'DELETE FROM test_snapshot_equipment_events WHERE snapshot_id = ?', [snapshotId]);
-    await execute(env, 'DELETE FROM test_snapshot_cable_event_movements WHERE snapshot_id = ?', [snapshotId]);
-    await execute(env, 'DELETE FROM test_snapshot_maintenances WHERE snapshot_id = ?', [snapshotId]);
-    await execute(env, 'DELETE FROM test_snapshot_events WHERE snapshot_id = ?', [snapshotId]);
-    await execute(env, 'DELETE FROM test_snapshot_equipments WHERE snapshot_id = ?', [snapshotId]);
-    await execute(env, 'DELETE FROM test_snapshot_cable_maintenances WHERE snapshot_id = ?', [snapshotId]);
-    await execute(env, 'DELETE FROM test_snapshot_cables WHERE snapshot_id = ?', [snapshotId]);
 }
 
 async function buildSessionCookie(sessionId, request, env) {
