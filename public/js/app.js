@@ -1566,7 +1566,10 @@ function getHistoryCardHtml(event, isRental) {
             </div>
         </div>
         <div class="event-actions">
-            <button onclick="showSection('historico')" class="btn-primary">Gerenciar</button>
+            ${isRental
+                ? `<button onclick="gerenciarLocacao(${event.id}, '${escapeJsString(event.name)}', '${escapeJsString(event.withdrawal_date || '')}', '${escapeJsString(event.return_date || '')}')" class="btn-primary">Gerenciar</button>`
+                : `<button onclick="gerenciarEvento(${event.id}, '${escapeJsString(event.name)}')" class="btn-primary">Gerenciar</button>`
+            }
         </div>`;
 }
 
@@ -2972,9 +2975,11 @@ function renderLoginUsers() {
         row.innerHTML = `
             <td>${escapeHtml(user.username)}</td>
             <td><span class="user-role-badge ${user.role === 'admin' || user.role === 'gestor_admin' ? 'admin' : ''}">${escapeHtml(roleLabel)}</span></td>
-            <td>${escapeHtml(getUserCompanyLabel(user))}</td>
+            <td class="hide-mobile">${escapeHtml(getUserCompanyLabel(user))}</td>
             <td class="user-actions-cell">
-                <button type="button" class="btn-primary user-password-button" onclick="openUserManage(${userId})" ${canEdit ? '' : 'disabled'}>Gerenciar</button>
+                <button type="button" class="company-edit-btn" onclick="openUserManage(${userId})" ${canEdit ? '' : 'disabled'} title="Gerenciar usuário">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
             </td>
         `;
         tbody.appendChild(row);

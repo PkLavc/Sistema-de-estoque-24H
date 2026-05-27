@@ -1006,6 +1006,10 @@ textarea:focus {
 .company-edit-btn:hover {
     background: rgba(255, 255, 255, 0.08);
 }
+.company-edit-btn:disabled svg {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
 
 .company-edit-panel {
     margin-top: 24px;
@@ -1666,6 +1670,10 @@ textarea {
    MOBILE RESPONSIVE (max-width: 768px)
    ================================================ */
 @media (max-width: 768px) {
+    .hide-mobile {
+        display: none !important;
+    }
+
     body {
         overflow-x: hidden;
         --floating-edge-gap: 16px;
