@@ -531,6 +531,23 @@
                                 </div>
                             </div>
 
+                            <div class="form-group">
+                                <label for="warningColor">Cor do Ícone de Alerta (Manutenção)</label>
+                                <div class="color-picker-wrapper">
+                                    <button type="button" class="color-swatch-btn" id="warningColorSwatch" onclick="openColorPopover('warningColor')" style="background:#ff0000"></button>
+                                    <input type="text" class="color-hex-display" id="warningColorHex" value="#ff0000" placeholder="#ff0000">
+                                    <input type="hidden" id="warningColor" name="warningColor" value="#ff0000">
+                                    <div class="color-popover" id="warningColorPopover">
+                                        <input type="color" id="warningColorPopoverColor" value="#ff0000" oninput="syncPickerToHex('warningColor')">
+                                        <input type="text" class="color-popover-hex" id="warningColorPopoverHex" value="#ff0000" oninput="syncPopoverHexToColor('warningColor')">
+                                        <div class="color-popover-actions">
+                                            <button type="button" class="btn-secondary btn-small" onclick="cancelColorPopover('warningColor')">Cancelar</button>
+                                            <button type="button" class="btn-primary btn-small" onclick="confirmColorPopover('warningColor')">OK</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Cores de Fundo -->
                             <div class="theme-section-title">
                                 <h3>Cores de Fundo</h3>

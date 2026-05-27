@@ -15,6 +15,7 @@ body {
     --floating-chat-gap: 12px;
     --floating-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
     --floating-create-right: var(--floating-edge-gap);
+    --warning-color: #ff0000;
 }
 
 .app-container {
@@ -265,6 +266,7 @@ body {
     flex: 1;
     margin-left: 340px;
     padding: 30px;
+    padding-bottom: calc(var(--floating-bottom) + var(--floating-chat-size) + 24px);
     overflow: visible;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -1379,19 +1381,34 @@ textarea {
     box-shadow: 0 5px 15px rgba(30, 168, 92, 0.35);
 }
 
+@keyframes warningPulse {
+    0%, 100% { filter: drop-shadow(0 0 3px var(--warning-color)); opacity: 1; }
+    50%       { filter: drop-shadow(0 0 8px var(--warning-color)); opacity: 0.75; }
+}
+
 .warning-button {
     background: transparent;
     border: none;
     cursor: pointer;
-    font-size: 1.1rem;
-    line-height: 1;
     padding: 0;
     margin-left: 8px;
-    filter: drop-shadow(0 0 8px rgba(241, 196, 15, 0.2));
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    color: var(--warning-color);
+    animation: warningPulse 1.8s ease-in-out infinite;
+    transition: transform 0.15s ease;
+}
+
+.warning-button svg {
+    width: 15px;
+    height: 15px;
+    display: block;
 }
 
 .warning-button:hover {
-    transform: scale(1.08);
+    transform: scale(1.18);
+    animation-play-state: paused;
 }
 
 .modal-overlay {

@@ -84,6 +84,7 @@ function reloadLottieAnimations(_primaryColor, _secondaryColor) {
 function applyCustomTheme() {
     const primaryColor = localStorage.getItem('theme-primary-color') || '#ff3333';
     const secondaryColor = localStorage.getItem('theme-secondary-color') || '#cc0000';
+    const warningColor = localStorage.getItem('theme-warning-color') || '#ff0000';
     const customLogo = localStorage.getItem('custom-logo');
     const customFavicon = localStorage.getItem('custom-favicon');
 
@@ -92,6 +93,7 @@ function applyCustomTheme() {
     document.documentElement.style.setProperty('--primary-2', secondaryColor);
     document.documentElement.style.setProperty('--primary-3', darkenHex(secondaryColor, 18));
     document.documentElement.style.setProperty('--component-bg', 'transparent');
+    document.documentElement.style.setProperty('--warning-color', warningColor);
 
     // Apply custom logo if exists
     if (customLogo) {
@@ -984,7 +986,7 @@ function renderEquipments(equipments) {
                     const statusText = isPreSeparado ? 'Pre separado' : (isRelacao ? 'RelaÃ§Ã£o' : (isManutencao ? 'Em Manutencao' : (isDisponivel ? 'Disponivel' : 'Indisponivel')));
                     const statusClass = (isPreSeparado || isRelacao) ? 'badge-relation' : (isManutencao ? 'badge-maintenance' : (isDisponivel ? 'badge-available' : 'badge-unavailable'));
                     const warningButton = isManutencao && eq.maintenance_description
-                        ? `<button type="button" class="warning-button" onclick="openMaintenanceDetails(${eq.id})" title="Ver problema">⚠️</button>`
+                        ? `<button type="button" class="warning-button" onclick="openMaintenanceDetails(${eq.id})" title="Ver problema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>`
                         : '';
 
                     const actionButtons = [];
@@ -2896,6 +2898,7 @@ function loadThemeSettings() {
         
         if (theme['primary'])            setColorValue('primaryColor',      theme['primary']);
         if (theme['primary-2'])          setColorValue('primary2Color',     theme['primary-2']);
+        if (theme['warning-color'])      setColorValue('warningColor',      theme['warning-color']);
         if (theme['bg-start'])           setColorValue('bgStart',           theme['bg-start']);
         if (theme['bg-end'])             setColorValue('bgEnd',             theme['bg-end']);
         if (theme['text-color'])         setColorValue('textColor',         theme['text-color']);
@@ -2945,6 +2948,7 @@ function showSettingsTab(tabName) {
 function saveThemeSettings() {
     const primary = document.getElementById('primaryColor')?.value || '#ff3333';
     const primary2 = document.getElementById('primary2Color')?.value || '#cc0000';
+    const warningColor = document.getElementById('warningColor')?.value || '#ff0000';
     const bgStart = document.getElementById('bgStart')?.value || '#1a1a1a';
     const bgEnd = document.getElementById('bgEnd')?.value || '#000000';
     const textColor = document.getElementById('textColor')?.value || '#cccccc';
@@ -2959,6 +2963,7 @@ function saveThemeSettings() {
     const theme = {
         'primary': primary,
         'primary-2': primary2,
+        'warning-color': warningColor,
         'bg-start': bgStart,
         'bg-end': bgEnd,
         'text-color': textColor,
@@ -2974,6 +2979,7 @@ function saveThemeSettings() {
     // Save to localStorage
     localStorage.setItem('theme-primary-color', primary);
     localStorage.setItem('theme-secondary-color', primary2);
+    localStorage.setItem('theme-warning-color', warningColor);
     localStorage.setItem('theme-bg-start', bgStart);
     localStorage.setItem('theme-bg-end', bgEnd);
     localStorage.setItem('theme-text-color', textColor);
@@ -2997,6 +3003,7 @@ function resetThemeSettings() {
     localStorage.removeItem('appTheme');
     localStorage.removeItem('theme-primary-color');
     localStorage.removeItem('theme-secondary-color');
+    localStorage.removeItem('theme-warning-color');
     localStorage.removeItem('theme-bg-start');
     localStorage.removeItem('theme-bg-end');
     localStorage.removeItem('theme-text-color');
@@ -3011,6 +3018,7 @@ function resetThemeSettings() {
     const defaultTheme = {
         'primary': '#ff3333',
         'primary-2': '#cc0000',
+        'warning-color': '#ff0000',
         'bg-start': '#1a1a1a',
         'bg-end': '#000000',
         'text-color': '#cccccc',
@@ -3025,6 +3033,7 @@ function resetThemeSettings() {
     
     setColorValue('primaryColor',      defaultTheme['primary']);
     setColorValue('primary2Color',     defaultTheme['primary-2']);
+    setColorValue('warningColor',      '#ff0000');
     setColorValue('bgStart',           defaultTheme['bg-start']);
     setColorValue('bgEnd',             defaultTheme['bg-end']);
     setColorValue('textColor',         defaultTheme['text-color']);
@@ -3042,7 +3051,7 @@ function resetThemeSettings() {
 
 function updateColorInputs() {
     // Sync swatch + hex display with the hidden color input value
-    ['primaryColor', 'primary2Color', 'bgStart', 'bgEnd', 'textColor',
+    ['primaryColor', 'primary2Color', 'warningColor', 'bgStart', 'bgEnd', 'textColor',
      'secondaryBtnBg', 'secondaryBtnBorder', 'secondaryBtnText',
      'innerComponentBg', 'inputBg', 'inputBorder', 'inputText'].forEach(id => {
         const colorInput = document.getElementById(id);
