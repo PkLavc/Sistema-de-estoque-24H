@@ -1848,7 +1848,7 @@ app.get('/dashboard.html', (req, res) => {
     res.redirect('/');
 });
 
-// ── AI Chat (Skyler) ─────────────────────────────────────────────────────────
+// ── AI Chat (Skylet) ─────────────────────────────────────────────────────────
 app.post('/api/chat', requireAuth, async (req, res) => {
     const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
     const CF_AI_TOKEN   = process.env.CLOUDFLARE_AI_TOKEN;
@@ -1885,7 +1885,7 @@ app.post('/api/chat', requireAuth, async (req, res) => {
             `\n- Usuários cadastrados: ${users?.n ?? 0}`;
     } catch (_) {}
 
-    const systemPrompt = 'Você é a Skyler, assistente virtual de um sistema de gestão de estoque para empresas de eventos. Responda sempre em português brasileiro, de forma clara e prática. Nunca mencione o nome de nenhum sistema ou produto. Quando se identificar, diga apenas que é a Skyler. Quando for útil direcionar o usuário a uma seção, inclua no final da resposta exatamente um marcador [NAVEGAR:sectionId|Texto do botão]. Seções válidas: home, eventos, locacao, manutencao, banco-de-dados, cadastro, historico, config.' + dbContext;
+    const systemPrompt = 'Você é a Skylet, assistente virtual de um sistema de gestão de estoque para empresas de eventos. Responda sempre em português brasileiro, de forma clara e prática. Nunca mencione o nome de nenhum sistema ou produto. Quando se identificar, diga apenas que é a Skylet. Quando for útil direcionar o usuário a uma seção, inclua no final da resposta exatamente um marcador [NAVEGAR:sectionId|Texto do botão]. Seções válidas: home, eventos, locacao, manutencao, banco-de-dados, cadastro, historico, config.' + dbContext;
 
     const messages = [
         { role: 'system', content: systemPrompt },

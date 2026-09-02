@@ -1,4 +1,4 @@
-/* ── Skyler Chat Widget ────────────────────────────────────────────────────── */
+/* ── Skylet Chat Widget ────────────────────────────────────────────────────── */
 
 /* Hidden state (sidebar closed) */
 .eq-chat-launcher.eq-chat-hidden {
@@ -381,7 +381,7 @@
 }
 
 /* ── Right-column ad (sidebar collapsed, desktop) ───────────────────────── */
-/* Ad becomes a 200px right column; move Skyler and create button to its left */
+/* Ad becomes a 200px right column; move Skylet and create button to its left */
 .app-container.has-ad.sidebar-collapsed ~ .eq-chat-launcher {
   --floating-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
   right: calc(200px + 32px);

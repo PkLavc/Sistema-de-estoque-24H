@@ -17,7 +17,7 @@
     launcher.type = 'button';
     launcher.setAttribute('aria-controls', 'eq-chat-widget');
     launcher.setAttribute('aria-expanded', 'false');
-    launcher.setAttribute('aria-label', 'Abrir Skyler');
+    launcher.setAttribute('aria-label', 'Abrir Skylet');
     launcher.innerHTML =
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>' +
@@ -26,7 +26,7 @@
     var widget = document.createElement('section');
     widget.id = 'eq-chat-widget';
     widget.className = 'eq-chat-widget';
-    widget.setAttribute('aria-label', 'Skyler');
+    widget.setAttribute('aria-label', 'Skylet');
     widget.setAttribute('aria-hidden', 'true');
     widget.innerHTML = [
       '<header class="eq-chat-header">',
@@ -37,11 +37,11 @@
       '      </svg>',
       '    </span>',
       '    <div>',
-      '    <strong>Skyler</strong>',
+      '    <strong>Skylet</strong>',
       '      <span>Assistente virtual</span>',
       '    </div>',
       '  </div>',
-      '  <button id="eq-chat-close" class="eq-chat-close-btn" type="button" aria-label="Fechar Skyler">',
+      '  <button id="eq-chat-close" class="eq-chat-close-btn" type="button" aria-label="Fechar Skylet">',
       '    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">',
       '      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
       '    </svg>',
@@ -184,7 +184,7 @@
     if (!els.launcher) return;
     var visible = isSidebarOpen();
     els.launcher.classList.toggle('eq-chat-hidden', !visible);
-    document.body.classList.toggle('skyler-visible', visible);
+    document.body.classList.toggle('skylet-visible', visible);
     if (!visible && state.isOpen) {
       closeWidget();
     }
@@ -262,7 +262,7 @@
         thinking.classList.add('eq-msg-error');
       }
       setStatus('');
-      console.error('[Skyler Chat]', err);
+      console.error('[Skylet Chat]', err);
     } finally {
       setSendDisabled(false);
       focusInput();
@@ -326,7 +326,7 @@
     if (els.log && !els.log.children.length) {
       appendMessage(
         'assistant',
-        'Olá! Sou a Skyler, sua assistente virtual. Posso te ajudar com dúvidas sobre eventos, equipamentos, cabos, manutenções, usuários e muito mais. Como posso ajudar?',
+        'Olá! Sou a Skylet, sua assistente virtual. Posso te ajudar com dúvidas sobre eventos, equipamentos, cabos, manutenções, usuários e muito mais. Como posso ajudar?',
         false
       );
     }

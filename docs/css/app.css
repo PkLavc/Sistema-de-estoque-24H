@@ -1275,9 +1275,9 @@ textarea:focus {
     box-shadow: 0 12px 28px color-mix(in srgb, var(--primary, #ff3333) 28%, transparent);
 }
 
-body.skyler-visible .app-container .floating-create-button,
-body.skyler-visible .app-container.has-ad:not(.sidebar-collapsed) .floating-create-button,
-body.skyler-visible .app-container.has-ad.sidebar-collapsed .floating-create-button {
+body.skylet-visible .app-container .floating-create-button,
+body.skylet-visible .app-container.has-ad:not(.sidebar-collapsed) .floating-create-button,
+body.skylet-visible .app-container.has-ad.sidebar-collapsed .floating-create-button {
     --floating-create-right: calc(var(--floating-edge-gap) + var(--floating-chat-size) + var(--floating-chat-gap));
 }
 
